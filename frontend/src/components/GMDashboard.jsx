@@ -14,6 +14,7 @@ function GMDashboard() {
   const createEncounter = useStore((state) => state.createEncounter);
   const saveEncounter = useStore((state) => state.saveEncounter);
   const saveCampaign = useStore((state) => state.saveCampaign);
+  const returnToCampaignSelector = useStore((state) => state.returnToCampaignSelector);
   const [newEncounterName, setNewEncounterName] = useState('');
   const [showActorForm, setShowActorForm] = useState(false);
   const [rulesetDropdown, setRulesetDropdown] = useState(ruleset);
@@ -42,6 +43,12 @@ function GMDashboard() {
     }
   };
 
+  const handleBackToCampaigns = () => {
+    if (window.confirm('Return to the campaign selector? Unsaved changes will be lost unless you Save All first.')) {
+      returnToCampaignSelector();
+    }
+  };
+
   return (
     <div className="gm-dashboard">
       <header className="gm-header">
@@ -59,6 +66,9 @@ function GMDashboard() {
           </div>
         </div>
         <div className="header-right">
+          <button className="btn btn-secondary" onClick={handleBackToCampaigns}>
+            Back to Campaigns
+          </button>
           <button className="btn btn-primary" onClick={handleOpenPlayerView}>
             Open Player View
           </button>

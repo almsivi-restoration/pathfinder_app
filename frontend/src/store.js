@@ -299,4 +299,20 @@ export const useStore = create((set, get) => ({
   // Utility
   setSelectedActorId: (actorId) => set({ selectedActorId: actorId }),
   setSelectedTemplateId: (templateId) => set({ selectedTemplateId: templateId }),
+
+  // Clears all campaign/encounter session state so the app falls back to the campaign selector.
+  returnToCampaignSelector: () => set({
+    currentCampaign: null,
+    ruleset: null,
+    currentEncounter: null,
+    actors: [],
+    initiativeOrder: [],
+    currentRound: 0,
+    currentTurnIndex: 0,
+    actorTemplates: [],
+    rulesetConfig: null,
+    selectedActorId: null,
+    selectedTemplateId: null,
+    isEncounterActive: false,
+  }),
 }));
