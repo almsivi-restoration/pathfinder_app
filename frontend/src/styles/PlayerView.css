@@ -2,20 +2,20 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+  background: radial-gradient(ellipse at center, var(--mw-wood-light) 0%, var(--mw-wood-dark) 100%);
 }
 
 .player-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
-  background-color: #2d2d2d;
-  border-bottom: 3px solid #FF6B00;
+  padding: 16px 20px;
+  background: linear-gradient(180deg, var(--mw-wood-light), var(--mw-wood-dark));
+  border-bottom: 2px solid var(--mw-gold);
 }
 
 .player-header h1 {
-  font-size: 32px;
+  font-size: 28px;
   margin: 0;
 }
 
@@ -27,11 +27,12 @@
 .round-badge {
   display: inline-block;
   padding: 8px 16px;
-  background-color: #FF6B00;
-  color: white;
-  border-radius: 4px;
-  font-weight: 600;
+  background: linear-gradient(180deg, var(--mw-gold-bright), var(--mw-gold));
+  color: var(--mw-wood-dark);
+  border-radius: 2px;
+  font-weight: 700;
   font-size: 14px;
+  font-variant: small-caps;
 }
 
 .player-content {
@@ -48,7 +49,7 @@
   justify-content: center;
   flex: 1;
   font-size: 20px;
-  color: #888;
+  color: var(--mw-parchment-text);
   font-style: italic;
 }
 
@@ -62,7 +63,7 @@
 
 .initiative-section h2 {
   margin: 0;
-  font-size: 24px;
+  font-size: 22px;
 }
 
 .actor-list-player {

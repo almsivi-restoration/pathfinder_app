@@ -3,12 +3,15 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px;
-  background-color: #1a1a1a;
-  border: 1px solid #444;
-  border-radius: 4px;
+  background: linear-gradient(160deg, var(--mw-parchment-light), var(--mw-parchment) 60%, var(--mw-parchment-dark));
+  border: 2px solid var(--mw-border-dark);
+  outline: 1px solid var(--mw-gold);
+  outline-offset: -4px;
+  border-radius: 2px;
   margin-bottom: 16px;
   max-height: 500px;
   overflow-y: auto;
+  color: var(--mw-ink);
 }
 
 .form-row {
@@ -24,63 +27,57 @@
 }
 
 .field-label {
-  font-size: 12px;
-  color: #aaa;
+  font-size: 11px;
+  font-variant: small-caps;
+  color: var(--mw-ink-light);
 }
 
 .checkbox-field {
   display: flex;
   align-items: center;
   gap: 8px;
+  color: var(--mw-ink);
 }
 
-.abilities-section {
-  border-top: 1px solid #444;
+.abilities-section,
+.saves-section,
+.skills-section {
+  border-top: 1px solid var(--mw-border-dark);
   padding-top: 12px;
 }
 
-.abilities-section h4 {
+.abilities-section h4,
+.saves-section h4,
+.skills-section h4 {
   margin: 0 0 8px 0;
   font-size: 14px;
+  color: var(--mw-ink);
+  text-shadow: none;
 }
 
-.abilities-row {
+.abilities-row,
+.saves-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
 
-.ability-input {
+.ability-input,
+.skill-input {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.ability-input .field-label {
-  font-size: 12px;
-  color: #aaa;
+.ability-input .field-label,
+.skill-input .field-label {
+  font-size: 11px;
+  color: var(--mw-ink-light);
 }
 
-.ability-input input {
+.ability-input input,
+.skill-input input {
   padding: 6px;
-}
-
-.saves-section,
-.skills-section {
-  border-top: 1px solid #444;
-  padding-top: 12px;
-}
-
-.saves-section h4,
-.skills-section h4 {
-  margin: 0 0 8px 0;
-  font-size: 14px;
-}
-
-.saves-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
 }
 
 .skills-grid {
@@ -90,21 +87,6 @@
   max-height: 260px;
   overflow-y: auto;
   padding-right: 4px;
-}
-
-.skill-input {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.skill-input .field-label {
-  font-size: 11px;
-  color: #aaa;
-}
-
-.skill-input input {
-  padding: 6px;
 }
 
 .form-actions {
