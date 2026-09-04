@@ -2,8 +2,20 @@ import React from 'react';
 
 const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 
+const formatLabel = (name) =>
+  name
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
 /** Presentational form fields shared by the create (ActorForm) and edit (ActorEditModal) flows. */
-function ActorStatFields({ formData, onChange, onAbilityChange }) {
+function ActorStatFields({
+  formData,
+  onChange,
+  onAbilityChange,
+  rulesetConfig,
+  onSkillChange,
+  onSaveChange,
+}) {
   return (
     <>
       <div className="form-row">
@@ -90,6 +102,44 @@ function ActorStatFields({ formData, onChange, onAbilityChange }) {
           ))}
         </div>
       </div>
+
+      {rulesetConfig && (
+        <div className="saves-section">
+          <h4>Saving Throws</h4>
+          <div className="saves-row">
+            {rulesetConfig.saves.map((save) => (
+              <label key={save} className="ability-input">
+                <span className="field-label">{formatLabel(save)}</span>
+                <input
+                  type="number"
+                  value={formData.saves?.[save] ?? 0}
+                  onChange={(e) => onSaveChange(save, e.target.value)}
+                />
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {rulesetConfig && (
+        <div className="skills-section">
+          <h4>Skills</h4>
+          <div className="skills-grid">
+            {Object.entries(rulesetConfig.skills).map(([skillName, ability]) => (
+              <label key={skillName} className="skill-input">
+                <span className="field-label">
+                  {formatLabel(skillName)} ({ability.toUpperCase()})
+                </span>
+                <input
+                  type="number"
+                  value={formData.skills?.[skillName] ?? 0}
+                  onChange={(e) => onSkillChange(skillName, e.target.value)}
+                />
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
     </>
   );
 }

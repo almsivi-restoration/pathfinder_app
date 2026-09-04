@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../store';
 import ActorStatFields from './ActorStatFields';
 import '../styles/ActorForm.css';
 
 function ActorForm({ onActorAdded }) {
   const ruleset = useStore((state) => state.ruleset);
+  const rulesetConfig = useStore((state) => state.rulesetConfig);
+  const fetchRulesetConfig = useStore((state) => state.fetchRulesetConfig);
   const addActor = useStore((state) => state.addActor);
   const saveActorTemplate = useStore((state) => state.saveActorTemplate);
+
+  useEffect(() => {
+    if (ruleset) fetchRulesetConfig(ruleset);
+  }, [ruleset, fetchRulesetConfig]);
 
   const emptyForm = {
     name: '',
@@ -26,6 +32,8 @@ function ActorForm({ onActorAdded }) {
       wis: 10,
       cha: 10,
     },
+    skills: {},
+    saves: {},
   };
 
   const [formData, setFormData] = useState(emptyForm);
@@ -52,12 +60,24 @@ function ActorForm({ onActorAdded }) {
     });
   };
 
+  const handleSkillChange = (skillName, value) => {
+    setFormData({
+      ...formData,
+      skills: { ...formData.skills, [skillName]: parseInt(value) || 0 },
+    });
+  };
+
+  const handleSaveChange = (saveName, value) => {
+    setFormData({
+      ...formData,
+      saves: { ...formData.saves, [saveName]: parseInt(value) || 0 },
+    });
+  };
+
   const buildActor = () => ({
     id: '',
     ...formData,
     ruleset,
-    skills: {},
-    saves: {},
     resistances: {},
     weapons: [],
     effects: [],
@@ -79,7 +99,14 @@ function ActorForm({ onActorAdded }) {
 
   return (
     <form className="actor-form" onSubmit={handleSubmit}>
-      <ActorStatFields formData={formData} onChange={handleChange} onAbilityChange={handleAbilityChange} />
+      <ActorStatFields
+        formData={formData}
+        onChange={handleChange}
+        onAbilityChange={handleAbilityChange}
+        rulesetConfig={rulesetConfig}
+        onSkillChange={handleSkillChange}
+        onSaveChange={handleSaveChange}
+      />
 
       <div className="form-actions">
         <button type="submit" className="btn btn-primary">

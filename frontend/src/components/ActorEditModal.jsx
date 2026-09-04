@@ -15,6 +15,8 @@ function ActorEditModal() {
   const setSelectedTemplateId = useStore((state) => state.setSelectedTemplateId);
   const updateActor = useStore((state) => state.updateActor);
   const updateActorTemplate = useStore((state) => state.updateActorTemplate);
+  const rulesetConfig = useStore((state) => state.rulesetConfig);
+  const fetchRulesetConfig = useStore((state) => state.fetchRulesetConfig);
 
   const isTemplate = Boolean(selectedTemplateId);
   const actor = isTemplate
@@ -31,8 +33,9 @@ function ActorEditModal() {
       setFormData({ ...actor });
       setNewEffect(emptyEffect);
       setNewWeapon(emptyWeapon);
+      fetchRulesetConfig(actor.ruleset);
     }
-  }, [actor]);
+  }, [actor, fetchRulesetConfig]);
 
   if ((!selectedActorId && !selectedTemplateId) || !formData) return null;
 
@@ -47,6 +50,14 @@ function ActorEditModal() {
 
   const handleAbilityChange = (ability, value) => {
     setFormData({ ...formData, abilities: { ...formData.abilities, [ability]: parseInt(value) } });
+  };
+
+  const handleSkillChange = (skillName, value) => {
+    setFormData({ ...formData, skills: { ...formData.skills, [skillName]: parseInt(value) || 0 } });
+  };
+
+  const handleSaveChange = (saveName, value) => {
+    setFormData({ ...formData, saves: { ...formData.saves, [saveName]: parseInt(value) || 0 } });
   };
 
   const handleAddEffect = () => {
@@ -112,7 +123,14 @@ function ActorEditModal() {
         </div>
 
         <form className="actor-edit-form" onSubmit={handleSave}>
-          <ActorStatFields formData={formData} onChange={handleChange} onAbilityChange={handleAbilityChange} />
+          <ActorStatFields
+            formData={formData}
+            onChange={handleChange}
+            onAbilityChange={handleAbilityChange}
+            rulesetConfig={rulesetConfig}
+            onSkillChange={handleSkillChange}
+            onSaveChange={handleSaveChange}
+          />
 
           <div className="edit-section">
             <h4>Status Effects</h4>

@@ -19,6 +19,9 @@ export const useStore = create((set, get) => ({
   // Actor template state
   actorTemplates: [],
 
+  // Ruleset config (skills/saves/abilities for the active ruleset)
+  rulesetConfig: null,
+
   // UI state
   selectedActorId: null,
   selectedTemplateId: null,
@@ -63,6 +66,16 @@ export const useStore = create((set, get) => ({
       await axios.post(`${API_URL}/campaign/save`);
     } catch (error) {
       console.error('Failed to save campaign:', error);
+    }
+  },
+
+  fetchRulesetConfig: async (ruleset) => {
+    try {
+      const res = await axios.get(`${API_URL}/rules/${ruleset}`);
+      set({ rulesetConfig: res.data });
+      return res.data;
+    } catch (error) {
+      console.error('Failed to fetch ruleset config:', error);
     }
   },
 
