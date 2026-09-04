@@ -60,6 +60,6 @@
 }
 
 .btn-edit {
-  border-color: var(--mw-gold);
+  outline-color: var(--mw-gold);
   color: var(--mw-gold-bright);
 }

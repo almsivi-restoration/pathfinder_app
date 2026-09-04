@@ -50,7 +50,7 @@
 }
 
 .btn-add {
-  border-color: var(--mw-fatigue);
+  outline-color: var(--mw-fatigue);
   color: var(--mw-fatigue-bright);
 }
 

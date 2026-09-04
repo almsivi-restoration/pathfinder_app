@@ -57,12 +57,26 @@ body {
 .btn-small {
   padding: 4px 8px;
   font-size: 12px;
-  border-color: var(--mw-danger);
+  font-family: var(--mw-font-display);
+  font-variant: small-caps;
+  border: 2px solid var(--mw-border-dark);
+  outline: 1px solid var(--mw-danger);
+  outline-offset: -2px;
+  border-radius: 2px;
+  cursor: pointer;
+  background: linear-gradient(180deg, var(--mw-wood-light), var(--mw-wood-dark));
   color: #f0b0b0;
+  text-shadow: 0 1px 1px #000;
+  transition: all 0.2s;
 }
 
-.btn-small:hover {
+.btn-small:hover:not(:disabled) {
   box-shadow: 0 0 6px var(--mw-danger-bright);
+}
+
+.btn-small:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Form inputs */

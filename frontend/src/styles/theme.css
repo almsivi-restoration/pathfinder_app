@@ -33,8 +33,9 @@
   --mw-danger-bright: #c23b3b;
 
   --mw-shadow: rgba(0, 0, 0, 0.65);
-  --mw-font-display: Georgia, 'Times New Roman', serif;
-  --mw-font-body: Georgia, 'Times New Roman', serif;
+  /* Linux Libertine — installed locally via apt (fonts-linuxlibertine), not bundled/CDN. */
+  --mw-font-display: 'Linux Libertine Display O', 'Linux Libertine O', Georgia, serif;
+  --mw-font-body: 'Linux Libertine O', Georgia, serif;
 }
 
 /* Reusable panel: parchment background, double border, inset shadow */
