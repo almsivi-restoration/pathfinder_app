@@ -1,0 +1,80 @@
+.actor-row {
+  display: flex;
+  padding: 8px 12px;
+  background-color: #2a2a2a;
+  border-bottom: 1px solid #3a3a3a;
+  align-items: center;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.actor-row:hover {
+  background-color: #3a3a3a;
+}
+
+.actor-row .col-name {
+  flex: 2;
+  cursor: pointer;
+  color: #64b5f6;
+  font-weight: 500;
+}
+
+.actor-row .col-name:hover {
+  text-decoration: underline;
+}
+
+.actor-row .col-type {
+  flex: 1;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.actor-row .col-hp {
+  flex: 1.5;
+  cursor: pointer;
+  color: #fff;
+}
+
+.actor-row .col-hp input {
+  width: 60px;
+  padding: 4px;
+  background-color: #1a1a1a;
+}
+
+.actor-row .col-ac {
+  flex: 0.8;
+  text-align: center;
+}
+
+.actor-row .col-init {
+  flex: 1;
+  text-align: center;
+}
+
+.actor-row .col-actions {
+  flex: 1;
+  display: flex;
+  gap: 4px;
+}
+
+.btn-edit {
+  background-color: #1976d2;
+}
+
+.btn-edit:hover {
+  background-color: #1565c0;
+}
+
+.btn-small {
+  padding: 4px 8px;
+  font-size: 12px;
+  background-color: #d32f2f;
+  color: white;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.btn-small:hover {
+  background-color: #b71c1c;
+}

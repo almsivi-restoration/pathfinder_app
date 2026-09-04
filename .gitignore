@@ -216,3 +216,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# User
+.github/skills
+
+# Node / frontend build
+node_modules/
+frontend/build/
+
+# Runtime campaign save data (user-generated, not source)
+backend/campaigns/

@@ -1,0 +1,77 @@
+.actor-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background-color: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.form-row {
+  display: flex;
+  gap: 8px;
+}
+
+.form-row .field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-label {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.abilities-section {
+  border-top: 1px solid #444;
+  padding-top: 12px;
+}
+
+.abilities-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+}
+
+.abilities-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.ability-input {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ability-input .field-label {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.ability-input input {
+  padding: 6px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.form-actions .btn {
+  flex: 1;
+  padding: 10px;
+  font-weight: 600;
+}

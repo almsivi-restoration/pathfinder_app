@@ -1,0 +1,100 @@
+.gm-dashboard {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #1a1a1a;
+}
+
+.gm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background-color: #2d2d2d;
+  border-bottom: 2px solid #1976d2;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.header-left h1 {
+  font-size: 28px;
+  margin: 0;
+}
+
+.ruleset-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ruleset-selector select {
+  padding: 6px 12px;
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+  border: 1px solid #1976d2;
+}
+
+.header-right {
+  display: flex;
+  gap: 12px;
+}
+
+.dashboard-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.encounter-creator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 16px;
+}
+
+.encounter-creator h2 {
+  font-size: 24px;
+}
+
+.encounter-creator input {
+  padding: 8px 16px;
+  width: 300px;
+}
+
+.encounter-active {
+  display: flex;
+  flex: 1;
+  gap: 16px;
+  padding: 16px;
+}
+
+.left-panel,
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #2a2a2a;
+  border-radius: 4px;
+  padding: 16px;
+  border: 1px solid #444;
+  overflow: hidden;
+}
+
+.left-panel {
+  flex: 2;
+}
+
+.left-panel h2,
+.right-panel h2 {
+  margin-bottom: 12px;
+}
+
+.left-panel > .btn {
+  margin-bottom: 12px;
+}
