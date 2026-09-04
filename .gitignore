@@ -220,6 +220,9 @@ __marimo__/
 # User
 .github/skills
 
+# Local-only artifacts (session state, scratch notes, etc.) — never committed
+artifacts/local/
+
 # Node / frontend build
 node_modules/
 frontend/build/
