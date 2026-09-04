@@ -21,6 +21,7 @@ export const useStore = create((set, get) => ({
 
   // UI state
   selectedActorId: null,
+  selectedTemplateId: null,
   isEncounterActive: false,
 
   // Campaign actions
@@ -199,6 +200,19 @@ export const useStore = create((set, get) => ({
     }
   },
 
+  updateActorTemplate: async (templateId, updatedActor) => {
+    try {
+      const res = await axios.put(`${API_URL}/campaign/actor-template/${templateId}`, updatedActor);
+      const state = get();
+      set({
+        actorTemplates: state.actorTemplates.map((t) => (t.id === templateId ? res.data : t)),
+      });
+      return res.data;
+    } catch (error) {
+      console.error('Failed to update actor template:', error);
+    }
+  },
+
   addActorFromTemplate: async (templateId) => {
     try {
       const res = await axios.post(`${API_URL}/encounter/actor/from-template/${templateId}`);
@@ -271,4 +285,5 @@ export const useStore = create((set, get) => ({
 
   // Utility
   setSelectedActorId: (actorId) => set({ selectedActorId: actorId }),
+  setSelectedTemplateId: (templateId) => set({ selectedTemplateId: templateId }),
 }));

@@ -7,6 +7,7 @@ function ActorTemplateLibrary() {
   const listActorTemplates = useStore((state) => state.listActorTemplates);
   const addActorFromTemplate = useStore((state) => state.addActorFromTemplate);
   const removeActorTemplate = useStore((state) => state.removeActorTemplate);
+  const setSelectedTemplateId = useStore((state) => state.setSelectedTemplateId);
   const currentEncounter = useStore((state) => state.currentEncounter);
 
   useEffect(() => {
@@ -48,6 +49,9 @@ function ActorTemplateLibrary() {
               title={!currentEncounter ? 'Create an encounter first' : 'Add to current encounter'}
             >
               Add to Encounter
+            </button>
+            <button className="btn-small btn-edit" onClick={() => setSelectedTemplateId(template.id)}>
+              Edit
             </button>
             <button className="btn-small" onClick={() => handleRemove(template.id, template.name)}>
               Delete

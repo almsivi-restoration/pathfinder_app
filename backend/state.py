@@ -184,6 +184,20 @@ class StateManager:
             self.save_campaign()
         return removed
     
+    def update_actor_template(self, template_id: str, updated_actor: Actor) -> Optional[Actor]:
+        """Update an actor template on the current campaign."""
+        if not self.current_campaign:
+            return None
+        
+        for i, template in enumerate(self.current_campaign.actor_templates):
+            if template.id == template_id:
+                updated_actor.id = template_id
+                self.current_campaign.actor_templates[i] = updated_actor
+                self.save_campaign()
+                return updated_actor
+        
+        return None
+    
     def list_actor_templates(self) -> List[Actor]:
         """List actor templates saved on the current campaign."""
         if not self.current_campaign:

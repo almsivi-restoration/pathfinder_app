@@ -8,17 +8,24 @@ const emptyWeapon = { name: '', damage_dice: '', damage_type: '', modifier: 0 };
 
 function ActorEditModal() {
   const actors = useStore((state) => state.actors);
+  const actorTemplates = useStore((state) => state.actorTemplates);
   const selectedActorId = useStore((state) => state.selectedActorId);
+  const selectedTemplateId = useStore((state) => state.selectedTemplateId);
   const setSelectedActorId = useStore((state) => state.setSelectedActorId);
+  const setSelectedTemplateId = useStore((state) => state.setSelectedTemplateId);
   const updateActor = useStore((state) => state.updateActor);
+  const updateActorTemplate = useStore((state) => state.updateActorTemplate);
 
-  const actor = actors.find((a) => a.id === selectedActorId);
+  const isTemplate = Boolean(selectedTemplateId);
+  const actor = isTemplate
+    ? actorTemplates.find((t) => t.id === selectedTemplateId)
+    : actors.find((a) => a.id === selectedActorId);
 
   const [formData, setFormData] = useState(null);
   const [newEffect, setNewEffect] = useState(emptyEffect);
   const [newWeapon, setNewWeapon] = useState(emptyWeapon);
 
-  // Re-seed local edit state whenever a different actor is opened.
+  // Re-seed local edit state whenever a different actor/template is opened.
   useEffect(() => {
     if (actor) {
       setFormData({ ...actor });
@@ -27,7 +34,7 @@ function ActorEditModal() {
     }
   }, [actor]);
 
-  if (!selectedActorId || !formData) return null;
+  if ((!selectedActorId && !selectedTemplateId) || !formData) return null;
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -68,18 +75,26 @@ function ActorEditModal() {
     setFormData({ ...formData, weapons: formData.weapons.filter((_, i) => i !== index) });
   };
 
-  const handleClose = () => setSelectedActorId(null);
+  const handleClose = () => {
+    setSelectedActorId(null);
+    setSelectedTemplateId(null);
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
-    await updateActor(actor.id, {
+    const payload = {
       ...formData,
       hp_current: parseInt(formData.hp_current),
       hp_max: parseInt(formData.hp_max),
       ac: parseInt(formData.ac),
       initiative_bonus: parseInt(formData.initiative_bonus),
       speed: parseInt(formData.speed),
-    });
+    };
+    if (isTemplate) {
+      await updateActorTemplate(actor.id, payload);
+    } else {
+      await updateActor(actor.id, payload);
+    }
     handleClose();
   };
 
@@ -87,7 +102,10 @@ function ActorEditModal() {
     <div className="actor-edit-overlay" onClick={handleClose}>
       <div className="actor-edit-modal" onClick={(e) => e.stopPropagation()}>
         <div className="actor-edit-header">
-          <h2>Edit {actor.name}</h2>
+          <h2>
+            Edit {actor.name}
+            {isTemplate ? ' (Template)' : ''}
+          </h2>
           <button className="btn-close" onClick={handleClose} aria-label="Close">
             ✕
           </button>

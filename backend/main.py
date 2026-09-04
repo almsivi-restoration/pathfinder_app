@@ -176,6 +176,15 @@ def remove_actor_template(template_id: str):
     return {"status": "removed"}
 
 
+@app.put("/api/campaign/actor-template/{template_id}")
+def update_actor_template(template_id: str, actor: Actor):
+    """Update an actor template on the current campaign."""
+    template = state_manager.update_actor_template(template_id, actor)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return template.model_dump()
+
+
 @app.post("/api/encounter/actor/from-template/{template_id}")
 def add_actor_from_template(template_id: str):
     """Instantiate a campaign actor template into the current encounter."""
