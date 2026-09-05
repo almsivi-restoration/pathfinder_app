@@ -12,6 +12,8 @@ function CampaignSelector({ onCampaignLoaded }) {
   const deleteCampaign = useStore((state) => state.deleteCampaign);
   const listCampaigns = useStore((state) => state.listCampaigns);
   const fetchRulesets = useStore((state) => state.fetchRulesets);
+  const operationError = useStore((state) => state.operationError);
+  const clearOperationError = useStore((state) => state.clearOperationError);
 
   useEffect(() => {
     listCampaigns();
@@ -22,19 +24,23 @@ function CampaignSelector({ onCampaignLoaded }) {
 
   const handleCreateCampaign = async () => {
     if (!newCampaignName.trim()) return;
-    await createCampaign(newCampaignName, newCampaignRuleset);
+    clearOperationError();
+    const campaign = await createCampaign(newCampaignName, newCampaignRuleset);
+    if (!campaign) return;
     setNewCampaignName('');
     await listCampaigns();
     onCampaignLoaded();
   };
 
   const handleLoadCampaign = async (campaignName) => {
-    await loadCampaign(campaignName);
-    onCampaignLoaded();
+    clearOperationError();
+    const campaign = await loadCampaign(campaignName);
+    if (campaign) onCampaignLoaded();
   };
 
   const handleDeleteCampaign = async (campaignName) => {
     if (window.confirm(`Delete ${campaignName} and all of its saved encounters? This cannot be undone.`)) {
+      clearOperationError();
       await deleteCampaign(campaignName);
     }
   };
@@ -44,6 +50,7 @@ function CampaignSelector({ onCampaignLoaded }) {
       <h1>Game Master's Workbench</h1>
 
       <div className="selector-content">
+        {operationError && <div className="operation-message error">{operationError}</div>}
         <div className="load-section">
           <h2>Load Campaign</h2>
           {campaigns.length > 0 ? (

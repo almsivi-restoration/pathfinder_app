@@ -9,9 +9,8 @@
 }
 
 .actor-edit-modal {
-  width: 600px;
-  max-width: 90vw;
-  max-height: 85vh;
+  width: min(1180px, 92vw);
+  max-height: 92vh;
   overflow-y: auto;
   background: linear-gradient(160deg, var(--mw-parchment-light), var(--mw-parchment) 60%, var(--mw-parchment-dark));
   border: 2px solid var(--mw-border-dark);
@@ -19,7 +18,7 @@
   outline-offset: -4px;
   box-shadow: 0 8px 24px var(--mw-shadow);
   border-radius: 2px;
-  padding: 20px;
+  padding: 24px;
   color: var(--mw-ink);
 }
 
@@ -56,6 +55,19 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .actor-edit-overlay {
+    align-items: stretch;
+  }
+
+  .actor-edit-modal {
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    padding: 16px;
+  }
 }
 
 .edit-section {

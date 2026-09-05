@@ -10,7 +10,7 @@ initiative, or persistence ownership.
 
 ## Features
 
-- Create, load, save, and delete campaigns.
+- Create, load, save, and delete campaigns and their saved encounters.
 - Create and save encounters with PC and NPC actors.
 - Save reusable actor templates on a campaign.
 - Enter physical initiative results, order actors manually, and advance turns and rounds.
@@ -73,11 +73,11 @@ The backend runs at `http://127.0.0.1:8000`; the React development server runs a
 ## Campaign Workflow
 
 1. Create or load a campaign and choose its ruleset.
-2. Create an encounter; it inherits the campaign's ruleset.
+2. Create a new encounter or load a saved encounter from the campaign encounter library; each inherits the campaign's ruleset.
 3. Add actors directly or instantiate campaign templates.
 4. Enter the GM's physical initiative results, arrange the order, and start the encounter.
 5. Open the player view for a second monitor when needed.
-6. Use **Save All** to persist the campaign and current encounter.
+6. Use **Save All** to persist the campaign and current encounter. The dashboard indicates unsaved campaign or encounter changes and reports save failures without discarding edits.
 
 Campaign deletion is available from the campaign selector. It removes that campaign and its
 persisted encounters after confirmation; it cannot be undone.

@@ -58,6 +58,11 @@
   border-bottom: 1px solid var(--mw-parchment-dark);
 }
 
+.reference-source-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .reference-search form {
   display: flex;
   gap: 8px;
@@ -85,6 +90,10 @@
 .empty-reference-state {
   margin-top: 6px;
   white-space: pre-wrap;
+}
+
+.reference-result .btn-small {
+  margin-top: 8px;
 }
 
 @media (max-width: 640px) {

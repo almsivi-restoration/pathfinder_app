@@ -49,6 +49,12 @@ def test_campaign_encounter_actor_happy_path(client):
     res = client.post("/api/encounter/new", params={"name": "Ambush"})
     assert res.status_code == 200
     assert res.json()["actors"] == []
+    encounter_id = res.json()["id"]
+
+    res = client.post("/api/encounter/save")
+    assert res.status_code == 200
+    res = client.get("/api/encounters")
+    assert [encounter["id"] for encounter in res.json()["encounters"]] == [encounter_id]
 
     res = client.post("/api/actor/add", json=actor_payload())
     assert res.status_code == 200
@@ -69,6 +75,16 @@ def test_campaign_encounter_actor_happy_path(client):
 
     res = client.get(f"/api/actor/{actor_id}")
     assert res.status_code == 404
+
+    res = client.delete(f"/api/actor/{actor_id}")
+    assert res.status_code == 404
+
+    res = client.post("/api/encounter/close")
+    assert res.status_code == 200
+    res = client.post("/api/encounter/load", params={"encounter_id": encounter_id})
+    assert res.status_code == 200
+    res = client.delete(f"/api/encounter/{encounter_id}")
+    assert res.status_code == 200
 
 
 def test_actor_not_found_returns_404(client):
@@ -116,6 +132,17 @@ def test_reference_routes_require_and_scope_to_the_current_campaign(client, tmp_
 
     assert response.status_code == 200
     assert response.json() == {"ruleset": "1e", "source_files": [], "documents": []}
+
+    assert client.get("/api/references/current/files/../campaign.json").status_code == 404
+
+    source_dir = main.reference_library.root_dir / "sources" / "pathfinder_1e"
+    source_dir.mkdir(parents=True)
+    (source_dir / "core_rulebook.pdf").write_bytes(b"%PDF-1.4 test document")
+    response = client.get("/api/references/current/files/core_rulebook.pdf")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert response.content == b"%PDF-1.4 test document"
 
 def test_roll_dice_respects_die_type_and_modifier(client):
     res = client.post("/api/roll", json={"die_type": 20, "modifier": 5, "bonus_dice": 0})

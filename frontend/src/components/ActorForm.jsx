@@ -4,11 +4,13 @@ import ActorStatFields from './ActorStatFields';
 import { createDefaultSheet, setSheetValue } from '../sheet';
 import '../styles/ActorForm.css';
 
-function ActorForm({ onActorAdded }) {
+function ActorForm({ onActorAdded, allowEncounterAdd = true }) {
   const rulesetConfig = useStore((state) => state.rulesetConfig);
   const fetchRulesetConfig = useStore((state) => state.fetchRulesetConfig);
   const addActor = useStore((state) => state.addActor);
   const saveActorTemplate = useStore((state) => state.saveActorTemplate);
+  const operationError = useStore((state) => state.operationError);
+  const clearOperationError = useStore((state) => state.clearOperationError);
 
   const emptyForm = {
     name: '',
@@ -55,35 +57,48 @@ function ActorForm({ onActorAdded }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await addActor(buildActor());
+    clearOperationError();
+    const actor = await addActor(buildActor());
+    if (!actor) return;
     setFormData({ ...emptyForm, sheet: createDefaultSheet(rulesetConfig?.actor_sheet) });
     onActorAdded();
   };
 
   const handleSaveTemplate = async () => {
-    await saveActorTemplate(buildActor());
+    clearOperationError();
+    const template = await saveActorTemplate(buildActor());
+    if (!template) return;
     setFormData({ ...emptyForm, sheet: createDefaultSheet(rulesetConfig?.actor_sheet) });
     onActorAdded();
   };
 
   return (
-    <form className="actor-form" onSubmit={handleSubmit}>
-      <ActorStatFields
-        formData={formData}
-        onChange={handleChange}
-        rulesetConfig={rulesetConfig}
-        onSheetChange={handleSheetChange}
-      />
+    <div className="actor-form-overlay">
+      <form className="actor-form" onSubmit={handleSubmit}>
+        <div className="actor-form-header">
+          <h2>New Actor</h2>
+          <button type="button" className="btn-small" onClick={onActorAdded}>Close</button>
+        </div>
+        <ActorStatFields
+          formData={formData}
+          onChange={handleChange}
+          rulesetConfig={rulesetConfig}
+          onSheetChange={handleSheetChange}
+        />
+        {operationError && <div className="operation-message error">{operationError}</div>}
 
-      <div className="form-actions">
-        <button type="submit" className="btn btn-primary">
-          Add to Encounter
-        </button>
-        <button type="button" className="btn btn-secondary" onClick={handleSaveTemplate}>
-          Save as Campaign Template
-        </button>
-      </div>
-    </form>
+        <div className="form-actions actor-form-actions">
+          {allowEncounterAdd && (
+            <button type="submit" className="btn btn-primary">
+              Add to Encounter
+            </button>
+          )}
+          <button type="button" className="btn btn-secondary" onClick={handleSaveTemplate}>
+            Save as Campaign Template
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 

@@ -5,7 +5,7 @@ Provides REST API for campaign, encounter, actor, and initiative management.
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 import uvicorn
 import random
 from uuid import uuid4
@@ -95,6 +95,14 @@ def create_encounter(name: str):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@app.get("/api/encounters")
+def list_encounters():
+    """List saved encounters for the current campaign."""
+    if not state_manager.current_campaign:
+        raise HTTPException(status_code=404, detail="No campaign loaded")
+    return {"encounters": [encounter.model_dump() for encounter in state_manager.list_encounters()]}
+
+
 @app.get("/api/encounter/current")
 def get_current_encounter():
     """Get the currently loaded encounter."""
@@ -110,6 +118,22 @@ def load_encounter(encounter_id: str):
     if not encounter:
         raise HTTPException(status_code=404, detail="Encounter not found")
     return encounter.model_dump()
+
+
+@app.post("/api/encounter/close")
+def close_encounter():
+    """Close the active encounter without deleting it."""
+    if not state_manager.close_encounter():
+        raise HTTPException(status_code=404, detail="No encounter loaded")
+    return {"status": "closed"}
+
+
+@app.delete("/api/encounter/{encounter_id}")
+def delete_encounter(encounter_id: str):
+    """Delete one saved encounter from the current campaign."""
+    if not state_manager.delete_encounter(encounter_id):
+        raise HTTPException(status_code=404, detail="Encounter not found")
+    return {"status": "removed"}
 
 
 @app.post("/api/encounter/save")
@@ -323,6 +347,16 @@ def import_current_reference(request: ReferenceImportRequest):
         raise HTTPException(status_code=404, detail=str(error))
     except Exception as error:
         raise HTTPException(status_code=400, detail=f"Could not index reference: {error}")
+
+
+@app.get("/api/references/current/files/{filename}")
+def get_current_reference_file(filename: str):
+    """Serve one local PDF from the active campaign ruleset to the Encyclopedia Reader."""
+    ruleset, config = get_current_ruleset_definition()
+    source_path = reference_library.get_source_path(ruleset, filename, config["reference_directory"])
+    if not source_path:
+        raise HTTPException(status_code=404, detail="Reference PDF not found")
+    return FileResponse(source_path, media_type="application/pdf", filename=source_path.name)
 
 
 @app.get("/api/references/current/search")

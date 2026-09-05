@@ -33,6 +33,12 @@
   font-family: var(--mw-font-display);
 }
 
+.dirty-indicator {
+  color: var(--mw-gold-bright);
+  font-size: 12px;
+  font-variant: small-caps;
+}
+
 .ruleset-selector select {
   padding: 6px 12px;
 }
@@ -43,10 +49,18 @@
 }
 
 .dashboard-content {
+  position: relative;
   flex: 1;
   display: flex;
   overflow: hidden;
   padding: 12px;
+}
+
+.dashboard-content > .operation-message {
+  position: absolute;
+  z-index: 2;
+  top: 18px;
+  right: 18px;
 }
 
 .encounter-creator {
@@ -82,6 +96,7 @@
   display: flex;
   flex: 1;
   gap: 16px;
+  min-width: 0;
 }
 
 .left-panel,
@@ -102,6 +117,7 @@
 
 .left-panel {
   flex: 2;
+  min-width: 0;
 }
 
 .left-panel h2,
@@ -115,4 +131,24 @@
 
 .left-panel > .btn {
   margin-bottom: 12px;
+}
+
+@media (max-width: 900px) {
+  .gm-header,
+  .header-left,
+  .header-right,
+  .encounter-active {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .encounter-active {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .left-panel,
+  .right-panel {
+    min-height: 360px;
+  }
 }

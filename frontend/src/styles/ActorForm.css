@@ -1,17 +1,40 @@
+.actor-form-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.7);
+}
+
 .actor-form {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 16px;
+  width: min(1180px, 100%);
+  height: 100%;
+  margin: auto;
+  padding: 20px;
   background: linear-gradient(160deg, var(--mw-parchment-light), var(--mw-parchment) 60%, var(--mw-parchment-dark));
   border: 2px solid var(--mw-border-dark);
   outline: 1px solid var(--mw-gold);
   outline-offset: -4px;
   border-radius: 2px;
-  margin-bottom: 16px;
-  max-height: 500px;
   overflow-y: auto;
   color: var(--mw-ink);
+}
+
+.actor-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--mw-border-dark);
+}
+
+.actor-form-header h2 {
+  color: var(--mw-ink);
+  text-shadow: none;
 }
 
 .form-row {
@@ -79,16 +102,18 @@
 
 .sheet-fields-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
   gap: 8px;
-  max-height: 260px;
-  overflow-y: auto;
-  padding-right: 4px;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .sheet-collection {
   border-top: 1px solid var(--mw-parchment-dark);
   padding-top: 8px;
+  min-width: 0;
+  width: 100%;
+  overflow-x: auto;
 }
 
 .sheet-collection-heading {
@@ -100,7 +125,8 @@
 
 .sheet-collection-item {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+  min-width: 760px;
   gap: 6px;
   align-items: end;
   border-top: 1px solid var(--mw-parchment-dark);
@@ -116,4 +142,27 @@
   flex: 1;
   padding: 10px;
   font-weight: 600;
+}
+
+.actor-form-actions {
+  position: sticky;
+  bottom: -20px;
+  padding: 12px 0 0;
+  background: var(--mw-parchment);
+  border-top: 1px solid var(--mw-border-dark);
+}
+
+@media (max-width: 640px) {
+  .actor-form-overlay {
+    padding: 8px;
+  }
+
+  .form-row,
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .sheet-fields-grid {
+    grid-template-columns: 1fr;
+  }
 }

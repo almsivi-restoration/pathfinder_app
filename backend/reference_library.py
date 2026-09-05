@@ -22,13 +22,18 @@ class ReferenceLibrary:
             return []
         return sorted(path.name for path in source_dir.glob("*.pdf"))
 
+    def get_source_path(self, ruleset: str, filename: str, source_directory: Optional[str] = None) -> Optional[Path]:
+        """Return a PDF only when it is directly inside the configured source directory."""
+        source_dir = self._source_dir(source_directory or ruleset).resolve()
+        source_path = (source_dir / filename).resolve()
+        if source_path.parent != source_dir or source_path.suffix.lower() != ".pdf" or not source_path.is_file():
+            return None
+        return source_path
+
     def import_source(self, ruleset: str, filename: str, source_directory: Optional[str] = None) -> Dict[str, Any]:
-        source_dir = self._source_dir(source_directory or ruleset)
-        source_path = source_dir / filename
-        if source_path.suffix.lower() != ".pdf" or not source_path.is_file():
+        source_path = self.get_source_path(ruleset, filename, source_directory)
+        if not source_path:
             raise FileNotFoundError("Reference PDF not found")
-        if source_path.resolve().parent != source_dir.resolve():
-            raise ValueError("Reference source must be in the active ruleset directory")
 
         reader = PdfReader(str(source_path))
         pages = [page.extract_text() or "" for page in reader.pages]

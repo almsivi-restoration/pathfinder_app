@@ -1,0 +1,39 @@
+.encounter-library {
+  width: min(620px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.encounter-library.empty {
+  padding: 12px;
+  border: 1px dashed var(--mw-border-dark);
+  color: var(--mw-ink-light);
+  font-style: italic;
+}
+
+.encounter-library-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--mw-border-dark);
+  background: var(--mw-parchment-dark);
+}
+
+.encounter-library-row strong,
+.encounter-library-row span {
+  display: block;
+}
+
+.encounter-library-row span {
+  margin-top: 2px;
+  color: var(--mw-ink-light);
+  font-size: 12px;
+}
+
+.encounter-library-actions {
+  display: flex;
+  gap: 6px;
+}

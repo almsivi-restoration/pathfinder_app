@@ -17,6 +17,8 @@ function ActorEditModal() {
   const updateActorTemplate = useStore((state) => state.updateActorTemplate);
   const rulesetConfig = useStore((state) => state.rulesetConfig);
   const fetchRulesetConfig = useStore((state) => state.fetchRulesetConfig);
+  const operationError = useStore((state) => state.operationError);
+  const clearOperationError = useStore((state) => state.clearOperationError);
 
   const isTemplate = Boolean(selectedTemplateId);
   const actor = isTemplate
@@ -71,11 +73,11 @@ function ActorEditModal() {
   const handleSave = async (e) => {
     e.preventDefault();
     const payload = formData;
-    if (isTemplate) {
-      await updateActorTemplate(actor.id, payload);
-    } else {
-      await updateActor(actor.id, payload);
-    }
+    clearOperationError();
+    const result = isTemplate
+      ? await updateActorTemplate(actor.id, payload)
+      : await updateActor(actor.id, payload);
+    if (!result) return;
     handleClose();
   };
 
@@ -99,6 +101,7 @@ function ActorEditModal() {
             rulesetConfig={rulesetConfig}
             onSheetChange={handleSheetChange}
           />
+          {operationError && <div className="operation-message error">{operationError}</div>}
 
           <div className="edit-section">
             <h4>Status Effects</h4>

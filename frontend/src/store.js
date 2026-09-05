@@ -1,7 +1,9 @@
 import create from 'zustand';
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+export const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+
+const getErrorMessage = (error) => error.response?.data?.detail || error.message || 'The request failed.';
 
 export const useStore = create((set, get) => ({
   // Campaign state
@@ -12,6 +14,7 @@ export const useStore = create((set, get) => ({
   referenceSources: [],
   referenceDocuments: [],
   referenceResults: [],
+  campaignEncounters: [],
 
   // Encounter state
   currentEncounter: null,
@@ -30,6 +33,11 @@ export const useStore = create((set, get) => ({
   selectedActorId: null,
   selectedTemplateId: null,
   isEncounterActive: false,
+  isCampaignDirty: false,
+  isEncounterDirty: false,
+  operationError: null,
+
+  clearOperationError: () => set({ operationError: null }),
 
   // Campaign actions
   listCampaigns: async () => {
@@ -50,6 +58,8 @@ export const useStore = create((set, get) => ({
       return res.data;
     } catch (error) {
       console.error('Failed to create campaign:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
     }
   },
 
@@ -69,10 +79,21 @@ export const useStore = create((set, get) => ({
       const res = await axios.post(`${API_URL}/campaign/load`, null, {
         params: { name },
       });
-      set({ currentCampaign: res.data, ruleset: res.data.ruleset });
+      set({
+        currentCampaign: res.data,
+        ruleset: res.data.ruleset,
+        currentEncounter: null,
+        actors: [],
+        initiativeOrder: [],
+        campaignEncounters: [],
+        isCampaignDirty: false,
+        isEncounterDirty: false,
+      });
       return res.data;
     } catch (error) {
       console.error('Failed to load campaign:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
     }
   },
 
@@ -81,16 +102,23 @@ export const useStore = create((set, get) => ({
       await axios.delete(`${API_URL}/campaign/${encodeURIComponent(name)}`);
       const state = get();
       set({ campaigns: state.campaigns.filter((campaignName) => campaignName !== name) });
+      return true;
     } catch (error) {
       console.error('Failed to delete campaign:', error);
+      set({ operationError: getErrorMessage(error) });
+      return false;
     }
   },
 
   saveCampaign: async () => {
     try {
       await axios.post(`${API_URL}/campaign/save`);
+      set({ isCampaignDirty: false });
+      return true;
     } catch (error) {
       console.error('Failed to save campaign:', error);
+      set({ operationError: getErrorMessage(error) });
+      return false;
     }
   },
 
@@ -143,6 +171,18 @@ export const useStore = create((set, get) => ({
   },
 
   // Encounter actions
+  fetchCampaignEncounters: async () => {
+    try {
+      const res = await axios.get(`${API_URL}/encounters`);
+      set({ campaignEncounters: res.data.encounters });
+      return res.data.encounters;
+    } catch (error) {
+      console.error('Failed to fetch campaign encounters:', error);
+      set({ operationError: getErrorMessage(error) });
+      return [];
+    }
+  },
+
   createEncounter: async (name) => {
     try {
       const res = await axios.post(`${API_URL}/encounter/new`, null, {
@@ -154,10 +194,15 @@ export const useStore = create((set, get) => ({
         initiativeOrder: res.data.initiative_order || [],
         currentRound: res.data.current_round || 0,
         currentTurnIndex: res.data.current_turn_index || 0,
+        campaignEncounters: [...get().campaignEncounters, res.data],
+        isCampaignDirty: true,
+        isEncounterDirty: true,
       });
       return res.data;
     } catch (error) {
       console.error('Failed to create encounter:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
     }
   },
 
@@ -172,18 +217,55 @@ export const useStore = create((set, get) => ({
         initiativeOrder: res.data.initiative_order || [],
         currentRound: res.data.current_round || 0,
         currentTurnIndex: res.data.current_turn_index || 0,
+        isEncounterDirty: false,
       });
       return res.data;
     } catch (error) {
       console.error('Failed to load encounter:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
+    }
+  },
+
+  closeEncounter: async () => {
+    try {
+      await axios.post(`${API_URL}/encounter/close`);
+      set({ currentEncounter: null, actors: [], initiativeOrder: [], currentRound: 0, currentTurnIndex: 0, isEncounterActive: false, isEncounterDirty: false });
+      return true;
+    } catch (error) {
+      console.error('Failed to close encounter:', error);
+      set({ operationError: getErrorMessage(error) });
+      return false;
+    }
+  },
+
+  deleteEncounter: async (encounterId) => {
+    try {
+      await axios.delete(`${API_URL}/encounter/${encounterId}`);
+      const state = get();
+      const isCurrent = state.currentEncounter?.id === encounterId;
+      set({
+        campaignEncounters: state.campaignEncounters.filter((encounter) => encounter.id !== encounterId),
+        isCampaignDirty: false,
+        ...(isCurrent ? { currentEncounter: null, actors: [], initiativeOrder: [], currentRound: 0, currentTurnIndex: 0, isEncounterActive: false, isEncounterDirty: false } : {}),
+      });
+      return true;
+    } catch (error) {
+      console.error('Failed to delete encounter:', error);
+      set({ operationError: getErrorMessage(error) });
+      return false;
     }
   },
 
   saveEncounter: async () => {
     try {
       await axios.post(`${API_URL}/encounter/save`);
+      set({ isEncounterDirty: false });
+      return true;
     } catch (error) {
       console.error('Failed to save encounter:', error);
+      set({ operationError: getErrorMessage(error) });
+      return false;
     }
   },
 
@@ -215,9 +297,12 @@ export const useStore = create((set, get) => ({
       const res = await axios.post(`${API_URL}/actor/add`, actor);
       const state = get();
       set({ actors: [...state.actors, res.data] });
+      set({ isEncounterDirty: true });
       return res.data;
     } catch (error) {
       console.error('Failed to add actor:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
     }
   },
 
@@ -229,9 +314,12 @@ export const useStore = create((set, get) => ({
         a.id === actorId ? res.data : a
       );
       set({ actors: updatedActors });
+      set({ isEncounterDirty: true });
       return res.data;
     } catch (error) {
       console.error('Failed to update actor:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
     }
   },
 
@@ -240,8 +328,12 @@ export const useStore = create((set, get) => ({
       await axios.delete(`${API_URL}/actor/${actorId}`);
       const state = get();
       set({ actors: state.actors.filter((a) => a.id !== actorId) });
+      set({ isEncounterDirty: true });
+      return true;
     } catch (error) {
       console.error('Failed to remove actor:', error);
+      set({ operationError: getErrorMessage(error) });
+      return false;
     }
   },
 
@@ -263,6 +355,8 @@ export const useStore = create((set, get) => ({
       return res.data;
     } catch (error) {
       console.error('Failed to save actor template:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
     }
   },
 
@@ -271,8 +365,11 @@ export const useStore = create((set, get) => ({
       await axios.delete(`${API_URL}/campaign/actor-template/${templateId}`);
       const state = get();
       set({ actorTemplates: state.actorTemplates.filter((t) => t.id !== templateId) });
+      return true;
     } catch (error) {
       console.error('Failed to remove actor template:', error);
+      set({ operationError: getErrorMessage(error) });
+      return false;
     }
   },
 
@@ -286,6 +383,8 @@ export const useStore = create((set, get) => ({
       return res.data;
     } catch (error) {
       console.error('Failed to update actor template:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
     }
   },
 
@@ -294,9 +393,12 @@ export const useStore = create((set, get) => ({
       const res = await axios.post(`${API_URL}/encounter/actor/from-template/${templateId}`);
       const state = get();
       set({ actors: [...state.actors, res.data] });
+      set({ isEncounterDirty: true });
       return res.data;
     } catch (error) {
       console.error('Failed to add actor from template:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
     }
   },
 
@@ -309,10 +411,13 @@ export const useStore = create((set, get) => ({
         currentRound: res.data.round,
         currentTurnIndex: res.data.current_turn_index,
         isEncounterActive: true,
+        isEncounterDirty: true,
       });
       return res.data;
     } catch (error) {
       console.error('Failed to roll initiative:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
     }
   },
 
@@ -322,10 +427,13 @@ export const useStore = create((set, get) => ({
       set({
         currentTurnIndex: res.data.turn_index,
         currentRound: res.data.round,
+        isEncounterDirty: true,
       });
       return res.data;
     } catch (error) {
       console.error('Failed to advance turn:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
     }
   },
 
@@ -338,10 +446,13 @@ export const useStore = create((set, get) => ({
         currentRound: res.data.round,
         currentTurnIndex: res.data.current_turn_index,
         isEncounterActive: true,
+        isEncounterDirty: true,
       });
       return res.data;
     } catch (error) {
       console.error('Failed to set initiative order:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
     }
   },
 
@@ -371,6 +482,7 @@ export const useStore = create((set, get) => ({
     referenceSources: [],
     referenceDocuments: [],
     referenceResults: [],
+    campaignEncounters: [],
     currentEncounter: null,
     actors: [],
     initiativeOrder: [],
@@ -381,5 +493,8 @@ export const useStore = create((set, get) => ({
     selectedActorId: null,
     selectedTemplateId: null,
     isEncounterActive: false,
+    isCampaignDirty: false,
+    isEncounterDirty: false,
+    operationError: null,
   }),
 }));

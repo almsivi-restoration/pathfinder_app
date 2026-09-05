@@ -33,3 +33,14 @@ def test_discovers_sources_in_the_configured_ruleset_directory(tmp_path):
     (source_dir / "core_rulebook.pdf").touch()
 
     assert library.available_sources("1e", "pathfinder_1e") == ["core_rulebook.pdf"]
+
+
+def test_source_path_is_limited_to_the_configured_directory(tmp_path):
+    library = ReferenceLibrary(tmp_path / "reference_library")
+    source_dir = library.root_dir / "sources" / "pathfinder_1e"
+    source_dir.mkdir(parents=True)
+    source_path = source_dir / "core_rulebook.pdf"
+    source_path.touch()
+
+    assert library.get_source_path("1e", "core_rulebook.pdf", "pathfinder_1e") == source_path
+    assert library.get_source_path("1e", "../core_rulebook.pdf", "pathfinder_1e") is None

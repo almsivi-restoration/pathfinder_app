@@ -82,6 +82,28 @@ test('setInitiativeOrder persists a GM-entered manual order', async () => {
   expect(useStore.getState().initiativeOrder).toEqual(['a2', 'a1']);
 });
 
+test('createEncounter marks both the new encounter and its campaign reference as unsaved', async () => {
+  const encounter = { id: 'encounter-1', name: 'Ambush', actors: [], initiative_order: [] };
+  axios.post.mockResolvedValueOnce({ data: encounter });
+
+  await useStore.getState().createEncounter('Ambush');
+
+  expect(useStore.getState().isCampaignDirty).toBe(true);
+  expect(useStore.getState().isEncounterDirty).toBe(true);
+  expect(useStore.getState().campaignEncounters).toEqual([encounter]);
+});
+
+test('saveEncounter reports failure and retains unsaved state', async () => {
+  useStore.setState({ isEncounterDirty: true });
+  axios.post.mockRejectedValueOnce({ response: { data: { detail: 'No encounter loaded' } } });
+
+  const saved = await useStore.getState().saveEncounter();
+
+  expect(saved).toBe(false);
+  expect(useStore.getState().isEncounterDirty).toBe(true);
+  expect(useStore.getState().operationError).toBe('No encounter loaded');
+});
+
 test('searchCurrentReferences stores ruleset-scoped search results', async () => {
   const results = [{ title: 'Core Rulebook', filename: 'core_rulebook.pdf', page_number: 12, excerpt: 'Initiative.' }];
   axios.get.mockResolvedValueOnce({ data: { results } });

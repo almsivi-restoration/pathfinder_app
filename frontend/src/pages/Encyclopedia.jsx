@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useStore } from '../store';
+import ReferenceReader from '../components/ReferenceReader';
 import '../styles/Encyclopedia.css';
 
 function Encyclopedia({ onBack }) {
@@ -10,8 +11,12 @@ function Encyclopedia({ onBack }) {
   const fetchCurrentReferences = useStore((state) => state.fetchCurrentReferences);
   const importCurrentReference = useStore((state) => state.importCurrentReference);
   const searchCurrentReferences = useStore((state) => state.searchCurrentReferences);
+  const operationError = useStore((state) => state.operationError);
+  const clearOperationError = useStore((state) => state.clearOperationError);
   const [query, setQuery] = useState('');
   const [indexingFilename, setIndexingFilename] = useState(null);
+  const [readerTarget, setReaderTarget] = useState(null);
+  const [indexMessage, setIndexMessage] = useState('');
 
   useEffect(() => {
     fetchCurrentReferences();
@@ -19,12 +24,15 @@ function Encyclopedia({ onBack }) {
 
   const handleSearch = async (event) => {
     event.preventDefault();
+    clearOperationError();
     await searchCurrentReferences(query);
   };
 
   const handleImport = async (filename) => {
     setIndexingFilename(filename);
-    await importCurrentReference(filename);
+    clearOperationError();
+    const document = await importCurrentReference(filename);
+    if (document) setIndexMessage(`Indexed ${document.title}: ${document.page_count} pages.`);
     setIndexingFilename(null);
   };
 
@@ -44,6 +52,16 @@ function Encyclopedia({ onBack }) {
     );
   }
 
+  if (readerTarget) {
+    return (
+      <ReferenceReader
+        filename={readerTarget.filename}
+        initialPage={readerTarget.pageNumber}
+        onBack={() => setReaderTarget(null)}
+      />
+    );
+  }
+
   return (
     <main className="encyclopedia">
       <header className="encyclopedia-header">
@@ -56,6 +74,7 @@ function Encyclopedia({ onBack }) {
 
       <section className="reference-sources">
         <h2>Local References</h2>
+        {(operationError || indexMessage) && <div className={`operation-message ${operationError ? 'error' : 'success'}`}>{operationError || indexMessage}</div>}
         {referenceSources.length === 0 ? (
           <p className="empty-reference-state">No PDFs found for this ruleset.</p>
         ) : (
@@ -63,13 +82,16 @@ function Encyclopedia({ onBack }) {
             {referenceSources.map((filename) => (
               <div className="reference-source" key={filename}>
                 <span>{filename}</span>
-                <button
-                  className="btn-small btn-add"
-                  disabled={indexingFilename === filename}
-                  onClick={() => handleImport(filename)}
-                >
-                  {indexingFilename === filename ? 'Indexing' : indexedFilenames.has(filename) ? 'Reindex' : 'Index'}
-                </button>
+                <div className="reference-source-actions">
+                  <button className="btn-small btn-add" onClick={() => setReaderTarget({ filename, pageNumber: 1 })}>Read</button>
+                  <button
+                    className="btn-small btn-add"
+                    disabled={indexingFilename === filename}
+                    onClick={() => handleImport(filename)}
+                  >
+                    {indexingFilename === filename ? 'Indexing' : indexedFilenames.has(filename) ? 'Reindex' : 'Index'}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -91,6 +113,12 @@ function Encyclopedia({ onBack }) {
             <article className="reference-result" key={`${result.filename}-${result.page_number}-${result.excerpt}`}>
               <div className="reference-result-meta">{result.title} · Page {result.page_number}</div>
               <p>{result.excerpt}</p>
+              <button
+                className="btn-small btn-add"
+                onClick={() => setReaderTarget({ filename: result.filename, pageNumber: result.page_number })}
+              >
+                Open at Page {result.page_number}
+              </button>
             </article>
           ))}
         </div>

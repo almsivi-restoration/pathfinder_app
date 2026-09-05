@@ -61,6 +61,40 @@ def test_create_encounter_registers_on_campaign(state_manager):
     assert not hasattr(encounter, "ruleset")
 
 
+def test_list_close_and_delete_encounter(state_manager):
+    state_manager.create_campaign("Camp", "1e")
+    encounter = state_manager.create_encounter("Fight")
+    assert state_manager.save_encounter() is True
+
+    assert [item.id for item in state_manager.list_encounters()] == [encounter.id]
+    assert state_manager.close_encounter() is True
+    assert state_manager.current_encounter is None
+    assert [item.id for item in state_manager.list_encounters()] == [encounter.id]
+    assert state_manager.current_encounter is None
+    assert state_manager.delete_encounter(encounter.id) is True
+    assert state_manager.list_encounters() == []
+
+
+def test_closing_an_unsaved_encounter_discards_its_campaign_reference(state_manager):
+    campaign = state_manager.create_campaign("Camp", "1e")
+    encounter = state_manager.create_encounter("Unsaved Fight")
+
+    assert state_manager.close_encounter() is True
+    assert encounter.id not in campaign.encounters
+
+
+def test_loading_campaign_clears_encounter_from_the_previous_campaign(state_manager):
+    first_campaign = state_manager.create_campaign("First", "1e")
+    state_manager.save_campaign(first_campaign)
+    state_manager.create_encounter("First Fight")
+    state_manager.create_campaign("Second", "1e")
+    state_manager.save_campaign()
+
+    state_manager.load_campaign("First")
+
+    assert state_manager.current_encounter is None
+
+
 def test_add_update_remove_actor(state_manager):
     state_manager.create_campaign("Camp", "1e")
     state_manager.create_encounter("Fight")
@@ -86,6 +120,7 @@ def test_remove_actor_clears_it_from_initiative_order(state_manager):
 
     state_manager.remove_actor(actor.id)
     assert actor.id not in state_manager.current_encounter.initiative_order
+    assert state_manager.remove_actor(actor.id) is False
 
 
 def test_roll_initiative_orders_all_actors_and_starts_round_1(state_manager):

@@ -47,6 +47,8 @@ class StateManager:
             campaign = Campaign(**data)
         
         self.current_campaign = campaign
+        self.current_encounter = None
+        self.encounters = {}
         self.campaigns[campaign_name] = campaign
         return campaign
     
@@ -96,6 +98,48 @@ class StateManager:
         self.current_campaign.encounters.append(encounter.id)
         
         return encounter
+
+    def list_encounters(self) -> List[Encounter]:
+        """Return the current campaign's encounters from memory or persisted files."""
+        if not self.current_campaign:
+            return []
+
+        active_encounter_id = self.current_encounter.id if self.current_encounter else None
+        encounters = []
+        for encounter_id in self.current_campaign.encounters:
+            encounter = self.load_encounter(encounter_id)
+            if encounter:
+                encounters.append(encounter)
+        self.current_encounter = next(
+            (encounter for encounter in encounters if encounter.id == active_encounter_id),
+            None,
+        )
+        return encounters
+
+    def close_encounter(self) -> bool:
+        """Clear the active encounter without changing the campaign or saved encounter data."""
+        if not self.current_encounter:
+            return False
+        encounter_path = self.campaigns_dir / self.current_campaign.name / "encounters" / f"{self.current_encounter.id}.json"
+        if not encounter_path.exists():
+            self.current_campaign.encounters.remove(self.current_encounter.id)
+        self.current_encounter = None
+        return True
+
+    def delete_encounter(self, encounter_id: str) -> bool:
+        """Delete one encounter belonging to the current campaign."""
+        if not self.current_campaign or encounter_id not in self.current_campaign.encounters:
+            return False
+
+        encounter_path = self.campaigns_dir / self.current_campaign.name / "encounters" / f"{encounter_id}.json"
+        if encounter_path.exists():
+            encounter_path.unlink()
+        self.current_campaign.encounters.remove(encounter_id)
+        self.encounters.pop(encounter_id, None)
+        if self.current_encounter and self.current_encounter.id == encounter_id:
+            self.current_encounter = None
+        self.save_campaign()
+        return True
     
     def load_encounter(self, encounter_id: str) -> Optional[Encounter]:
         """Load encounter from memory or disk."""
@@ -146,7 +190,10 @@ class StateManager:
         if not self.current_encounter:
             return False
         
+        original_count = len(self.current_encounter.actors)
         self.current_encounter.actors = [a for a in self.current_encounter.actors if a.id != actor_id]
+        if len(self.current_encounter.actors) == original_count:
+            return False
         # Remove from initiative order if present
         if actor_id in self.current_encounter.initiative_order:
             self.current_encounter.initiative_order.remove(actor_id)
