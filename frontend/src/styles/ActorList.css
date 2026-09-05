@@ -34,7 +34,5 @@
 
 .actor-header .col-name { flex: 2; }
 .actor-header .col-type { flex: 1; }
-.actor-header .col-hp { flex: 1.5; }
-.actor-header .col-ac { flex: 0.8; }
-.actor-header .col-init { flex: 1; }
+.actor-header .col-stat { flex: 1; text-align: center; }
 .actor-header .col-actions { flex: 1; }

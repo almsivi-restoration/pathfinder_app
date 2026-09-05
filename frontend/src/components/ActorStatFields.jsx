@@ -1,21 +1,73 @@
 import React from 'react';
+import { getSheetValue } from '../sheet';
 
-const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+function CollectionField({ field, formData, onSheetChange }) {
+  const items = getSheetValue(formData.sheet, field.key, []);
+  const itemFields = field.item_fields || [];
 
-const formatLabel = (name) =>
-  name
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  const updateItem = (index, itemField, event) => {
+    const rawValue = itemField.type === 'checkbox' ? event.target.checked : event.target.value;
+    const value = itemField.type === 'number' && rawValue !== '' ? Number(rawValue) : rawValue;
+    const nextItems = items.map((item, itemIndex) => (
+      itemIndex === index ? { ...item, [itemField.key]: value } : item
+    ));
+    onSheetChange(field.key, nextItems);
+  };
 
-/** Presentational form fields shared by the create (ActorForm) and edit (ActorEditModal) flows. */
+  const addItem = () => {
+    const item = itemFields.reduce((nextItem, itemField) => (
+      { ...nextItem, [itemField.key]: itemField.default ?? '' }
+    ), {});
+    onSheetChange(field.key, [...items, item]);
+  };
+
+  const removeItem = (index) => onSheetChange(field.key, items.filter((_, itemIndex) => itemIndex !== index));
+
+  return (
+    <div className="sheet-collection">
+      <div className="sheet-collection-heading">
+        <span className="field-label">{field.label}</span>
+        <button type="button" className="btn-small btn-add" onClick={addItem}>Add</button>
+      </div>
+      {items.map((item, index) => (
+        <div key={`${field.key}-${index}`} className="sheet-collection-item">
+          {itemFields.map((itemField) => (
+            <label key={itemField.key} className="sheet-field">
+              <span className="field-label">{itemField.label}</span>
+              <input
+                type={itemField.type || 'text'}
+                checked={itemField.type === 'checkbox' ? Boolean(item[itemField.key]) : undefined}
+                value={itemField.type === 'checkbox' ? undefined : item[itemField.key] ?? itemField.default ?? ''}
+                onChange={(event) => updateItem(index, itemField, event)}
+              />
+            </label>
+          ))}
+          <button type="button" className="btn-small" onClick={() => removeItem(index)}>Remove</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ActorStatFields({
   formData,
   onChange,
-  onAbilityChange,
   rulesetConfig,
-  onSkillChange,
-  onSaveChange,
+  onSheetChange,
 }) {
+  const fields = rulesetConfig?.actor_sheet?.fields || [];
+  const sections = fields.reduce((groups, field) => {
+    const section = field.section || 'Details';
+    groups[section] = [...(groups[section] || []), field];
+    return groups;
+  }, {});
+
+  const handleSheetChange = (field, event) => {
+    const rawValue = field.type === 'checkbox' ? event.target.checked : event.target.value;
+    const value = field.type === 'number' && rawValue !== '' ? Number(rawValue) : rawValue;
+    onSheetChange(field.key, value);
+  };
+
   return (
     <>
       <div className="form-row">
@@ -51,32 +103,6 @@ function ActorStatFields({
 
       <div className="form-row">
         <label className="field">
-          <span className="field-label">Current HP</span>
-          <input type="number" name="hp_current" value={formData.hp_current} onChange={onChange} required />
-        </label>
-        <label className="field">
-          <span className="field-label">Max HP</span>
-          <input type="number" name="hp_max" value={formData.hp_max} onChange={onChange} required />
-        </label>
-      </div>
-
-      <div className="form-row">
-        <label className="field">
-          <span className="field-label">Armor Class</span>
-          <input type="number" name="ac" value={formData.ac} onChange={onChange} required />
-        </label>
-        <label className="field">
-          <span className="field-label">Initiative Bonus</span>
-          <input type="number" name="initiative_bonus" value={formData.initiative_bonus} onChange={onChange} />
-        </label>
-      </div>
-
-      <div className="form-row">
-        <label className="field">
-          <span className="field-label">Speed</span>
-          <input type="number" name="speed" value={formData.speed} onChange={onChange} />
-        </label>
-        <label className="field">
           <span className="field-label">Initiative Roll (physical die result)</span>
           <input
             type="number"
@@ -87,59 +113,35 @@ function ActorStatFields({
         </label>
       </div>
 
-      <div className="abilities-section">
-        <h4>Abilities</h4>
-        <div className="abilities-row">
-          {ABILITIES.map((ability) => (
-            <label key={ability} className="ability-input">
-              <span className="field-label">{ability.toUpperCase()}</span>
-              <input
-                type="number"
-                value={formData.abilities[ability]}
-                onChange={(e) => onAbilityChange(ability, e.target.value)}
-              />
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {rulesetConfig && (
-        <div className="saves-section">
-          <h4>Saving Throws</h4>
-          <div className="saves-row">
-            {rulesetConfig.saves.map((save) => (
-              <label key={save} className="ability-input">
-                <span className="field-label">{formatLabel(save)}</span>
-                <input
-                  type="number"
-                  value={formData.saves?.[save] ?? 0}
-                  onChange={(e) => onSaveChange(save, e.target.value)}
-                />
-              </label>
+      {Object.entries(sections).map(([section, sectionFields]) => (
+        <div key={section} className="sheet-section">
+          <h4>{section}</h4>
+          <div className="sheet-fields-grid">
+            {sectionFields.map((field) => (
+              field.type === 'collection' ? (
+                <CollectionField key={field.key} field={field} formData={formData} onSheetChange={onSheetChange} />
+              ) : (
+                <label key={field.key} className={`sheet-field ${field.type === 'textarea' ? 'sheet-field-wide' : ''}`}>
+                  <span className="field-label">{field.label}</span>
+                  {field.type === 'textarea' ? (
+                    <textarea
+                      value={getSheetValue(formData.sheet, field.key, field.default ?? '')}
+                      onChange={(event) => handleSheetChange(field, event)}
+                    />
+                  ) : (
+                    <input
+                      type={field.type || 'text'}
+                      checked={field.type === 'checkbox' ? Boolean(getSheetValue(formData.sheet, field.key)) : undefined}
+                      value={field.type === 'checkbox' ? undefined : getSheetValue(formData.sheet, field.key, field.default ?? '')}
+                      onChange={(event) => handleSheetChange(field, event)}
+                    />
+                  )}
+                </label>
+              )
             ))}
           </div>
         </div>
-      )}
-
-      {rulesetConfig && (
-        <div className="skills-section">
-          <h4>Skills</h4>
-          <div className="skills-grid">
-            {Object.entries(rulesetConfig.skills).map(([skillName, ability]) => (
-              <label key={skillName} className="skill-input">
-                <span className="field-label">
-                  {formatLabel(skillName)} ({ability.toUpperCase()})
-                </span>
-                <input
-                  type="number"
-                  value={formData.skills?.[skillName] ?? 0}
-                  onChange={(e) => onSkillChange(skillName, e.target.value)}
-                />
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
+      ))}
     </>
   );
 }

@@ -9,21 +9,11 @@ def actor_payload(name="Goblin", is_pc=False):
         "id": "",
         "name": name,
         "player_name": None,
-        "ruleset": "1e",
         "is_pc": is_pc,
-        "hp_current": 10,
-        "hp_max": 10,
-        "ac": 12,
-        "initiative_bonus": 2,
         "initiative_roll": None,
-        "speed": 30,
-        "abilities": {"str": 10, "dex": 12, "con": 10, "int": 10, "wis": 10, "cha": 10},
-        "skills": {},
-        "saves": {},
-        "resistances": {},
-        "weapons": [],
         "effects": [],
         "notes": "",
+        "sheet": {"hp": {"current": 10, "max": 10}},
     }
 
 
@@ -33,12 +23,30 @@ def test_health_check(client):
     assert res.json() == {"status": "ok"}
 
 
+def test_campaign_rulesets_come_from_the_registry(client):
+    res = client.get("/api/rulesets")
+    assert res.status_code == 200
+    assert {"id": "1e", "name": "Pathfinder 1e"} in res.json()["rulesets"]
+
+    res = client.post("/api/campaign/new", params={"name": "Invalid", "ruleset": "unknown"})
+    assert res.status_code == 400
+
+
+def test_delete_campaign_removes_the_saved_campaign(client):
+    client.post("/api/campaign/new", params={"name": "Disposable", "ruleset": "1e"})
+
+    response = client.delete("/api/campaign/Disposable")
+
+    assert response.status_code == 200
+    assert client.get("/api/campaign/list").json() == {"campaigns": []}
+
+
 def test_campaign_encounter_actor_happy_path(client):
     res = client.post("/api/campaign/new", params={"name": "Test Camp", "ruleset": "1e"})
     assert res.status_code == 200
     assert res.json()["name"] == "Test Camp"
 
-    res = client.post("/api/encounter/new", params={"name": "Ambush", "ruleset": "1e"})
+    res = client.post("/api/encounter/new", params={"name": "Ambush"})
     assert res.status_code == 200
     assert res.json()["actors"] == []
 
@@ -65,21 +73,37 @@ def test_campaign_encounter_actor_happy_path(client):
 
 def test_actor_not_found_returns_404(client):
     client.post("/api/campaign/new", params={"name": "Camp2", "ruleset": "1e"})
-    client.post("/api/encounter/new", params={"name": "Fight", "ruleset": "1e"})
+    client.post("/api/encounter/new", params={"name": "Fight"})
     res = client.get("/api/actor/does-not-exist")
     assert res.status_code == 404
 
 
 def test_ruleset_config_endpoint(client):
-    res = client.get("/api/rules/1e")
+    res = client.get("/api/rules/current")
+    assert res.status_code == 404
+
+    client.post("/api/campaign/new", params={"name": "Rules Camp", "ruleset": "1e"})
+    res = client.get("/api/rules/current")
     assert res.status_code == 200
     body = res.json()
     assert "saves" in body and "skills" in body
     assert "fort" in body["saves"]
+    assert body["actor_sheet"]["player_resource"]["current_key"] == "hp.current"
+    assert any(field["key"] == "weapons" for field in body["actor_sheet"]["fields"])
 
-    res = client.get("/api/rules/not-a-real-ruleset")
-    assert res.status_code == 404
 
+def test_reference_routes_require_and_scope_to_the_current_campaign(client, tmp_path):
+    import main
+    from reference_library import ReferenceLibrary
+
+    main.reference_library = ReferenceLibrary(tmp_path / "reference_library")
+    assert client.get("/api/references/current").status_code == 404
+
+    client.post("/api/campaign/new", params={"name": "Rules Camp", "ruleset": "1e"})
+    response = client.get("/api/references/current")
+
+    assert response.status_code == 200
+    assert response.json() == {"ruleset": "1e", "source_files": [], "documents": []}
 
 def test_roll_dice_respects_die_type_and_modifier(client):
     res = client.post("/api/roll", json={"die_type": 20, "modifier": 5, "bonus_dice": 0})
@@ -91,7 +115,7 @@ def test_roll_dice_respects_die_type_and_modifier(client):
 
 def test_actor_template_endpoints(client):
     client.post("/api/campaign/new", params={"name": "Camp3", "ruleset": "1e"})
-    client.post("/api/encounter/new", params={"name": "Fight", "ruleset": "1e"})
+    client.post("/api/encounter/new", params={"name": "Fight"})
 
     res = client.post("/api/campaign/actor-template/add", json=actor_payload(name="Orc"))
     assert res.status_code == 200

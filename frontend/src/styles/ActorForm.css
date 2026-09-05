@@ -39,54 +39,72 @@
   color: var(--mw-ink);
 }
 
-.abilities-section,
-.saves-section,
-.skills-section {
+.sheet-section {
   border-top: 1px solid var(--mw-border-dark);
   padding-top: 12px;
 }
 
-.abilities-section h4,
-.saves-section h4,
-.skills-section h4 {
+.sheet-section h4 {
   margin: 0 0 8px 0;
   font-size: 14px;
   color: var(--mw-ink);
   text-shadow: none;
 }
 
-.abilities-row,
-.saves-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.ability-input,
-.skill-input {
+.sheet-field {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.ability-input .field-label,
-.skill-input .field-label {
+.sheet-field .field-label {
   font-size: 11px;
   color: var(--mw-ink-light);
 }
 
-.ability-input input,
-.skill-input input {
+.sheet-field input {
   padding: 6px;
 }
 
-.skills-grid {
+.sheet-field textarea {
+  min-height: 72px;
+  padding: 6px;
+  resize: vertical;
+}
+
+.sheet-field-wide,
+.sheet-collection {
+  grid-column: 1 / -1;
+}
+
+.sheet-fields-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 8px;
   max-height: 260px;
   overflow-y: auto;
   padding-right: 4px;
+}
+
+.sheet-collection {
+  border-top: 1px solid var(--mw-parchment-dark);
+  padding-top: 8px;
+}
+
+.sheet-collection-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.sheet-collection-item {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 6px;
+  align-items: end;
+  border-top: 1px solid var(--mw-parchment-dark);
+  padding: 8px 0;
 }
 
 .form-actions {

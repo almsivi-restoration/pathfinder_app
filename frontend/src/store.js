@@ -8,6 +8,10 @@ export const useStore = create((set, get) => ({
   campaigns: [],
   currentCampaign: null,
   ruleset: null,
+  availableRulesets: [],
+  referenceSources: [],
+  referenceDocuments: [],
+  referenceResults: [],
 
   // Encounter state
   currentEncounter: null,
@@ -49,6 +53,17 @@ export const useStore = create((set, get) => ({
     }
   },
 
+  fetchRulesets: async () => {
+    try {
+      const res = await axios.get(`${API_URL}/rulesets`);
+      set({ availableRulesets: res.data.rulesets });
+      return res.data.rulesets;
+    } catch (error) {
+      console.error('Failed to fetch available rulesets:', error);
+      return [];
+    }
+  },
+
   loadCampaign: async (name) => {
     try {
       const res = await axios.post(`${API_URL}/campaign/load`, null, {
@@ -61,6 +76,16 @@ export const useStore = create((set, get) => ({
     }
   },
 
+  deleteCampaign: async (name) => {
+    try {
+      await axios.delete(`${API_URL}/campaign/${encodeURIComponent(name)}`);
+      const state = get();
+      set({ campaigns: state.campaigns.filter((campaignName) => campaignName !== name) });
+    } catch (error) {
+      console.error('Failed to delete campaign:', error);
+    }
+  },
+
   saveCampaign: async () => {
     try {
       await axios.post(`${API_URL}/campaign/save`);
@@ -69,9 +94,9 @@ export const useStore = create((set, get) => ({
     }
   },
 
-  fetchRulesetConfig: async (ruleset) => {
+  fetchRulesetConfig: async () => {
     try {
-      const res = await axios.get(`${API_URL}/rules/${ruleset}`);
+      const res = await axios.get(`${API_URL}/rules/current`);
       set({ rulesetConfig: res.data });
       return res.data;
     } catch (error) {
@@ -79,11 +104,49 @@ export const useStore = create((set, get) => ({
     }
   },
 
+  fetchCurrentReferences: async () => {
+    try {
+      const res = await axios.get(`${API_URL}/references/current`);
+      set({
+        referenceSources: res.data.source_files,
+        referenceDocuments: res.data.documents,
+      });
+      return res.data;
+    } catch (error) {
+      console.error('Failed to fetch local references:', error);
+    }
+  },
+
+  importCurrentReference: async (filename) => {
+    try {
+      const res = await axios.post(`${API_URL}/references/current/import`, { filename });
+      await get().fetchCurrentReferences();
+      return res.data;
+    } catch (error) {
+      console.error('Failed to index local reference:', error);
+    }
+  },
+
+  searchCurrentReferences: async (query) => {
+    if (!query.trim()) {
+      set({ referenceResults: [] });
+      return [];
+    }
+    try {
+      const res = await axios.get(`${API_URL}/references/current/search`, { params: { query } });
+      set({ referenceResults: res.data.results });
+      return res.data.results;
+    } catch (error) {
+      console.error('Failed to search local references:', error);
+      return [];
+    }
+  },
+
   // Encounter actions
-  createEncounter: async (name, ruleset) => {
+  createEncounter: async (name) => {
     try {
       const res = await axios.post(`${API_URL}/encounter/new`, null, {
-        params: { name, ruleset },
+        params: { name },
       });
       set({
         currentEncounter: res.data,
@@ -304,6 +367,10 @@ export const useStore = create((set, get) => ({
   returnToCampaignSelector: () => set({
     currentCampaign: null,
     ruleset: null,
+    availableRulesets: [],
+    referenceSources: [],
+    referenceDocuments: [],
+    referenceResults: [],
     currentEncounter: null,
     actors: [],
     initiativeOrder: [],

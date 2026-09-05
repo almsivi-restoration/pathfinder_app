@@ -5,6 +5,8 @@ import '../styles/ActorList.css';
 
 function ActorList() {
   const actors = useStore((state) => state.actors);
+  const rulesetConfig = useStore((state) => state.rulesetConfig);
+  const summaryFields = rulesetConfig?.actor_sheet?.summary || [];
 
   if (actors.length === 0) {
     return <div className="actor-list empty">No actors in encounter</div>;
@@ -15,13 +17,13 @@ function ActorList() {
       <div className="actor-header">
         <span className="col-name">Name</span>
         <span className="col-type">Type</span>
-        <span className="col-hp">HP</span>
-        <span className="col-ac">AC</span>
-        <span className="col-init">Init</span>
+        {summaryFields.map((field) => (
+          <span key={field.value_key} className="col-stat">{field.label}</span>
+        ))}
         <span className="col-actions">Actions</span>
       </div>
       {actors.map((actor) => (
-        <ActorRow key={actor.id} actor={actor} />
+        <ActorRow key={actor.id} actor={actor} summaryFields={summaryFields} />
       ))}
     </div>
   );

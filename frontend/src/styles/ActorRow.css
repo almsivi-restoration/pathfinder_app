@@ -31,26 +31,20 @@
   color: var(--mw-ink-light);
 }
 
-.actor-row .col-hp {
-  flex: 1.5;
+.actor-row .col-stat {
+  flex: 1;
+  text-align: center;
+}
+
+.actor-row .editable-stat {
   cursor: pointer;
   color: var(--mw-health);
   font-weight: 700;
 }
 
-.actor-row .col-hp input {
+.actor-row .editable-stat input {
   width: 60px;
   padding: 4px;
-}
-
-.actor-row .col-ac {
-  flex: 0.8;
-  text-align: center;
-}
-
-.actor-row .col-init {
-  flex: 1;
-  text-align: center;
 }
 
 .actor-row .col-actions {

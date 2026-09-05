@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../store';
 import ActorList from './ActorList';
 import InitiativeTracker from './InitiativeTracker';
@@ -10,22 +10,15 @@ import '../styles/GMDashboard.css';
 function GMDashboard() {
   const currentCampaign = useStore((state) => state.currentCampaign);
   const currentEncounter = useStore((state) => state.currentEncounter);
-  const ruleset = useStore((state) => state.ruleset);
   const createEncounter = useStore((state) => state.createEncounter);
   const saveEncounter = useStore((state) => state.saveEncounter);
   const saveCampaign = useStore((state) => state.saveCampaign);
   const returnToCampaignSelector = useStore((state) => state.returnToCampaignSelector);
   const [newEncounterName, setNewEncounterName] = useState('');
   const [showActorForm, setShowActorForm] = useState(false);
-  const [rulesetDropdown, setRulesetDropdown] = useState(ruleset);
-
-  useEffect(() => {
-    setRulesetDropdown(ruleset);
-  }, [ruleset]);
-
   const handleCreateEncounter = async () => {
     if (!newEncounterName.trim()) return;
-    await createEncounter(newEncounterName, rulesetDropdown);
+    await createEncounter(newEncounterName);
     setNewEncounterName('');
   };
 
@@ -53,17 +46,8 @@ function GMDashboard() {
     <div className="gm-dashboard">
       <header className="gm-header">
         <div className="header-left">
-          <h1>{currentCampaign?.name || 'Pathfinder Encounter Manager'}</h1>
-          <div className="ruleset-selector">
-            <label>Ruleset: </label>
-            <select
-              value={rulesetDropdown}
-              onChange={(e) => setRulesetDropdown(e.target.value)}
-            >
-              <option value="1e">Pathfinder 1e</option>
-              <option value="2e">Pathfinder 2e</option>
-            </select>
-          </div>
+          <h1>{currentCampaign?.name || "Game Master's Workbench"}</h1>
+          <div className="ruleset-selector">Ruleset: {currentCampaign?.ruleset}</div>
         </div>
         <div className="header-right">
           <button className="btn btn-secondary" onClick={handleBackToCampaigns}>

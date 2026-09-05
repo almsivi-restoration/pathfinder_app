@@ -5,9 +5,12 @@ Handles CRUD operations and persistence.
 
 import json
 import os
+import shutil
 from typing import Dict, List, Optional
 from pathlib import Path
-from models import Campaign, Encounter, Actor, Ruleset
+from models import Campaign, Encounter, Actor
+from rules import get_ruleset
+from rules.common import get_sheet_value
 import uuid
 
 
@@ -24,8 +27,10 @@ class StateManager:
     
     # ==================== Campaign Methods ====================
     
-    def create_campaign(self, name: str, ruleset: Ruleset) -> Campaign:
+    def create_campaign(self, name: str, ruleset: str) -> Campaign:
         """Create a new campaign."""
+        if not get_ruleset(ruleset):
+            raise ValueError("Ruleset not found")
         campaign = Campaign(name=name, ruleset=ruleset)
         self.campaigns[campaign.name] = campaign
         self.current_campaign = campaign
@@ -63,17 +68,32 @@ class StateManager:
     def list_campaigns(self) -> List[str]:
         """List all saved campaigns."""
         return [d.name for d in self.campaigns_dir.iterdir() if d.is_dir()]
+
+    def delete_campaign(self, campaign_name: str) -> bool:
+        """Delete one persisted campaign and clear it if it is currently loaded."""
+        campaign_dir = (self.campaigns_dir / campaign_name).resolve()
+        if campaign_dir.parent != self.campaigns_dir.resolve() or not campaign_dir.is_dir():
+            return False
+
+        shutil.rmtree(campaign_dir)
+        self.campaigns.pop(campaign_name, None)
+        if self.current_campaign and self.current_campaign.name == campaign_name:
+            self.current_campaign = None
+            self.current_encounter = None
+            self.encounters = {}
+        return True
     
     # ==================== Encounter Methods ====================
     
-    def create_encounter(self, name: str, ruleset: Ruleset) -> Encounter:
+    def create_encounter(self, name: str) -> Encounter:
         """Create a new encounter."""
-        encounter = Encounter(id=str(uuid.uuid4()), name=name, ruleset=ruleset)
+        if not self.current_campaign:
+            raise ValueError("No campaign loaded")
+
+        encounter = Encounter(id=str(uuid.uuid4()), name=name)
         self.encounters[encounter.id] = encounter
         self.current_encounter = encounter
-        
-        if self.current_campaign:
-            self.current_campaign.encounters.append(encounter.id)
+        self.current_campaign.encounters.append(encounter.id)
         
         return encounter
     
@@ -250,8 +270,11 @@ class StateManager:
         import random
         
         initiative_rolls = []
+        ruleset = get_ruleset(self.current_campaign.ruleset) if self.current_campaign else None
+        bonus_key = ruleset.get("actor_sheet", {}).get("initiative", {}).get("bonus_key") if ruleset else None
         for actor in self.current_encounter.actors:
-            roll = random.randint(1, 20) + actor.initiative_bonus
+            bonus = get_sheet_value(actor.sheet, bonus_key, 0) if bonus_key else 0
+            roll = random.randint(1, 20) + bonus
             initiative_rolls.append((actor.id, roll))
         
         # Sort by roll descending

@@ -1,5 +1,5 @@
 """
-FastAPI backend for Pathfinder Encounter Manager.
+FastAPI backend for Game Master's Workbench.
 Provides REST API for campaign, encounter, actor, and initiative management.
 """
 
@@ -10,11 +10,12 @@ import uvicorn
 import random
 from uuid import uuid4
 
-from models import Actor, Campaign, Encounter, Ruleset, RollRequest, RollResult, Effect, InitiativeOrderRequest
+from models import Actor, Campaign, Encounter, RollRequest, RollResult, Effect, InitiativeOrderRequest, ReferenceImportRequest
+from reference_library import ReferenceLibrary
 from state import StateManager
-from rules import get_ruleset
+from rules import get_ruleset, list_rulesets
 
-app = FastAPI(title="Pathfinder Encounter Manager API")
+app = FastAPI(title="Game Master's Workbench API")
 
 # CORS middleware to allow frontend communication
 app.add_middleware(
@@ -27,11 +28,12 @@ app.add_middleware(
 
 # Initialize state manager
 state_manager = StateManager()
+reference_library = ReferenceLibrary()
 
 # ==================== Campaign Routes ====================
 
 @app.post("/api/campaign/new")
-def create_campaign(name: str, ruleset: Ruleset):
+def create_campaign(name: str, ruleset: str):
     """Create a new campaign."""
     try:
         campaign = state_manager.create_campaign(name, ruleset)
@@ -73,13 +75,21 @@ def save_campaign():
     raise HTTPException(status_code=400, detail="No campaign to save")
 
 
+@app.delete("/api/campaign/{campaign_name}")
+def delete_campaign(campaign_name: str):
+    """Delete one persisted campaign and all encounters saved under it."""
+    if not state_manager.delete_campaign(campaign_name):
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    return {"status": "removed"}
+
+
 # ==================== Encounter Routes ====================
 
 @app.post("/api/encounter/new")
-def create_encounter(name: str, ruleset: Ruleset):
+def create_encounter(name: str):
     """Create a new encounter in the current campaign."""
     try:
-        encounter = state_manager.create_encounter(name, ruleset)
+        encounter = state_manager.create_encounter(name)
         return encounter.model_dump()
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -278,10 +288,62 @@ def roll_dice(request: RollRequest):
 
 # ==================== Rules Routes ====================
 
-@app.get("/api/rules/{ruleset}")
-def get_ruleset_config(ruleset: str):
-    """Get ruleset configuration (skills, saves, abilities)."""
+def get_current_ruleset_name() -> str:
+    if not state_manager.current_campaign:
+        raise HTTPException(status_code=404, detail="No campaign loaded")
+    return state_manager.current_campaign.ruleset
+
+
+def get_current_ruleset_definition():
+    ruleset = get_current_ruleset_name()
     config = get_ruleset(ruleset)
+    if not config:
+        raise HTTPException(status_code=404, detail="Ruleset not found")
+    return ruleset, config
+
+
+@app.get("/api/references/current")
+def get_current_references():
+    """List local PDFs and indexed documents for the active campaign's ruleset."""
+    ruleset, config = get_current_ruleset_definition()
+    return {
+        "ruleset": ruleset,
+        "source_files": reference_library.available_sources(ruleset, config["reference_directory"]),
+        "documents": reference_library.list_documents(ruleset),
+    }
+
+
+@app.post("/api/references/current/import")
+def import_current_reference(request: ReferenceImportRequest):
+    """Index a local PDF registered under the active campaign's ruleset."""
+    ruleset, config = get_current_ruleset_definition()
+    try:
+        return reference_library.import_source(ruleset, request.filename, config["reference_directory"])
+    except (FileNotFoundError, ValueError) as error:
+        raise HTTPException(status_code=404, detail=str(error))
+    except Exception as error:
+        raise HTTPException(status_code=400, detail=f"Could not index reference: {error}")
+
+
+@app.get("/api/references/current/search")
+def search_current_references(query: str, limit: int = 20):
+    """Search only the local reference index for the active campaign's ruleset."""
+    ruleset, _ = get_current_ruleset_definition()
+    return {"results": reference_library.search(ruleset, query, limit)}
+
+@app.get("/api/rulesets")
+def get_available_rulesets():
+    """List rulesets available for new campaigns."""
+    return {"rulesets": list_rulesets()}
+
+
+@app.get("/api/rules/current")
+def get_current_ruleset_config():
+    """Get sheet configuration for the current campaign's ruleset."""
+    if not state_manager.current_campaign:
+        raise HTTPException(status_code=404, detail="No campaign loaded")
+
+    config = get_ruleset(state_manager.current_campaign.ruleset)
     if not config:
         raise HTTPException(status_code=404, detail="Ruleset not found")
     return {
@@ -290,6 +352,8 @@ def get_ruleset_config(ruleset: str):
         "skills": config["skills"],
         "saves": config["saves"],
         "max_level": config["max_level"],
+        "reference_directory": config["reference_directory"],
+        "actor_sheet": config["actor_sheet"],
     }
 
 

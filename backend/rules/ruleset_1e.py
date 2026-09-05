@@ -3,6 +3,8 @@ Pathfinder 1e ruleset configuration.
 Defines skills, saves, and ability modifiers for 1e campaigns.
 """
 
+from .common import build_pathfinder_1e_actor_sheet
+
 ABILITIES = ["str", "dex", "con", "int", "wis", "cha"]
 
 SKILLS_1E = {
@@ -48,9 +50,11 @@ SAVES_1E = ["fort", "ref", "will"]
 
 RULESET_CONFIG_1E = {
     "name": "Pathfinder 1e",
+    "reference_directory": "pathfinder_1e",
     "abilities": ABILITIES,
     "skills": SKILLS_1E,
     "saves": SAVES_1E,
     "max_level": 20,
     "ability_modifier_calc": lambda ability_score: (ability_score - 10) // 2,
+    "actor_sheet": build_pathfinder_1e_actor_sheet(SKILLS_1E, SAVES_1E),
 }

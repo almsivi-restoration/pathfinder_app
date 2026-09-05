@@ -49,7 +49,13 @@
   gap: 10px;
 }
 
+.campaign-entry {
+  display: flex;
+  gap: 8px;
+}
+
 .campaign-button {
+  flex: 1;
   padding: 12px 16px;
   background: linear-gradient(180deg, var(--mw-wood-light), var(--mw-wood-dark));
   color: var(--mw-parchment-text);
@@ -67,6 +73,18 @@
 .campaign-button:hover {
   box-shadow: 0 0 8px var(--mw-gold-bright);
   transform: translateX(4px);
+}
+
+.campaign-delete-button {
+  padding: 8px 10px;
+  border: 2px solid var(--mw-border-dark);
+  outline: 1px solid var(--mw-danger);
+  outline-offset: -3px;
+  background: var(--mw-wood-dark);
+  color: #f0b0b0;
+  cursor: pointer;
+  font-family: var(--mw-font-display);
+  font-variant: small-caps;
 }
 
 .divider {

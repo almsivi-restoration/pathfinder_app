@@ -45,6 +45,16 @@ test('removeActor removes only the targeted actor from state', async () => {
   expect(useStore.getState().actors).toEqual([{ id: 'a2', name: 'Orc' }]);
 });
 
+test('deleteCampaign removes only the targeted campaign from state', async () => {
+  useStore.setState({ campaigns: ['Keep', 'Remove'] });
+  axios.delete.mockResolvedValueOnce({});
+
+  await useStore.getState().deleteCampaign('Remove');
+
+  expect(axios.delete).toHaveBeenCalledWith(expect.stringContaining('/campaign/Remove'));
+  expect(useStore.getState().campaigns).toEqual(['Keep']);
+});
+
 test('rollInitiative stores the returned order and marks the encounter active', async () => {
   axios.post.mockResolvedValueOnce({
     data: { initiative_order: ['a1', 'a2'], round: 1, current_turn_index: 0 },
@@ -70,6 +80,19 @@ test('setInitiativeOrder persists a GM-entered manual order', async () => {
     { actor_ids: ['a2', 'a1'] }
   );
   expect(useStore.getState().initiativeOrder).toEqual(['a2', 'a1']);
+});
+
+test('searchCurrentReferences stores ruleset-scoped search results', async () => {
+  const results = [{ title: 'Core Rulebook', filename: 'core_rulebook.pdf', page_number: 12, excerpt: 'Initiative.' }];
+  axios.get.mockResolvedValueOnce({ data: { results } });
+
+  await useStore.getState().searchCurrentReferences('initiative');
+
+  expect(axios.get).toHaveBeenCalledWith(
+    expect.stringContaining('/references/current/search'),
+    { params: { query: 'initiative' } }
+  );
+  expect(useStore.getState().referenceResults).toEqual(results);
 });
 
 test('returnToCampaignSelector clears the full session without touching the network', () => {

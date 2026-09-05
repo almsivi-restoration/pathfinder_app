@@ -5,6 +5,8 @@ const isDev = require('electron-is-dev');
 let mainWindow;
 let playerWindow;
 
+app.setName('GM Workbench');
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
@@ -79,6 +81,14 @@ const template = [
     label: 'File',
     submenu: [
       {
+        label: 'Restart App',
+        accelerator: 'CmdOrCtrl+R',
+        click: () => {
+          app.relaunch();
+          app.exit(0);
+        },
+      },
+      {
         label: 'Exit',
         accelerator: 'CmdOrCtrl+Q',
         click: () => {
@@ -101,6 +111,17 @@ const template = [
         accelerator: 'CmdOrCtrl+Shift+I',
         click: () => {
           if (mainWindow) mainWindow.webContents.toggleDevTools();
+        },
+      },
+    ],
+  },
+  {
+    label: 'GM Tools',
+    submenu: [
+      {
+        label: 'Encyclopedia',
+        click: () => {
+          if (mainWindow) mainWindow.webContents.send('open-encyclopedia');
         },
       },
     ],

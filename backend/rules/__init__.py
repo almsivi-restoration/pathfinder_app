@@ -9,3 +9,11 @@ RULESETS = {
 def get_ruleset(ruleset_name: str):
     """Retrieve ruleset configuration by name."""
     return RULESETS.get(ruleset_name)
+
+
+def list_rulesets():
+    """Return the rulesets available for campaign creation."""
+    return [
+        {"id": ruleset_id, "name": config["name"]}
+        for ruleset_id, config in RULESETS.items()
+    ]

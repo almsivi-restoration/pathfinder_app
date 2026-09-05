@@ -4,7 +4,7 @@ Each test uses an isolated temp-directory-backed StateManager (see conftest.py) 
 here ever touches the real backend/campaigns/ save data.
 """
 
-from models import Actor, Effect, Ruleset
+from models import Actor, Effect
 import uuid
 
 
@@ -15,19 +15,13 @@ def make_actor(actor_id=None, name="Goblin", is_pc=False):
     return Actor(
         id=actor_id or str(uuid.uuid4()),
         name=name,
-        ruleset=Ruleset.PATHFINDER_1E,
         is_pc=is_pc,
-        hp_current=10,
-        hp_max=10,
-        ac=12,
-        initiative_bonus=2,
-        speed=30,
-        abilities={"str": 10, "dex": 12, "con": 10, "int": 10, "wis": 10, "cha": 10},
+        sheet={"initiative": {"bonus": 2}},
     )
 
 
 def test_create_save_and_load_campaign(state_manager, tmp_path):
-    campaign = state_manager.create_campaign("Test Campaign", Ruleset.PATHFINDER_1E)
+    campaign = state_manager.create_campaign("Test Campaign", "1e")
     assert campaign.name == "Test Campaign"
     assert state_manager.current_campaign is campaign
 
@@ -40,39 +34,52 @@ def test_create_save_and_load_campaign(state_manager, tmp_path):
     loaded = state_manager.load_campaign("Test Campaign")
     assert loaded is not None
     assert loaded.name == "Test Campaign"
-    assert loaded.ruleset == Ruleset.PATHFINDER_1E
+    assert loaded.ruleset == "1e"
 
 
 def test_load_missing_campaign_returns_none(state_manager):
     assert state_manager.load_campaign("does-not-exist") is None
 
 
+def test_delete_campaign_removes_only_the_selected_campaign(state_manager):
+    state_manager.create_campaign("Keep", "1e")
+    state_manager.save_campaign()
+    state_manager.create_campaign("Remove", "1e")
+    state_manager.save_campaign()
+
+    assert state_manager.delete_campaign("Remove") is True
+    assert state_manager.list_campaigns() == ["Keep"]
+    assert state_manager.current_campaign is None
+    assert state_manager.delete_campaign("../Keep") is False
+
+
 def test_create_encounter_registers_on_campaign(state_manager):
-    state_manager.create_campaign("Camp", Ruleset.PATHFINDER_1E)
-    encounter = state_manager.create_encounter("Goblin Ambush", Ruleset.PATHFINDER_1E)
+    state_manager.create_campaign("Camp", "1e")
+    encounter = state_manager.create_encounter("Goblin Ambush")
     assert encounter.id in state_manager.current_campaign.encounters
     assert state_manager.current_encounter is encounter
+    assert not hasattr(encounter, "ruleset")
 
 
 def test_add_update_remove_actor(state_manager):
-    state_manager.create_campaign("Camp", Ruleset.PATHFINDER_1E)
-    state_manager.create_encounter("Fight", Ruleset.PATHFINDER_1E)
+    state_manager.create_campaign("Camp", "1e")
+    state_manager.create_encounter("Fight")
 
     actor = make_actor()
     assert state_manager.add_actor(actor) is True
     assert len(state_manager.current_encounter.actors) == 1
 
-    actor.hp_current = 5
+    actor.sheet["hp"] = {"current": 5}
     assert state_manager.update_actor(actor.id, actor) is True
-    assert state_manager.get_actor(actor.id).hp_current == 5
+    assert state_manager.get_actor(actor.id).sheet["hp"]["current"] == 5
 
     assert state_manager.remove_actor(actor.id) is True
     assert state_manager.get_actor(actor.id) is None
 
 
 def test_remove_actor_clears_it_from_initiative_order(state_manager):
-    state_manager.create_campaign("Camp", Ruleset.PATHFINDER_1E)
-    state_manager.create_encounter("Fight", Ruleset.PATHFINDER_1E)
+    state_manager.create_campaign("Camp", "1e")
+    state_manager.create_encounter("Fight")
     actor = make_actor()
     state_manager.add_actor(actor)
     state_manager.current_encounter.initiative_order = [actor.id]
@@ -82,8 +89,8 @@ def test_remove_actor_clears_it_from_initiative_order(state_manager):
 
 
 def test_roll_initiative_orders_all_actors_and_starts_round_1(state_manager):
-    state_manager.create_campaign("Camp", Ruleset.PATHFINDER_1E)
-    state_manager.create_encounter("Fight", Ruleset.PATHFINDER_1E)
+    state_manager.create_campaign("Camp", "1e")
+    state_manager.create_encounter("Fight")
     a1, a2 = make_actor(name="A"), make_actor(name="B")
     state_manager.add_actor(a1)
     state_manager.add_actor(a2)
@@ -95,8 +102,8 @@ def test_roll_initiative_orders_all_actors_and_starts_round_1(state_manager):
 
 
 def test_set_initiative_order_is_gm_controlled_and_keeps_missing_actors(state_manager):
-    state_manager.create_campaign("Camp", Ruleset.PATHFINDER_1E)
-    state_manager.create_encounter("Fight", Ruleset.PATHFINDER_1E)
+    state_manager.create_campaign("Camp", "1e")
+    state_manager.create_encounter("Fight")
     a1, a2, a3 = make_actor(name="A"), make_actor(name="B"), make_actor(name="C")
     state_manager.add_actor(a1)
     state_manager.add_actor(a2)
@@ -112,8 +119,8 @@ def test_set_initiative_order_is_gm_controlled_and_keeps_missing_actors(state_ma
 
 
 def test_next_turn_advances_round_and_ticks_effects(state_manager):
-    state_manager.create_campaign("Camp", Ruleset.PATHFINDER_1E)
-    state_manager.create_encounter("Fight", Ruleset.PATHFINDER_1E)
+    state_manager.create_campaign("Camp", "1e")
+    state_manager.create_encounter("Fight")
     a1, a2 = make_actor(name="A"), make_actor(name="B")
     a1.effects.append(Effect(name="Poisoned", duration_rounds=1))
     state_manager.add_actor(a1)
@@ -138,8 +145,8 @@ def test_next_turn_advances_round_and_ticks_effects(state_manager):
 
 
 def test_actor_template_lifecycle(state_manager):
-    state_manager.create_campaign("Camp", Ruleset.PATHFINDER_1E)
-    state_manager.create_encounter("Fight", Ruleset.PATHFINDER_1E)
+    state_manager.create_campaign("Camp", "1e")
+    state_manager.create_encounter("Fight")
 
     template = make_actor(name="Goblin Template")
     saved = state_manager.add_actor_template(template)
@@ -157,3 +164,27 @@ def test_actor_template_lifecycle(state_manager):
 
     assert state_manager.remove_actor_template(saved.id) is True
     assert state_manager.list_actor_templates() == []
+
+
+def test_actor_migrates_legacy_pathfinder_fields_into_sheet():
+    actor = Actor(
+        id="legacy-actor",
+        name="Legacy Goblin",
+        is_pc=False,
+        hp_current=7,
+        hp_max=10,
+        ac=15,
+        initiative_bonus=2,
+        speed=30,
+        abilities={"str": 10},
+        skills={"perception": 4},
+        saves={"fort": 3},
+        weapons=[{"name": "Spear", "damage_dice": "1d6"}],
+    )
+
+    assert actor.sheet["hp"] == {"current": 7, "max": 10}
+    assert actor.sheet["defenses"]["ac"] == 15
+    assert actor.sheet["weapons"][0]["name"] == "Spear"
+    assert actor.sheet["weapons"][0]["damage"] == "1d6"
+    assert actor.sheet["skills"] == [{"name": "Perception", "total": 4, "ranks": 0, "misc": 0}]
+    assert actor.sheet["saves"][0]["name"] == "Fort"

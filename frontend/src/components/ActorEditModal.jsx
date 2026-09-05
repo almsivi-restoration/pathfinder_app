@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store';
 import ActorStatFields from './ActorStatFields';
+import { setSheetValue } from '../sheet';
 import '../styles/ActorEditModal.css';
 
 const emptyEffect = { name: '', duration_rounds: 1, description: '' };
-const emptyWeapon = { name: '', damage_dice: '', damage_type: '', modifier: 0 };
 
 function ActorEditModal() {
   const actors = useStore((state) => state.actors);
@@ -25,15 +25,13 @@ function ActorEditModal() {
 
   const [formData, setFormData] = useState(null);
   const [newEffect, setNewEffect] = useState(emptyEffect);
-  const [newWeapon, setNewWeapon] = useState(emptyWeapon);
 
   // Re-seed local edit state whenever a different actor/template is opened.
   useEffect(() => {
     if (actor) {
       setFormData({ ...actor });
       setNewEffect(emptyEffect);
-      setNewWeapon(emptyWeapon);
-      fetchRulesetConfig(actor.ruleset);
+      fetchRulesetConfig();
     }
   }, [actor, fetchRulesetConfig]);
 
@@ -48,16 +46,8 @@ function ActorEditModal() {
     setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
   };
 
-  const handleAbilityChange = (ability, value) => {
-    setFormData({ ...formData, abilities: { ...formData.abilities, [ability]: parseInt(value) } });
-  };
-
-  const handleSkillChange = (skillName, value) => {
-    setFormData({ ...formData, skills: { ...formData.skills, [skillName]: parseInt(value) || 0 } });
-  };
-
-  const handleSaveChange = (saveName, value) => {
-    setFormData({ ...formData, saves: { ...formData.saves, [saveName]: parseInt(value) || 0 } });
+  const handleSheetChange = (path, value) => {
+    setFormData({ ...formData, sheet: setSheetValue(formData.sheet, path, value) });
   };
 
   const handleAddEffect = () => {
@@ -73,19 +63,6 @@ function ActorEditModal() {
     setFormData({ ...formData, effects: formData.effects.filter((_, i) => i !== index) });
   };
 
-  const handleAddWeapon = () => {
-    if (!newWeapon.name.trim()) return;
-    setFormData({
-      ...formData,
-      weapons: [...formData.weapons, { ...newWeapon, modifier: parseInt(newWeapon.modifier) || 0 }],
-    });
-    setNewWeapon(emptyWeapon);
-  };
-
-  const handleRemoveWeapon = (index) => {
-    setFormData({ ...formData, weapons: formData.weapons.filter((_, i) => i !== index) });
-  };
-
   const handleClose = () => {
     setSelectedActorId(null);
     setSelectedTemplateId(null);
@@ -93,14 +70,7 @@ function ActorEditModal() {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    const payload = {
-      ...formData,
-      hp_current: parseInt(formData.hp_current),
-      hp_max: parseInt(formData.hp_max),
-      ac: parseInt(formData.ac),
-      initiative_bonus: parseInt(formData.initiative_bonus),
-      speed: parseInt(formData.speed),
-    };
+    const payload = formData;
     if (isTemplate) {
       await updateActorTemplate(actor.id, payload);
     } else {
@@ -126,10 +96,8 @@ function ActorEditModal() {
           <ActorStatFields
             formData={formData}
             onChange={handleChange}
-            onAbilityChange={handleAbilityChange}
             rulesetConfig={rulesetConfig}
-            onSkillChange={handleSkillChange}
-            onSaveChange={handleSaveChange}
+            onSheetChange={handleSheetChange}
           />
 
           <div className="edit-section">
@@ -163,54 +131,6 @@ function ActorEditModal() {
               />
               <button type="button" className="btn btn-secondary" onClick={handleAddEffect}>
                 Add Effect
-              </button>
-            </div>
-          </div>
-
-          <div className="edit-section">
-            <h4>Weapons</h4>
-            {formData.weapons.length > 0 && (
-              <div className="edit-list">
-                {formData.weapons.map((weapon, index) => (
-                  <div key={index} className="edit-list-row">
-                    <span>
-                      {weapon.name} — {weapon.damage_dice} {weapon.damage_type} ({weapon.modifier >= 0 ? '+' : ''}
-                      {weapon.modifier})
-                    </span>
-                    <button type="button" className="btn-small" onClick={() => handleRemoveWeapon(index)}>
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="add-row">
-              <input
-                type="text"
-                placeholder="Weapon name"
-                value={newWeapon.name}
-                onChange={(e) => setNewWeapon({ ...newWeapon, name: e.target.value })}
-              />
-              <input
-                type="text"
-                placeholder="Damage dice (e.g. 1d8)"
-                value={newWeapon.damage_dice}
-                onChange={(e) => setNewWeapon({ ...newWeapon, damage_dice: e.target.value })}
-              />
-              <input
-                type="text"
-                placeholder="Damage type"
-                value={newWeapon.damage_type}
-                onChange={(e) => setNewWeapon({ ...newWeapon, damage_type: e.target.value })}
-              />
-              <input
-                type="number"
-                placeholder="Modifier"
-                value={newWeapon.modifier}
-                onChange={(e) => setNewWeapon({ ...newWeapon, modifier: e.target.value })}
-              />
-              <button type="button" className="btn btn-secondary" onClick={handleAddWeapon}>
-                Add Weapon
               </button>
             </div>
           </div>

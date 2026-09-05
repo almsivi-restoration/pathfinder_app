@@ -12,15 +12,18 @@ function PlayerView() {
   const currentTurnIndex = useStore((state) => state.currentTurnIndex);
   const isEncounterActive = useStore((state) => state.isEncounterActive);
   const fetchCurrentEncounter = useStore((state) => state.fetchCurrentEncounter);
+  const rulesetConfig = useStore((state) => state.rulesetConfig);
+  const fetchRulesetConfig = useStore((state) => state.fetchRulesetConfig);
 
   // This window is a separate renderer process with its own in-memory store, so it
   // has no knowledge of anything the GM window did. Poll the backend (the shared
   // source of truth) instead of relying on any state passed in at window-open time.
   useEffect(() => {
     fetchCurrentEncounter();
+    fetchRulesetConfig();
     const intervalId = setInterval(fetchCurrentEncounter, POLL_INTERVAL_MS);
     return () => clearInterval(intervalId);
-  }, [fetchCurrentEncounter]);
+  }, [fetchCurrentEncounter, fetchRulesetConfig]);
 
   const getActorById = (actorId) => {
     return actors.find((a) => a.id === actorId);
@@ -61,6 +64,7 @@ function PlayerView() {
                     actor={actor}
                     position={index + 1}
                     isCurrent={isCurrent}
+                    rulesetConfig={rulesetConfig}
                   />
                 );
               })}

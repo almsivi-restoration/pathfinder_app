@@ -4,15 +4,21 @@ import '../styles/CampaignSelector.css';
 
 function CampaignSelector({ onCampaignLoaded }) {
   const [newCampaignName, setNewCampaignName] = useState('');
-  const [newCampaignRuleset, setNewCampaignRuleset] = useState('1e');
+  const [newCampaignRuleset, setNewCampaignRuleset] = useState('');
   const campaigns = useStore((state) => state.campaigns);
+  const availableRulesets = useStore((state) => state.availableRulesets);
   const createCampaign = useStore((state) => state.createCampaign);
   const loadCampaign = useStore((state) => state.loadCampaign);
+  const deleteCampaign = useStore((state) => state.deleteCampaign);
   const listCampaigns = useStore((state) => state.listCampaigns);
+  const fetchRulesets = useStore((state) => state.fetchRulesets);
 
   useEffect(() => {
     listCampaigns();
-  }, [listCampaigns]);
+    fetchRulesets().then((rulesets) => {
+      if (rulesets.length > 0) setNewCampaignRuleset(rulesets[0].id);
+    });
+  }, [fetchRulesets, listCampaigns]);
 
   const handleCreateCampaign = async () => {
     if (!newCampaignName.trim()) return;
@@ -27,9 +33,15 @@ function CampaignSelector({ onCampaignLoaded }) {
     onCampaignLoaded();
   };
 
+  const handleDeleteCampaign = async (campaignName) => {
+    if (window.confirm(`Delete ${campaignName} and all of its saved encounters? This cannot be undone.`)) {
+      await deleteCampaign(campaignName);
+    }
+  };
+
   return (
     <div className="campaign-selector">
-      <h1>Pathfinder Encounter Manager</h1>
+      <h1>Game Master's Workbench</h1>
 
       <div className="selector-content">
         <div className="load-section">
@@ -37,13 +49,14 @@ function CampaignSelector({ onCampaignLoaded }) {
           {campaigns.length > 0 ? (
             <div className="campaign-list">
               {campaigns.map((campaignName) => (
-                <button
-                  key={campaignName}
-                  className="campaign-button"
-                  onClick={() => handleLoadCampaign(campaignName)}
-                >
-                  {campaignName}
-                </button>
+                <div key={campaignName} className="campaign-entry">
+                  <button className="campaign-button" onClick={() => handleLoadCampaign(campaignName)}>
+                    {campaignName}
+                  </button>
+                  <button className="campaign-delete-button" onClick={() => handleDeleteCampaign(campaignName)}>
+                    Delete
+                  </button>
+                </div>
               ))}
             </div>
           ) : (
@@ -61,17 +74,15 @@ function CampaignSelector({ onCampaignLoaded }) {
             value={newCampaignName}
             onChange={(e) => setNewCampaignName(e.target.value)}
           />
-          <select
-            value={newCampaignRuleset}
-            onChange={(e) => setNewCampaignRuleset(e.target.value)}
-          >
-            <option value="1e">Pathfinder 1e</option>
-            <option value="2e">Pathfinder 2e</option>
+          <select value={newCampaignRuleset} onChange={(e) => setNewCampaignRuleset(e.target.value)}>
+            {availableRulesets.map((ruleset) => (
+              <option key={ruleset.id} value={ruleset.id}>{ruleset.name}</option>
+            ))}
           </select>
           <button
             className="create-button"
             onClick={handleCreateCampaign}
-            disabled={!newCampaignName.trim()}
+            disabled={!newCampaignName.trim() || !newCampaignRuleset}
           >
             Create
           </button>

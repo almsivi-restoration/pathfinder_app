@@ -1,42 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store';
 import ActorStatFields from './ActorStatFields';
+import { createDefaultSheet, setSheetValue } from '../sheet';
 import '../styles/ActorForm.css';
 
 function ActorForm({ onActorAdded }) {
-  const ruleset = useStore((state) => state.ruleset);
   const rulesetConfig = useStore((state) => state.rulesetConfig);
   const fetchRulesetConfig = useStore((state) => state.fetchRulesetConfig);
   const addActor = useStore((state) => state.addActor);
   const saveActorTemplate = useStore((state) => state.saveActorTemplate);
 
-  useEffect(() => {
-    if (ruleset) fetchRulesetConfig(ruleset);
-  }, [ruleset, fetchRulesetConfig]);
-
   const emptyForm = {
     name: '',
     player_name: '',
     is_pc: true,
-    hp_current: 10,
-    hp_max: 10,
-    ac: 10,
-    initiative_bonus: 0,
     initiative_roll: null,
-    speed: 30,
-    abilities: {
-      str: 10,
-      dex: 10,
-      con: 10,
-      int: 10,
-      wis: 10,
-      cha: 10,
-    },
-    skills: {},
-    saves: {},
+    sheet: {},
   };
 
   const [formData, setFormData] = useState(emptyForm);
+
+  useEffect(() => {
+    const loadSheetDefinition = async () => {
+      const config = await fetchRulesetConfig();
+      if (config?.actor_sheet) {
+        setFormData((current) => ({ ...current, sheet: createDefaultSheet(config.actor_sheet) }));
+      }
+    };
+    loadSheetDefinition();
+  }, [fetchRulesetConfig]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -50,36 +42,13 @@ function ActorForm({ onActorAdded }) {
     });
   };
 
-  const handleAbilityChange = (ability, value) => {
-    setFormData({
-      ...formData,
-      abilities: {
-        ...formData.abilities,
-        [ability]: parseInt(value),
-      },
-    });
-  };
-
-  const handleSkillChange = (skillName, value) => {
-    setFormData({
-      ...formData,
-      skills: { ...formData.skills, [skillName]: parseInt(value) || 0 },
-    });
-  };
-
-  const handleSaveChange = (saveName, value) => {
-    setFormData({
-      ...formData,
-      saves: { ...formData.saves, [saveName]: parseInt(value) || 0 },
-    });
+  const handleSheetChange = (path, value) => {
+    setFormData({ ...formData, sheet: setSheetValue(formData.sheet, path, value) });
   };
 
   const buildActor = () => ({
     id: '',
     ...formData,
-    ruleset,
-    resistances: {},
-    weapons: [],
     effects: [],
     notes: '',
   });
@@ -87,13 +56,13 @@ function ActorForm({ onActorAdded }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     await addActor(buildActor());
-    setFormData(emptyForm);
+    setFormData({ ...emptyForm, sheet: createDefaultSheet(rulesetConfig?.actor_sheet) });
     onActorAdded();
   };
 
   const handleSaveTemplate = async () => {
     await saveActorTemplate(buildActor());
-    setFormData(emptyForm);
+    setFormData({ ...emptyForm, sheet: createDefaultSheet(rulesetConfig?.actor_sheet) });
     onActorAdded();
   };
 
@@ -102,10 +71,8 @@ function ActorForm({ onActorAdded }) {
       <ActorStatFields
         formData={formData}
         onChange={handleChange}
-        onAbilityChange={handleAbilityChange}
         rulesetConfig={rulesetConfig}
-        onSkillChange={handleSkillChange}
-        onSaveChange={handleSaveChange}
+        onSheetChange={handleSheetChange}
       />
 
       <div className="form-actions">

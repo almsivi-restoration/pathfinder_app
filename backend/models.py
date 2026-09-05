@@ -1,12 +1,6 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import List, Optional, Dict, Any
-from enum import Enum
 from datetime import datetime
-
-
-class Ruleset(str, Enum):
-    PATHFINDER_1E = "1e"
-    PATHFINDER_2E = "2e"
 
 
 class Effect(BaseModel):
@@ -15,55 +9,76 @@ class Effect(BaseModel):
     description: Optional[str] = None
 
 
-class Weapon(BaseModel):
-    name: str
-    damage_dice: str  # e.g. "1d8", "2d6+2"
-    damage_type: str
-    modifier: int = 0
-
-
 class Actor(BaseModel):
     id: str
     name: str
     player_name: Optional[str] = None  # None for NPCs
-    ruleset: Ruleset
     is_pc: bool
-    
-    # Core attributes
-    hp_current: int
-    hp_max: int
-    ac: int
-    initiative_bonus: int
+
+    # Encounter state shared across rulesets.
     initiative_roll: Optional[int] = None  # actual rolled value (physical die + bonus), GM-entered
-    speed: int
-    
-    # Abilities (STR, DEX, CON, INT, WIS, CHA)
-    abilities: Dict[str, int]  # {"str": 10, "dex": 14, ...}
-    
-    # Skills (ruleset-dependent)
-    skills: Dict[str, int] = Field(default_factory=dict)  # {"acrobatics": 5, ...}
-    
-    # Saves
-    saves: Dict[str, int] = Field(default_factory=dict)  # {"fort": 3, "ref": 2, ...}
-    
-    # Resistances
-    resistances: Dict[str, str] = Field(default_factory=dict)  # {"fire": "10", ...}
-    
-    # Weapons
-    weapons: List[Weapon] = Field(default_factory=list)
-    
-    # Current effects
     effects: List[Effect] = Field(default_factory=list)
-    
-    # Metadata
     created_at: datetime = Field(default_factory=datetime.now)
     notes: str = ""
+    sheet: Dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_legacy_sheet_fields(cls, value: Any) -> Any:
+        """Preserve existing campaign data while moving Pathfinder fields into sheet."""
+        if not isinstance(value, dict):
+            return value
+
+        actor = value.copy()
+        sheet = actor.get("sheet", {}).copy()
+        legacy_fields = {
+            "hp_current": "hp.current",
+            "hp_max": "hp.max",
+            "ac": "defenses.ac",
+            "initiative_bonus": "initiative.bonus",
+            "speed": "movement.speed",
+            "abilities": "abilities",
+            "skills": "skills",
+            "saves": "saves",
+            "resistances": "resistances",
+            "weapons": "weapons",
+        }
+        for legacy_key, sheet_path in legacy_fields.items():
+            if legacy_key in actor:
+                from rules.common import set_sheet_value
+                set_sheet_value(sheet, sheet_path, actor.pop(legacy_key))
+
+        if isinstance(sheet.get("skills"), dict):
+            sheet["skills"] = [
+                {
+                    "name": skill_name.replace("_", " ").title(),
+                    "total": total,
+                    "ranks": 0,
+                    "misc": 0,
+                }
+                for skill_name, total in sheet["skills"].items()
+            ]
+        if isinstance(sheet.get("saves"), dict):
+            sheet["saves"] = [
+                {"name": save_name.title(), "total": total, "base": 0, "ability_modifier": 0, "magic": 0, "misc": 0, "temporary": 0}
+                for save_name, total in sheet["saves"].items()
+            ]
+        if isinstance(sheet.get("weapons"), list):
+            sheet["weapons"] = [
+                {
+                    **weapon,
+                    "damage": weapon.get("damage", " ".join(filter(None, [weapon.get("damage_dice", ""), weapon.get("damage_type", "")]))),
+                    "attack_bonus": weapon.get("attack_bonus", 0),
+                }
+                for weapon in sheet["weapons"]
+            ]
+        actor["sheet"] = sheet
+        return actor
 
 
 class Encounter(BaseModel):
     id: str
     name: str
-    ruleset: Ruleset
     actors: List[Actor] = Field(default_factory=list)
     initiative_order: List[str] = Field(default_factory=list)  # List of actor IDs
     current_round: int = 0
@@ -73,7 +88,7 @@ class Encounter(BaseModel):
 
 class Campaign(BaseModel):
     name: str
-    ruleset: Ruleset
+    ruleset: str
     created_at: datetime = Field(default_factory=datetime.now)
     encounters: List[str] = Field(default_factory=list)  # List of encounter IDs
     actor_templates: List[Actor] = Field(default_factory=list)
@@ -95,3 +110,7 @@ class RollResult(BaseModel):
 
 class InitiativeOrderRequest(BaseModel):
     actor_ids: List[str]  # explicit ordering of actor IDs, GM-controlled
+
+
+class ReferenceImportRequest(BaseModel):
+    filename: str

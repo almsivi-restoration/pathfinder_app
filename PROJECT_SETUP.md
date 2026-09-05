@@ -1,4 +1,4 @@
-# Pathfinder Encounter Manager
+# Game Master's Workbench
 
 A comprehensive GM tool for managing Pathfinder/D&D encounters. Includes a GM dashboard for actor management, initiative tracking, and a separate player view that displays only permitted information.
 

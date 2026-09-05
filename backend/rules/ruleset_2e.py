@@ -3,6 +3,8 @@ Pathfinder 2e ruleset configuration.
 Defines skills, saves, and ability modifiers for 2e campaigns.
 """
 
+from .common import build_pathfinder_actor_sheet
+
 ABILITIES = ["str", "dex", "con", "int", "wis", "cha"]
 
 SKILLS_2E = {
@@ -30,9 +32,11 @@ SAVES_2E = ["fort", "ref", "will"]
 
 RULESET_CONFIG_2E = {
     "name": "Pathfinder 2e",
+    "reference_directory": "pathfinder_2e",
     "abilities": ABILITIES,
     "skills": SKILLS_2E,
     "saves": SAVES_2E,
     "max_level": 20,
     "ability_modifier_calc": lambda ability_score: (ability_score - 10) // 2,
+    "actor_sheet": build_pathfinder_actor_sheet(SKILLS_2E, SAVES_2E),
 }

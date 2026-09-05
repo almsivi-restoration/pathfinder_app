@@ -1,8 +1,12 @@
 import React from 'react';
+import { getSheetValue } from '../sheet';
 import '../styles/PlayerActorRow.css';
 
-function PlayerActorRow({ actor, position, isCurrent }) {
-  const healthPercentage = (actor.hp_current / actor.hp_max) * 100;
+function PlayerActorRow({ actor, position, isCurrent, rulesetConfig }) {
+  const resource = rulesetConfig?.actor_sheet?.player_resource;
+  const current = resource ? getSheetValue(actor.sheet, resource.current_key) : null;
+  const maximum = resource ? getSheetValue(actor.sheet, resource.max_key) : null;
+  const healthPercentage = maximum ? (current / maximum) * 100 : 0;
 
   // Determine color gradient: green -> yellow -> red
   let barColor = '#4CAF50'; // green
@@ -22,10 +26,10 @@ function PlayerActorRow({ actor, position, isCurrent }) {
           {actor.is_pc && <span className="pc-badge">PC</span>}
         </div>
 
-        <div className="health-bar-container">
+        {resource && <div className="health-bar-container">
           {actor.is_pc ? (
             <div className="health-text">
-              {actor.hp_current}/{actor.hp_max}
+              {current}/{maximum}
             </div>
           ) : (
             <>
@@ -40,7 +44,7 @@ function PlayerActorRow({ actor, position, isCurrent }) {
               </div>
             </>
           )}
-        </div>
+        </div>}
 
         {actor.effects && actor.effects.length > 0 && (
           <div className="effects-list">

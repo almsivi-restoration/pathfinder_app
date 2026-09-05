@@ -1,7 +1,7 @@
 {
-  "name": "pathfinder-encounter-manager",
-  "version": "0.1.0",
-  "description": "Encounter management system for Pathfinder tabletop RPG",
+  "name": "gm-workbench",
+  "version": "0.1.7",
+  "description": "Ruleset-neutral tabletop campaign and encounter manager",
   "private": true,
   "homepage": "./",
   "main": "public/electron.js",
@@ -50,8 +50,8 @@
     ]
   },
   "build": {
-    "appId": "com.pathfinder.encounter-manager",
-    "productName": "Pathfinder Encounter Manager",
+    "appId": "com.almsivi.gm-workbench",
+    "productName": "Game Master's Workbench",
     "files": [
       "build/**/*",
       "public/electron.js"

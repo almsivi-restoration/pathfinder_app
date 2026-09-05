@@ -3,6 +3,7 @@ import { useStore } from './store';
 import GMDashboard from './components/GMDashboard';
 import PlayerView from './components/PlayerView';
 import CampaignSelector from './pages/CampaignSelector';
+import Encyclopedia from './pages/Encyclopedia';
 import './App.css';
 
 function App() {
@@ -13,6 +14,11 @@ function App() {
   useEffect(() => {
     listCampaigns();
   }, [listCampaigns]);
+
+  useEffect(() => {
+    if (!window.electron?.onOpenEncyclopedia) return undefined;
+    return window.electron.onOpenEncyclopedia(() => setView('encyclopedia'));
+  }, []);
 
   // Determine view based on URL or state
   useEffect(() => {
@@ -32,6 +38,7 @@ function App() {
         <CampaignSelector onCampaignLoaded={() => setView('gm')} />
       )}
       {view === 'gm' && <GMDashboard />}
+      {view === 'encyclopedia' && <Encyclopedia onBack={() => setView('gm')} />}
       {view === 'player' && <PlayerView />}
     </div>
   );
