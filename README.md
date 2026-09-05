@@ -70,6 +70,37 @@ npm --prefix frontend start
 The backend runs at `http://127.0.0.1:8000`; the React development server runs at
 `http://localhost:3000` and Electron launches automatically.
 
+## Packaging An Installable Application
+
+Release builds ship the React bundle, a PyInstaller-frozen backend binary, and the bundled
+Linux Libertine fonts as an AppImage and a `.deb`. No Python or Node installation is required
+to run the packaged app.
+
+Build the backend binary:
+
+```bash
+cd backend && venv/bin/pyinstaller gm-workbench-backend.spec
+```
+
+Build the installers:
+
+```bash
+cd frontend && npm run build
+```
+
+Artifacts land in `frontend/dist/`. At runtime the Electron main process spawns the backend
+binary and points it at the per-user data directory (`~/.config/GM Workbench/data/` on
+Linux): campaigns persist under `data/campaigns/`, and reference PDFs belong under
+`data/reference_library/sources/<ruleset>/`. Reference PDFs are user-supplied and never ship
+with the application; the packaged app indexes whatever the user places there, exactly as the
+development layout does under `artifacts/local/`.
+
+The application icon is generated procedurally (no game assets) and can be regenerated with:
+
+```bash
+backend/venv/bin/python frontend/build-resources/generate_icon.py
+```
+
 ## Campaign Workflow
 
 1. Create or load a campaign and choose its ruleset.
@@ -84,8 +115,9 @@ persisted encounters after confirmation; it cannot be undone.
 
 ## Local References And Encyclopedia
 
-Rulebooks and other published reference PDFs remain local and are never committed. Store them in
-the directory named by their ruleset's `reference_directory` configuration. For Pathfinder 1e:
+Rulebooks and other published reference PDFs remain local and are never committed or shipped.
+In development, store them in the directory named by their ruleset's `reference_directory`
+configuration. For Pathfinder 1e:
 
 ```text
 artifacts/local/reference_library/sources/pathfinder_1e/

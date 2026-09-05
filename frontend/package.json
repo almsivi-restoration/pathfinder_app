@@ -1,6 +1,6 @@
 {
   "name": "gm-workbench",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "description": "Ruleset-neutral tabletop campaign and encounter manager",
   "private": true,
   "homepage": "./",
@@ -53,12 +53,30 @@
   "build": {
     "appId": "com.almsivi.gm-workbench",
     "productName": "Game Master's Workbench",
+    "icon": "public/icon.png",
     "files": [
       "build/**/*",
-      "public/electron.js"
+      "public/electron.js",
+      "public/preload.js"
     ],
     "directories": {
-      "buildResources": "public"
+      "buildResources": "public",
+      "output": "dist"
+    },
+    "extraResources": [
+      {
+        "from": "../backend/dist/gm-workbench-backend",
+        "to": "backend/gm-workbench-backend"
+      }
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility",
+      "icon": "public/icons",
+      "maintainer": "almsivi-restoration <almsivi-restoration@proton.me>"
     }
   }
 }

@@ -1,7 +1,14 @@
-"""Local-only, ruleset-scoped PDF reference indexing and search."""
+"""Local-only, ruleset-scoped PDF reference indexing and search.
+
+Reference PDFs are user-supplied and never ship with the app. In the packaged
+app the library root comes from GM_WORKBENCH_REFERENCE_DIR (Electron points it
+at the per-user data directory); in development it defaults to the repo's
+gitignored artifacts/local/reference_library tree.
+"""
 
 import hashlib
 import json
+import os
 import re
 import sqlite3
 from datetime import datetime, timezone
@@ -14,7 +21,9 @@ from pypdf import PdfReader
 class ReferenceLibrary:
     def __init__(self, root_dir: Optional[Path] = None):
         repository_dir = Path(__file__).resolve().parent.parent
-        self.root_dir = root_dir or repository_dir / "artifacts" / "local" / "reference_library"
+        env_dir = os.environ.get("GM_WORKBENCH_REFERENCE_DIR")
+        default_dir = Path(env_dir) if env_dir else repository_dir / "artifacts" / "local" / "reference_library"
+        self.root_dir = Path(root_dir) if root_dir else default_dir
 
     def available_sources(self, ruleset: str, source_directory: Optional[str] = None) -> List[str]:
         source_dir = self._source_dir(source_directory or ruleset)

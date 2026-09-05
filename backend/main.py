@@ -6,6 +6,7 @@ Provides REST API for campaign, encounter, actor, and initiative management.
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
+import os
 import uvicorn
 import random
 from uuid import uuid4
@@ -26,8 +27,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Data locations: env vars in the packaged app (Electron sets them to the
+# per-user data directory), repo-relative defaults in development.
+campaigns_dir = os.environ.get("GM_WORKBENCH_CAMPAIGNS_DIR", "./campaigns")
+
 # Initialize state manager
-state_manager = StateManager()
+state_manager = StateManager(campaigns_dir=campaigns_dir)
 reference_library = ReferenceLibrary()
 
 # ==================== Campaign Routes ====================
@@ -402,4 +407,10 @@ def health_check():
 # ==================== Main ====================
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Loopback-only by default: this is a single-machine desktop app, and the
+    # API has no authentication. Override with env vars if ever needed.
+    uvicorn.run(
+        app,
+        host=os.environ.get("GM_WORKBENCH_HOST", "127.0.0.1"),
+        port=int(os.environ.get("GM_WORKBENCH_PORT", "8000")),
+    )

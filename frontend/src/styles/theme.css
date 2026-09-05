@@ -1,3 +1,37 @@
+/* Bundled Linux Libertine (OFL — see src/assets/fonts/OFL-LICENSE.txt). Family names
+   match the system package (fonts-linuxlibertine), so a locally installed copy and
+   the bundled copy are interchangeable; the bundled faces win by load order. */
+@font-face {
+  font-family: 'Linux Libertine O';
+  src: url('../assets/fonts/LinLibertine_R.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Linux Libertine O';
+  src: url('../assets/fonts/LinLibertine_RB.otf') format('opentype');
+  font-weight: bold;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Linux Libertine O';
+  src: url('../assets/fonts/LinLibertine_RI.otf') format('opentype');
+  font-weight: normal;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'Linux Libertine O';
+  src: url('../assets/fonts/LinLibertine_RBI.otf') format('opentype');
+  font-weight: bold;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'Linux Libertine Display O';
+  src: url('../assets/fonts/LinLibertine_DR.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 /* Morrowind-inspired UI theme. Original CSS approximation — no game assets used.
    The game's working UI is near-black charcoal windows set in a carved
    beige-stone frame — thicker across the top, where the window's nameplate
@@ -54,7 +88,8 @@
   --mw-danger-bright: #c23b3b;
 
   --mw-shadow: rgba(0, 0, 0, 0.65);
-  /* Linux Libertine — installed locally via apt (fonts-linuxlibertine), not bundled/CDN. */
+  /* Linux Libertine — bundled under OFL (see @font-face above); Georgia is the
+     last-ditch fallback if font loading fails entirely. */
   --mw-font-display: 'Linux Libertine Display O', 'Linux Libertine O', Georgia, serif;
   --mw-font-body: 'Linux Libertine O', Georgia, serif;
 }

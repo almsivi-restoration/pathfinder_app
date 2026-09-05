@@ -31,6 +31,8 @@ MANIFEST
 #   before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+# ...but the backend packaging spec is hand-maintained source, keep it tracked
+!backend/gm-workbench-backend.spec
 
 # Installer logs
 pip-log.txt
@@ -229,3 +231,9 @@ frontend/build/
 
 # Runtime campaign save data (user-generated, not source)
 backend/campaigns/
+
+# PyInstaller intermediate build tree (the dist/ output is rebuilt on demand)
+backend/build/
+
+# Editor-local settings
+.vscode/
