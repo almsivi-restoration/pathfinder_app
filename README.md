@@ -120,6 +120,31 @@ Compile the React application:
 cd frontend && npm run react-build
 ```
 
+## Versioning And Releases
+
+Releases use the `vX.Y.Z` format:
+
+- **Major (`X`)**: increment for breaking changes or a revision that is not compatible
+	with the previous release. Reset `Y` and `Z` to `0`.
+- **Minor (`Y`)**: increment for backward-compatible features or substantial enhancements.
+	Reset `Z` to `0`.
+- **Patch (`Z`)**: increment for backward-compatible bug fixes, documentation, tests, or
+	small internal improvements that do not add a feature or break compatibility.
+
+When cutting a release, determine the next number from the changes being committed and use
+the highest applicable increment if a release contains multiple kinds of changes. Before
+choosing the number, inspect the latest existing tag and the complete set of commits since
+that tag; do not assume every release is a patch release or choose a number from the commit
+count alone.
+
+The release sequence is:
+
+1. Determine the next `vX.Y.Z` using the rules above.
+2. Update any user-facing version references required by the release.
+3. Run the relevant backend and frontend tests and builds.
+4. Create an annotated tag with the selected version and push the branch and tag.
+5. Create the corresponding GitHub release using the same tag and summarize the changes.
+
 ## API Overview
 
 ### Campaigns
