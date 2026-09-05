@@ -1,6 +1,6 @@
 {
   "name": "gm-workbench",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Ruleset-neutral tabletop campaign and encounter manager",
   "private": true,
   "homepage": "./",

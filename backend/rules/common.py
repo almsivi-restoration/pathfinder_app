@@ -191,3 +191,143 @@ def build_pathfinder_1e_actor_sheet(skills: Dict[str, str], saves: Iterable[str]
         ]},
     ])
     return actor_sheet
+
+
+def build_pathfinder_2e_actor_sheet(skills: Dict[str, str], saves: Iterable[str]) -> Dict[str, Any]:
+    """Return a field definition matching the Pathfinder 2e four-page character sheet."""
+    actor_sheet = build_pathfinder_actor_sheet({}, [])
+    fields = actor_sheet["fields"]
+    fields.extend([
+        {"key": "character.level", "label": "Level", "type": "number", "default": 1, "section": "Character"},
+        {"key": "character.xp", "label": "XP", "type": "number", "default": 0, "section": "Character"},
+        {"key": "character.hero_points", "label": "Hero Points", "type": "number", "default": 0, "section": "Character"},
+        {"key": "character.ancestry", "label": "Ancestry", "type": "text", "default": "", "section": "Character"},
+        {"key": "character.heritage_traits", "label": "Heritage & Traits", "type": "textarea", "default": "", "section": "Character"},
+        {"key": "character.size", "label": "Size", "type": "text", "default": "Medium", "section": "Character"},
+        {"key": "character.background", "label": "Background", "type": "text", "default": "", "section": "Character"},
+        {"key": "character.background_notes", "label": "Background Notes", "type": "textarea", "default": "", "section": "Character"},
+        {"key": "character.class", "label": "Class", "type": "text", "default": "", "section": "Character"},
+        {"key": "character.class_notes", "label": "Class Notes", "type": "textarea", "default": "", "section": "Character"},
+        {"key": "hp.temporary", "label": "Temporary HP", "type": "number", "default": 0, "section": "Hit Points & Conditions"},
+        {"key": "hp.dying", "label": "Dying", "type": "number", "default": 0, "section": "Hit Points & Conditions"},
+        {"key": "hp.wounded", "label": "Wounded", "type": "number", "default": 0, "section": "Hit Points & Conditions"},
+        {"key": "defenses.resistances_immunities", "label": "Resistances & Immunities", "type": "textarea", "default": "", "section": "Hit Points & Conditions"},
+        {"key": "conditions", "label": "Conditions", "type": "textarea", "default": "", "section": "Hit Points & Conditions"},
+        {"key": "defenses.shield_hardness", "label": "Shield Hardness", "type": "number", "default": 0, "section": "Defenses"},
+        {"key": "defenses.shield_max_hp", "label": "Shield Max HP", "type": "number", "default": 0, "section": "Defenses"},
+        {"key": "defenses.shield_bt", "label": "Shield BT", "type": "number", "default": 0, "section": "Defenses"},
+        {"key": "defenses.shield_hp", "label": "Shield HP", "type": "number", "default": 0, "section": "Defenses"},
+        {"key": "perception.total", "label": "Perception", "type": "number", "default": 0, "section": "Perception & Movement"},
+        {"key": "perception.notes", "label": "Senses & Notes", "type": "textarea", "default": "", "section": "Perception & Movement"},
+        {"key": "movement.special", "label": "Special Movement", "type": "textarea", "default": "", "section": "Perception & Movement"},
+        {"key": "saves", "label": "Saving Throws", "type": "collection", "section": "Defenses", "default": [
+            {"name": "Fortitude", "key_ability": "CON", "rank": "Untrained", "total": 0, "proficiency": 0, "item": 0},
+            {"name": "Reflex", "key_ability": "DEX", "rank": "Untrained", "total": 0, "proficiency": 0, "item": 0},
+            {"name": "Will", "key_ability": "WIS", "rank": "Untrained", "total": 0, "proficiency": 0, "item": 0},
+        ], "item_fields": [
+            {"key": "name", "label": "Save", "type": "text", "default": ""},
+            {"key": "key_ability", "label": "Key", "type": "text", "default": ""},
+            {"key": "rank", "label": "Rank", "type": "text", "default": "Untrained"},
+            {"key": "total", "label": "Total", "type": "number", "default": 0},
+            {"key": "proficiency", "label": "Prof.", "type": "number", "default": 0},
+            {"key": "item", "label": "Item", "type": "number", "default": 0},
+        ]},
+        {"key": "skills", "label": "Skills", "type": "collection", "section": "Skills", "default": [
+            {"name": skill.replace("_", " ").title(), "key_ability": ability.upper(), "rank": "Untrained", "total": 0, "proficiency": 0, "item": 0, "armor": 0, "notes": ""}
+            for skill, ability in skills.items()
+        ], "item_fields": [
+            {"key": "name", "label": "Skill", "type": "text", "default": ""},
+            {"key": "key_ability", "label": "Key", "type": "text", "default": ""},
+            {"key": "rank", "label": "Rank", "type": "text", "default": "Untrained"},
+            {"key": "total", "label": "Total", "type": "number", "default": 0},
+            {"key": "proficiency", "label": "Prof.", "type": "number", "default": 0},
+            {"key": "item", "label": "Item", "type": "number", "default": 0},
+            {"key": "armor", "label": "Armor", "type": "number", "default": 0},
+            {"key": "notes", "label": "Notes", "type": "text", "default": ""},
+        ]},
+        {"key": "strikes", "label": "Strikes", "type": "collection", "section": "Strikes", "default": [], "item_fields": [
+            {"key": "category", "label": "Melee / Ranged", "type": "text", "default": "Melee"},
+            {"key": "name", "label": "Weapon", "type": "text", "default": ""},
+            {"key": "actions", "label": "Actions", "type": "text", "default": ""},
+            {"key": "attack_bonus", "label": "Attack", "type": "number", "default": 0},
+            {"key": "damage", "label": "Damage", "type": "text", "default": ""},
+            {"key": "damage_type", "label": "Type", "type": "text", "default": ""},
+            {"key": "traits_notes", "label": "Traits & Notes", "type": "text", "default": ""},
+        ]},
+        {"key": "proficiencies", "label": "Armor & Weapon Proficiencies", "type": "collection", "section": "Proficiencies", "default": [], "item_fields": [
+            {"key": "category", "label": "Category", "type": "text", "default": ""},
+            {"key": "name", "label": "Name", "type": "text", "default": ""},
+            {"key": "rank", "label": "Rank", "type": "text", "default": "Untrained"},
+            {"key": "notes", "label": "Notes", "type": "text", "default": ""},
+        ]},
+        {"key": "class_dc", "label": "Class DC", "type": "number", "default": 10, "section": "Proficiencies"},
+        {"key": "ancestry_features", "label": "Ancestry & General Feats", "type": "collection", "section": "Features", "default": [], "item_fields": [
+            {"key": "level", "label": "Level", "type": "number", "default": 1},
+            {"key": "type", "label": "Type", "type": "text", "default": "Ancestry Feat"},
+            {"key": "name", "label": "Name", "type": "text", "default": ""},
+            {"key": "boosts", "label": "Boosts", "type": "text", "default": ""},
+        ]},
+        {"key": "class_features", "label": "Class Feats & Features", "type": "collection", "section": "Features", "default": [], "item_fields": [
+            {"key": "level", "label": "Level", "type": "number", "default": 1},
+            {"key": "type", "label": "Type", "type": "text", "default": "Class Feat"},
+            {"key": "name", "label": "Name", "type": "text", "default": ""},
+        ]},
+        {"key": "inventory", "label": "Inventory", "type": "collection", "section": "Inventory & Wealth", "default": [], "item_fields": [
+            {"key": "location", "label": "Held / Worn / Consumable", "type": "text", "default": "Held"},
+            {"key": "name", "label": "Item", "type": "text", "default": ""},
+            {"key": "bulk", "label": "Bulk", "type": "text", "default": ""},
+            {"key": "invested", "label": "Invested", "type": "checkbox", "default": False},
+        ]},
+        {"key": "bulk.current", "label": "Current Bulk", "type": "text", "default": "", "section": "Inventory & Wealth"},
+        {"key": "bulk.encumbered", "label": "Encumbered Bulk", "type": "number", "default": 0, "section": "Inventory & Wealth"},
+        {"key": "bulk.maximum", "label": "Maximum Bulk", "type": "number", "default": 0, "section": "Inventory & Wealth"},
+        {"key": "wealth.cp", "label": "CP", "type": "number", "default": 0, "section": "Inventory & Wealth"},
+        {"key": "wealth.sp", "label": "SP", "type": "number", "default": 0, "section": "Inventory & Wealth"},
+        {"key": "wealth.gp", "label": "GP", "type": "number", "default": 0, "section": "Inventory & Wealth"},
+        {"key": "wealth.pp", "label": "PP", "type": "number", "default": 0, "section": "Inventory & Wealth"},
+        {"key": "character_sketch", "label": "Character Sketch", "type": "textarea", "default": "", "section": "Notes"},
+        {"key": "origin_appearance", "label": "Origin & Appearance", "type": "textarea", "default": "", "section": "Notes"},
+        {"key": "personality", "label": "Personality", "type": "textarea", "default": "", "section": "Notes"},
+        {"key": "campaign_notes", "label": "Campaign Notes", "type": "textarea", "default": "", "section": "Notes"},
+        {"key": "actions", "label": "Actions & Activities", "type": "collection", "section": "Actions", "default": [], "item_fields": [
+            {"key": "name", "label": "Name", "type": "text", "default": ""},
+            {"key": "actions", "label": "Actions", "type": "text", "default": ""},
+            {"key": "traits", "label": "Traits", "type": "text", "default": ""},
+            {"key": "page", "label": "Page", "type": "text", "default": ""},
+            {"key": "effects", "label": "Effects", "type": "text", "default": ""},
+        ]},
+        {"key": "reactions", "label": "Free Actions & Reactions", "type": "collection", "section": "Actions", "default": [], "item_fields": [
+            {"key": "name", "label": "Name", "type": "text", "default": ""},
+            {"key": "trigger", "label": "Trigger", "type": "text", "default": ""},
+            {"key": "traits", "label": "Traits", "type": "text", "default": ""},
+            {"key": "page", "label": "Page", "type": "text", "default": ""},
+            {"key": "effects", "label": "Effects", "type": "text", "default": ""},
+        ]},
+        {"key": "spellcasting.tradition", "label": "Magical Tradition", "type": "text", "default": "", "section": "Spellcasting"},
+        {"key": "spellcasting.caster_type", "label": "Prepared / Spontaneous", "type": "text", "default": "", "section": "Spellcasting"},
+        {"key": "spellcasting.attack", "label": "Spell Attack", "type": "number", "default": 0, "section": "Spellcasting"},
+        {"key": "spellcasting.dc", "label": "Spell DC", "type": "number", "default": 10, "section": "Spellcasting"},
+        {"key": "spellcasting.focus_points", "label": "Focus Points", "type": "number", "default": 0, "section": "Spellcasting"},
+        {"key": "spells", "label": "Spells", "type": "collection", "section": "Spellcasting", "default": [], "item_fields": [
+            {"key": "name", "label": "Name", "type": "text", "default": ""},
+            {"key": "rank", "label": "Rank", "type": "number", "default": 1},
+            {"key": "actions", "label": "Actions", "type": "text", "default": ""},
+            {"key": "prepared", "label": "Prepared", "type": "checkbox", "default": False},
+        ]},
+        {"key": "focus_spells", "label": "Focus Spells", "type": "collection", "section": "Spellcasting", "default": [], "item_fields": [
+            {"key": "name", "label": "Name", "type": "text", "default": ""},
+            {"key": "rank", "label": "Rank", "type": "number", "default": 1},
+            {"key": "actions", "label": "Actions", "type": "text", "default": ""},
+        ]},
+        {"key": "innate_spells", "label": "Innate Spells", "type": "collection", "section": "Spellcasting", "default": [], "item_fields": [
+            {"key": "name", "label": "Name", "type": "text", "default": ""},
+            {"key": "actions", "label": "Actions", "type": "text", "default": ""},
+            {"key": "frequency", "label": "Frequency", "type": "text", "default": ""},
+        ]},
+        {"key": "rituals", "label": "Rituals", "type": "collection", "section": "Spellcasting", "default": [], "item_fields": [
+            {"key": "name", "label": "Name", "type": "text", "default": ""},
+            {"key": "rank", "label": "Rank", "type": "number", "default": 1},
+            {"key": "cost", "label": "Cost", "type": "text", "default": ""},
+        ]},
+    ])
+    return actor_sheet

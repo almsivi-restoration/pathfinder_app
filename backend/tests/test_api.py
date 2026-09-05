@@ -92,6 +92,18 @@ def test_ruleset_config_endpoint(client):
     assert any(field["key"] == "weapons" for field in body["actor_sheet"]["fields"])
 
 
+def test_pathfinder_2e_ruleset_exposes_its_own_character_sheet(client):
+    client.post("/api/campaign/new", params={"name": "2e Rules Camp", "ruleset": "2e"})
+
+    response = client.get("/api/rules/current")
+
+    assert response.status_code == 200
+    fields = response.json()["actor_sheet"]["fields"]
+    assert any(field["key"] == "character.hero_points" for field in fields)
+    assert any(field["key"] == "strikes" for field in fields)
+    assert any(field["key"] == "focus_spells" for field in fields)
+
+
 def test_reference_routes_require_and_scope_to_the_current_campaign(client, tmp_path):
     import main
     from reference_library import ReferenceLibrary
