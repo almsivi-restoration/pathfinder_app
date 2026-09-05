@@ -37,17 +37,19 @@
   justify-content: center;
   gap: 10px;
   padding: 10px;
-  background: var(--mw-parchment-light);
-  border: 2px solid var(--mw-border-dark);
-  color: var(--mw-ink);
+  background: var(--mw-panel-lo);
+  border: 1px solid var(--mw-frame);
+  box-shadow: 0 0 0 1px var(--mw-frame-dark), inset 0 0 0 1px var(--mw-frame-dark);
+  color: var(--mw-text);
 }
 
 .reader-page {
   display: flex;
   justify-content: center;
   padding: 18px;
-  background: #25201a;
-  border: 2px solid var(--mw-border-dark);
+  background: var(--mw-panel-lo);
+  border: 2px solid var(--mw-frame);
+  box-shadow: 0 0 0 1px var(--mw-frame-dark);
   overflow: auto;
 }
 

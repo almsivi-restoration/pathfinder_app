@@ -32,17 +32,20 @@
 .reference-sources,
 .reference-search {
   padding: 16px;
-  background: linear-gradient(160deg, var(--mw-parchment-light), var(--mw-parchment) 60%, var(--mw-parchment-dark));
-  border: 2px solid var(--mw-border-dark);
-  outline: 1px solid var(--mw-gold);
-  outline-offset: -4px;
-  color: var(--mw-ink);
+  background: linear-gradient(165deg, var(--mw-panel-hi), var(--mw-panel) 55%, var(--mw-panel-lo));
+  border: 2px solid var(--mw-frame);
+  border-top-width: 10px;
+  box-shadow:
+    0 0 0 1px var(--mw-frame-dark),
+    inset 0 0 0 1px var(--mw-frame-dark),
+    inset 0 0 22px rgba(0, 0, 0, 0.55),
+    0 4px 12px var(--mw-shadow);
+  color: var(--mw-text);
 }
 
 .reference-sources h2,
 .reference-search h2 {
-  color: var(--mw-ink);
-  text-shadow: none;
+  color: var(--mw-text-bright);
 }
 
 .reference-source-list {
@@ -55,7 +58,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 10px 0;
-  border-bottom: 1px solid var(--mw-parchment-dark);
+  border-bottom: 1px solid var(--mw-border-dark);
 }
 
 .reference-source-actions {
@@ -81,7 +84,7 @@
 }
 
 .reference-result-meta {
-  color: var(--mw-ink-light);
+  color: var(--mw-text-dim);
   font-size: 12px;
   font-variant: small-caps;
 }

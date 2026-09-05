@@ -15,13 +15,17 @@
   height: 100%;
   margin: auto;
   padding: 20px;
-  background: linear-gradient(160deg, var(--mw-parchment-light), var(--mw-parchment) 60%, var(--mw-parchment-dark));
-  border: 2px solid var(--mw-border-dark);
-  outline: 1px solid var(--mw-gold);
-  outline-offset: -4px;
+  background: linear-gradient(165deg, var(--mw-panel-hi), var(--mw-panel) 55%, var(--mw-panel-lo));
+  border: 2px solid var(--mw-frame);
+  border-top-width: 10px;
+  box-shadow:
+    0 0 0 1px var(--mw-frame-dark),
+    inset 0 0 0 1px var(--mw-frame-dark),
+    inset 0 0 22px rgba(0, 0, 0, 0.55),
+    0 4px 12px var(--mw-shadow);
   border-radius: 2px;
   overflow-y: auto;
-  color: var(--mw-ink);
+  color: var(--mw-text);
 }
 
 .actor-form-header {
@@ -33,8 +37,7 @@
 }
 
 .actor-form-header h2 {
-  color: var(--mw-ink);
-  text-shadow: none;
+  color: var(--mw-text-bright);
 }
 
 .form-row {
@@ -52,14 +55,14 @@
 .field-label {
   font-size: 11px;
   font-variant: small-caps;
-  color: var(--mw-ink-light);
+  color: var(--mw-text-dim);
 }
 
 .checkbox-field {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--mw-ink);
+  color: var(--mw-text);
 }
 
 .sheet-section {
@@ -70,8 +73,7 @@
 .sheet-section h4 {
   margin: 0 0 8px 0;
   font-size: 14px;
-  color: var(--mw-ink);
-  text-shadow: none;
+  color: var(--mw-text-bright);
 }
 
 .sheet-field {
@@ -82,7 +84,7 @@
 
 .sheet-field .field-label {
   font-size: 11px;
-  color: var(--mw-ink-light);
+  color: var(--mw-text-dim);
 }
 
 .sheet-field input {
@@ -109,7 +111,7 @@
 }
 
 .sheet-collection {
-  border-top: 1px solid var(--mw-parchment-dark);
+  border-top: 1px solid var(--mw-border-dark);
   padding-top: 8px;
   min-width: 0;
   width: 100%;
@@ -129,7 +131,7 @@
   min-width: 760px;
   gap: 6px;
   align-items: end;
-  border-top: 1px solid var(--mw-parchment-dark);
+  border-top: 1px solid var(--mw-border-dark);
   padding: 8px 0;
 }
 
@@ -148,7 +150,7 @@
   position: sticky;
   bottom: -20px;
   padding: 12px 0 0;
-  background: var(--mw-parchment);
+  background: var(--mw-panel-lo);
   border-top: 1px solid var(--mw-border-dark);
 }
 

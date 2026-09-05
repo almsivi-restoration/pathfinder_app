@@ -1,22 +1,22 @@
 .actor-row {
   display: flex;
   padding: 8px 12px;
-  background: var(--mw-parchment-light);
-  border-bottom: 1px solid var(--mw-parchment-dark);
+  background: transparent;
+  border-bottom: 1px solid var(--mw-border-dark);
   align-items: center;
   font-size: 14px;
-  color: var(--mw-ink);
+  color: var(--mw-text);
   transition: background-color 0.2s;
 }
 
 .actor-row:hover {
-  background: var(--mw-parchment);
+  background: rgba(179, 163, 126, 0.1);
 }
 
 .actor-row .col-name {
   flex: 2;
   cursor: pointer;
-  color: var(--mw-ink);
+  color: var(--mw-text-bright);
   font-weight: 700;
 }
 
@@ -28,7 +28,7 @@
   flex: 1;
   font-size: 11px;
   font-variant: small-caps;
-  color: var(--mw-ink-light);
+  color: var(--mw-text-dim);
 }
 
 .actor-row .col-stat {
@@ -38,7 +38,7 @@
 
 .actor-row .editable-stat {
   cursor: pointer;
-  color: var(--mw-health);
+  color: var(--mw-health-bright);
   font-weight: 700;
 }
 

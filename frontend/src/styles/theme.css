@@ -1,22 +1,43 @@
-/* Morrowind-inspired parchment/wood theme. Original CSS approximation — no game assets used. */
+/* Morrowind-inspired UI theme. Original CSS approximation — no game assets used.
+   The game's working UI is near-black charcoal windows set in a carved
+   beige-stone frame — thicker across the top, where the window's nameplate
+   sits — with pale straw text. Parchment is reserved for books, scrolls,
+   and paper surfaces; gold is an accent (hover, active, links), not a surface. */
 :root {
-  /* Parchment panel surface */
+  /* Dark native chrome: dropdown popups, select arrows, checkboxes, scrollbars */
+  color-scheme: dark;
+
+  /* Parchment — paper surfaces only (books, scrolls, documents) */
   --mw-parchment-light: #cdb37e;
   --mw-parchment: #b89c68;
   --mw-parchment-dark: #9c8254;
   --mw-parchment-shadow: #6b5535;
 
-  /* Dark wood / banner surfaces */
-  --mw-wood-dark: #1c140c;
-  --mw-wood: #2b1e10;
-  --mw-wood-light: #3c2a16;
+  /* Dark wood / banner surfaces — desaturated charcoal, not chocolate */
+  --mw-wood-dark: #131110;
+  --mw-wood: #1d1a16;
+  --mw-wood-light: #2a2521;
 
-  /* Borders & accents */
-  --mw-gold: #c9a227;
-  --mw-gold-bright: #e8c76a;
-  --mw-border-dark: #4a3417;
+  /* Menu panels: near-black warm charcoal */
+  --mw-panel-hi: #1f1c17;
+  --mw-panel: #14110d;
+  --mw-panel-lo: #0c0a07;
+  --mw-well: #090705;
 
-  /* Text */
+  /* Carved stone frame: beige band edged in black etch */
+  --mw-frame: #b3a37e;
+  --mw-frame-lo: #77694e;
+  --mw-frame-dark: #060504;
+  --mw-border-dark: #201b13;
+
+  /* Gold is an accent only: hover, active turn, links, primary actions */
+  --mw-gold: #b08d4f;
+  --mw-gold-bright: #e3c87a;
+
+  /* Text: pale straw on dark panels, ink on parchment */
+  --mw-text: #cec6aa;
+  --mw-text-dim: #928a70;
+  --mw-text-bright: #ece4c4;
   --mw-ink: #2b1d0e;
   --mw-ink-light: #4a3417;
   --mw-parchment-text: #efe0bb;
@@ -38,20 +59,25 @@
   --mw-font-body: 'Linux Libertine O', Georgia, serif;
 }
 
-/* Reusable panel: parchment background, double border, inset shadow */
+/* Reusable window: near-black panel in a carved stone frame. The frame runs
+   thicker across the top — in the game, that is where the nameplate sits. */
 .mw-panel {
-  background: linear-gradient(160deg, var(--mw-parchment-light), var(--mw-parchment) 60%, var(--mw-parchment-dark));
-  border: 2px solid var(--mw-border-dark);
-  outline: 1px solid var(--mw-gold);
-  outline-offset: -4px;
-  box-shadow: 0 4px 12px var(--mw-shadow), inset 0 0 24px rgba(107, 85, 53, 0.35);
-  color: var(--mw-ink);
+  background: linear-gradient(165deg, var(--mw-panel-hi), var(--mw-panel) 55%, var(--mw-panel-lo));
+  border: 2px solid var(--mw-frame);
+  border-top-width: 10px;
+  box-shadow:
+    0 0 0 1px var(--mw-frame-dark),
+    inset 0 0 0 1px var(--mw-frame-dark),
+    inset 0 0 22px rgba(0, 0, 0, 0.55),
+    0 4px 12px var(--mw-shadow);
+  color: var(--mw-text);
 }
 
-/* Reusable header/nameplate banner: dark wood bar with centered gold small-caps title */
+/* Reusable header/nameplate banner: dark strip with centered gold small-caps title */
 .mw-banner {
   background: linear-gradient(180deg, var(--mw-wood-light), var(--mw-wood-dark));
-  border-bottom: 2px solid var(--mw-gold);
+  border-bottom: 2px solid var(--mw-frame);
+  box-shadow: inset 0 -1px 0 var(--mw-frame-dark);
   color: var(--mw-gold-bright);
   font-family: var(--mw-font-display);
   font-variant: small-caps;

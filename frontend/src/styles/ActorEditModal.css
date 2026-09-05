@@ -12,14 +12,17 @@
   width: min(1180px, 92vw);
   max-height: 92vh;
   overflow-y: auto;
-  background: linear-gradient(160deg, var(--mw-parchment-light), var(--mw-parchment) 60%, var(--mw-parchment-dark));
-  border: 2px solid var(--mw-border-dark);
-  outline: 1px solid var(--mw-gold);
-  outline-offset: -4px;
-  box-shadow: 0 8px 24px var(--mw-shadow);
+  background: linear-gradient(165deg, var(--mw-panel-hi), var(--mw-panel) 55%, var(--mw-panel-lo));
+  border: 2px solid var(--mw-frame);
+  border-top-width: 10px;
+  box-shadow:
+    0 0 0 1px var(--mw-frame-dark),
+    inset 0 0 0 1px var(--mw-frame-dark),
+    inset 0 0 22px rgba(0, 0, 0, 0.55),
+    0 8px 24px var(--mw-shadow);
   border-radius: 2px;
   padding: 24px;
-  color: var(--mw-ink);
+  color: var(--mw-text);
 }
 
 .actor-edit-header {
@@ -34,14 +37,13 @@
 .actor-edit-header h2 {
   margin: 0;
   font-size: 20px;
-  color: var(--mw-ink);
-  text-shadow: none;
+  color: var(--mw-text-bright);
 }
 
 .btn-close {
   background: none;
   border: none;
-  color: var(--mw-ink);
+  color: var(--mw-text-dim);
   font-size: 18px;
   cursor: pointer;
   padding: 4px 8px;
@@ -78,8 +80,7 @@
 .edit-section h4 {
   margin: 0 0 8px 0;
   font-size: 14px;
-  color: var(--mw-ink);
-  text-shadow: none;
+  color: var(--mw-text-bright);
 }
 
 .edit-list {
@@ -94,7 +95,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 6px 10px;
-  background: var(--mw-parchment-dark);
+  background: var(--mw-well);
+  border: 1px solid var(--mw-border-dark);
   border-radius: 2px;
   font-size: 13px;
 }

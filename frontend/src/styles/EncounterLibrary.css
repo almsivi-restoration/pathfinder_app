@@ -8,7 +8,7 @@
 .encounter-library.empty {
   padding: 12px;
   border: 1px dashed var(--mw-border-dark);
-  color: var(--mw-ink-light);
+  color: var(--mw-text-dim);
   font-style: italic;
 }
 
@@ -19,7 +19,7 @@
   gap: 12px;
   padding: 10px 12px;
   border: 1px solid var(--mw-border-dark);
-  background: var(--mw-parchment-dark);
+  background: var(--mw-well);
 }
 
 .encounter-library-row strong,
@@ -29,7 +29,7 @@
 
 .encounter-library-row span {
   margin-top: 2px;
-  color: var(--mw-ink-light);
+  color: var(--mw-text-dim);
   font-size: 12px;
 }
 

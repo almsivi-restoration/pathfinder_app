@@ -7,7 +7,7 @@
 body {
   font-family: var(--mw-font-body);
   background: radial-gradient(ellipse at center, var(--mw-wood-light) 0%, var(--mw-wood-dark) 100%);
-  color: var(--mw-parchment-text);
+  color: var(--mw-text);
 }
 
 .App {
@@ -16,12 +16,13 @@ body {
   overflow: hidden;
 }
 
-/* Buttons */
+/* Buttons: small framed boxes — beige frame, black etch, dark fill, straw text */
 .btn {
   padding: 8px 16px;
-  border: 2px solid var(--mw-border-dark);
-  outline: 1px solid var(--mw-gold);
-  outline-offset: -3px;
+  border: 1px solid var(--mw-frame);
+  box-shadow:
+    0 0 0 1px var(--mw-frame-dark),
+    inset 0 0 0 1px var(--mw-frame-dark);
   border-radius: 2px;
   cursor: pointer;
   font-family: var(--mw-font-display);
@@ -29,15 +30,19 @@ body {
   letter-spacing: 0.5px;
   font-size: 14px;
   font-weight: 700;
-  color: var(--mw-parchment-text);
+  color: var(--mw-text);
   background: linear-gradient(180deg, var(--mw-wood-light), var(--mw-wood-dark));
   text-shadow: 0 1px 1px #000;
   transition: all 0.2s;
 }
 
 .btn:hover:not(:disabled) {
-  background: linear-gradient(180deg, #4a331b, var(--mw-wood-light));
-  box-shadow: 0 0 8px var(--mw-gold-bright);
+  background: linear-gradient(180deg, #37312a, var(--mw-wood-light));
+  color: var(--mw-gold-bright);
+  box-shadow:
+    0 0 0 1px var(--mw-frame-dark),
+    inset 0 0 0 1px var(--mw-frame-dark),
+    0 0 8px rgba(227, 200, 122, 0.45);
 }
 
 .btn:disabled {
@@ -54,12 +59,14 @@ body {
   color: var(--mw-parchment-text);
 }
 
+/* Compact actions keep the outline-accent mechanism: variant classes
+   (btn-edit, btn-add, ...) override outline-color/color only. */
 .btn-small {
   padding: 4px 8px;
   font-size: 12px;
   font-family: var(--mw-font-display);
   font-variant: small-caps;
-  border: 2px solid var(--mw-border-dark);
+  border: 1px solid var(--mw-frame-dark);
   outline: 1px solid var(--mw-danger);
   outline-offset: -2px;
   border-radius: 2px;
@@ -79,16 +86,17 @@ body {
   cursor: not-allowed;
 }
 
-/* Form inputs */
+/* Form inputs: dark inset wells, straw text — like the game's name field */
 input[type='text'],
 input[type='number'],
 select,
 textarea {
   padding: 8px;
   border: 1px solid var(--mw-border-dark);
+  box-shadow: 0 0 0 1px var(--mw-frame-dark), inset 0 2px 6px rgba(0, 0, 0, 0.55);
   border-radius: 2px;
-  background-color: var(--mw-parchment-light);
-  color: var(--mw-ink);
+  background-color: var(--mw-well);
+  color: var(--mw-text-bright);
   font-family: var(--mw-font-body);
   font-size: 14px;
 }
@@ -99,7 +107,13 @@ select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--mw-gold);
-  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.25);
+  box-shadow: 0 0 0 1px var(--mw-frame-dark), inset 0 2px 6px rgba(0, 0, 0, 0.55), 0 0 6px rgba(227, 200, 122, 0.35);
+}
+
+/* Keep the native dropdown popup readable even where color-scheme is ignored */
+select option {
+  background-color: var(--mw-panel);
+  color: var(--mw-text-bright);
 }
 
 label {
@@ -121,12 +135,14 @@ h1, h2, h3, h4 {
   text-shadow: 0 1px 2px #000;
 }
 
+/* Message box: dark framed panel like the game's "Ok" popups */
 .operation-message {
   margin: 10px 0;
   padding: 8px 12px;
-  border: 1px solid var(--mw-border-dark);
-  background: var(--mw-parchment-dark);
-  color: var(--mw-ink);
+  border: 1px solid var(--mw-frame);
+  box-shadow: 0 0 0 1px var(--mw-frame-dark), inset 0 0 0 1px var(--mw-frame-dark);
+  background: var(--mw-panel-lo);
+  color: var(--mw-text);
 }
 
 .operation-message.error {
@@ -138,21 +154,22 @@ h1, h2, h3, h4 {
   border-color: var(--mw-fatigue);
 }
 
-/* Scroll */
+/* Scroll: dark track, wood thumb with a bronze edge */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--mw-wood-dark);
+  background: var(--mw-well);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--mw-gold);
-  border-radius: 4px;
+  background: var(--mw-wood-light);
+  border: 1px solid var(--mw-frame-lo);
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--mw-gold-bright);
+  background: var(--mw-gold);
 }

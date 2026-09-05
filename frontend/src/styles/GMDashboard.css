@@ -11,7 +11,8 @@
   align-items: center;
   padding: 12px 16px;
   background: linear-gradient(180deg, var(--mw-wood-light), var(--mw-wood-dark));
-  border-bottom: 2px solid var(--mw-gold);
+  border-bottom: 2px solid var(--mw-frame);
+  box-shadow: inset 0 -1px 0 var(--mw-frame-dark);
 }
 
 .header-left {
@@ -29,7 +30,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--mw-parchment-text);
+  color: var(--mw-text);
   font-family: var(--mw-font-display);
 }
 
@@ -71,20 +72,22 @@
   flex: 1;
   gap: 16px;
   padding: 24px;
-  background: linear-gradient(160deg, var(--mw-parchment-light), var(--mw-parchment) 60%, var(--mw-parchment-dark));
-  border: 2px solid var(--mw-border-dark);
-  outline: 1px solid var(--mw-gold);
-  outline-offset: -4px;
-  box-shadow: 0 4px 12px var(--mw-shadow), inset 0 0 24px rgba(107, 85, 53, 0.35);
-  color: var(--mw-ink);
+  background: linear-gradient(165deg, var(--mw-panel-hi), var(--mw-panel) 55%, var(--mw-panel-lo));
+  border: 2px solid var(--mw-frame);
+  border-top-width: 10px;
+  box-shadow:
+    0 0 0 1px var(--mw-frame-dark),
+    inset 0 0 0 1px var(--mw-frame-dark),
+    inset 0 0 22px rgba(0, 0, 0, 0.55),
+    0 4px 12px var(--mw-shadow);
+  color: var(--mw-text);
   overflow-y: auto;
 }
 
 .encounter-creator h2,
 .encounter-creator h3 {
   font-size: 20px;
-  color: var(--mw-ink);
-  text-shadow: none;
+  color: var(--mw-text-bright);
 }
 
 .encounter-creator input {
@@ -104,15 +107,18 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(160deg, var(--mw-parchment-light), var(--mw-parchment) 60%, var(--mw-parchment-dark));
-  border: 2px solid var(--mw-border-dark);
-  outline: 1px solid var(--mw-gold);
-  outline-offset: -4px;
-  box-shadow: 0 4px 12px var(--mw-shadow), inset 0 0 24px rgba(107, 85, 53, 0.35);
+  background: linear-gradient(165deg, var(--mw-panel-hi), var(--mw-panel) 55%, var(--mw-panel-lo));
+  border: 2px solid var(--mw-frame);
+  border-top-width: 10px;
+  box-shadow:
+    0 0 0 1px var(--mw-frame-dark),
+    inset 0 0 0 1px var(--mw-frame-dark),
+    inset 0 0 22px rgba(0, 0, 0, 0.55),
+    0 4px 12px var(--mw-shadow);
   border-radius: 2px;
   padding: 16px;
   overflow: hidden;
-  color: var(--mw-ink);
+  color: var(--mw-text);
 }
 
 .left-panel {
@@ -123,9 +129,9 @@
 .left-panel h2,
 .right-panel h2 {
   margin-bottom: 12px;
-  color: var(--mw-ink);
-  text-shadow: none;
+  color: var(--mw-text-bright);
   border-bottom: 1px solid var(--mw-border-dark);
+  box-shadow: 0 1px 0 rgba(227, 200, 122, 0.12);
   padding-bottom: 6px;
 }
 
