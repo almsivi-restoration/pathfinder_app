@@ -1,6 +1,6 @@
 {
   "name": "gm-workbench",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Ruleset-neutral tabletop campaign and encounter manager",
   "private": true,
   "homepage": "./",
@@ -52,7 +52,7 @@
   },
   "build": {
     "appId": "com.almsivi.gm-workbench",
-    "productName": "Game Master's Workbench",
+    "productName": "Game Masters Workbench",
     "icon": "public/icon.png",
     "files": [
       "build/**/*",

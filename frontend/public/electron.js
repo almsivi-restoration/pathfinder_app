@@ -17,7 +17,9 @@ let mainWindow;
 let playerWindow;
 let backendProcess;
 
-app.setName('GM Workbench');
+// No apostrophe: electron-builder embeds productName in single-quoted shell in
+// the deb maintainer scripts, and an apostrophe breaks the generated postinst.
+app.setName('Game Masters Workbench');
 
 // In production the backend is a PyInstaller-frozen binary shipped under
 // resources/backend/. It stores campaigns and the user-supplied reference
