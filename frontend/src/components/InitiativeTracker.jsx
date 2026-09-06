@@ -3,21 +3,21 @@ import { useStore } from '../store';
 import '../styles/InitiativeTracker.css';
 
 function InitiativeTracker() {
-  const currentEncounter = useStore((state) => state.currentEncounter);
+  const currentScene = useStore((state) => state.currentScene);
   const actors = useStore((state) => state.actors);
   const initiativeOrder = useStore((state) => state.initiativeOrder);
   const currentRound = useStore((state) => state.currentRound);
   const currentTurnIndex = useStore((state) => state.currentTurnIndex);
-  const isEncounterActive = useStore((state) => state.isEncounterActive);
+  const isSceneActive = useStore((state) => state.isSceneActive);
   const nextTurn = useStore((state) => state.nextTurn);
   const setInitiativeOrder = useStore((state) => state.setInitiativeOrder);
   const updateActor = useStore((state) => state.updateActor);
 
-  // Local editable order: falls back to actors' encounter order until the GM saves one explicitly.
+  // Local editable order: falls back to actors' scene order until the GM saves one explicitly.
   const [localOrder, setLocalOrder] = useState(null);
 
-  if (!currentEncounter) {
-    return <div className="initiative-tracker">No encounter loaded</div>;
+  if (!currentScene) {
+    return <div className="initiative-tracker">No scene loaded</div>;
   }
 
   const getActor = (actorId) => actors.find((a) => a.id === actorId);
@@ -61,7 +61,7 @@ function InitiativeTracker() {
     <div className="initiative-tracker">
       <h2>Initiative</h2>
 
-      {isEncounterActive && (
+      {isSceneActive && (
         <div className="initiative-active">
           <div className="round-info">
             <strong>Round: {currentRound}</strong>
@@ -77,7 +77,7 @@ function InitiativeTracker() {
           Sort by Roll
         </button>
         <button className="btn btn-primary" onClick={handleSaveOrder}>
-          {isEncounterActive ? 'Update Order' : 'Start Encounter'}
+          {isSceneActive ? 'Update Order' : 'Start Scene'}
         </button>
       </div>
 
@@ -89,7 +89,7 @@ function InitiativeTracker() {
         {orderedIds.map((actorId, index) => {
           const actor = getActor(actorId);
           if (!actor) return null;
-          const isCurrent = isEncounterActive && index === currentTurnIndex;
+          const isCurrent = isSceneActive && index === currentTurnIndex;
           return (
             <div key={actorId} className={`initiative-item ${isCurrent ? 'active' : ''}`}>
               <span className="position">{index + 1}</span>

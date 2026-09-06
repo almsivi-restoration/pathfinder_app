@@ -9,7 +9,7 @@ function ActorList() {
   const summaryFields = rulesetConfig?.actor_sheet?.summary || [];
 
   if (actors.length === 0) {
-    return <div className="actor-list empty">No actors in encounter</div>;
+    return <div className="actor-list empty">No actors in scene</div>;
   }
 
   return (

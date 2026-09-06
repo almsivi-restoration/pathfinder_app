@@ -55,7 +55,7 @@ test('deleteCampaign removes only the targeted campaign from state', async () =>
   expect(useStore.getState().campaigns).toEqual(['Keep']);
 });
 
-test('rollInitiative stores the returned order and marks the encounter active', async () => {
+test('rollInitiative stores the returned order and marks the scene active', async () => {
   axios.post.mockResolvedValueOnce({
     data: { initiative_order: ['a1', 'a2'], round: 1, current_turn_index: 0 },
   });
@@ -65,7 +65,7 @@ test('rollInitiative stores the returned order and marks the encounter active', 
   const state = useStore.getState();
   expect(state.initiativeOrder).toEqual(['a1', 'a2']);
   expect(state.currentRound).toBe(1);
-  expect(state.isEncounterActive).toBe(true);
+  expect(state.isSceneActive).toBe(true);
 });
 
 test('setInitiativeOrder persists a GM-entered manual order', async () => {
@@ -82,26 +82,26 @@ test('setInitiativeOrder persists a GM-entered manual order', async () => {
   expect(useStore.getState().initiativeOrder).toEqual(['a2', 'a1']);
 });
 
-test('createEncounter marks both the new encounter and its campaign reference as unsaved', async () => {
-  const encounter = { id: 'encounter-1', name: 'Ambush', actors: [], initiative_order: [] };
-  axios.post.mockResolvedValueOnce({ data: encounter });
+test('createScene marks both the new scene and its campaign reference as unsaved', async () => {
+  const scene = { id: 'scene-1', name: 'Ambush', actors: [], initiative_order: [] };
+  axios.post.mockResolvedValueOnce({ data: scene });
 
-  await useStore.getState().createEncounter('Ambush');
+  await useStore.getState().createScene('Ambush');
 
   expect(useStore.getState().isCampaignDirty).toBe(true);
-  expect(useStore.getState().isEncounterDirty).toBe(true);
-  expect(useStore.getState().campaignEncounters).toEqual([encounter]);
+  expect(useStore.getState().isSceneDirty).toBe(true);
+  expect(useStore.getState().campaignScenes).toEqual([scene]);
 });
 
-test('saveEncounter reports failure and retains unsaved state', async () => {
-  useStore.setState({ isEncounterDirty: true });
-  axios.post.mockRejectedValueOnce({ response: { data: { detail: 'No encounter loaded' } } });
+test('saveScene reports failure and retains unsaved state', async () => {
+  useStore.setState({ isSceneDirty: true });
+  axios.post.mockRejectedValueOnce({ response: { data: { detail: 'No scene loaded' } } });
 
-  const saved = await useStore.getState().saveEncounter();
+  const saved = await useStore.getState().saveScene();
 
   expect(saved).toBe(false);
-  expect(useStore.getState().isEncounterDirty).toBe(true);
-  expect(useStore.getState().operationError).toBe('No encounter loaded');
+  expect(useStore.getState().isSceneDirty).toBe(true);
+  expect(useStore.getState().operationError).toBe('No scene loaded');
 });
 
 test('searchCurrentReferences stores ruleset-scoped search results', async () => {
@@ -122,7 +122,7 @@ test('returnToCampaignSelector clears the full session without touching the netw
     currentCampaign: { name: 'Test' },
     actors: [{ id: 'a1' }],
     initiativeOrder: ['a1'],
-    isEncounterActive: true,
+    isSceneActive: true,
   });
 
   useStore.getState().returnToCampaignSelector();
@@ -131,7 +131,7 @@ test('returnToCampaignSelector clears the full session without touching the netw
   expect(state.currentCampaign).toBeNull();
   expect(state.actors).toEqual([]);
   expect(state.initiativeOrder).toEqual([]);
-  expect(state.isEncounterActive).toBe(false);
+  expect(state.isSceneActive).toBe(false);
   expect(axios.post).not.toHaveBeenCalled();
   expect(axios.get).not.toHaveBeenCalled();
 });

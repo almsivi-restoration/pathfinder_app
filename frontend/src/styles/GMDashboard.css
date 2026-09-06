@@ -64,7 +64,7 @@
   right: 18px;
 }
 
-.encounter-creator {
+.scene-creator {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -84,18 +84,18 @@
   overflow-y: auto;
 }
 
-.encounter-creator h2,
-.encounter-creator h3 {
+.scene-creator h2,
+.scene-creator h3 {
   font-size: 20px;
   color: var(--mw-text-bright);
 }
 
-.encounter-creator input {
+.scene-creator input {
   padding: 8px 16px;
   width: 300px;
 }
 
-.encounter-active {
+.scene-active {
   display: flex;
   flex: 1;
   gap: 16px;
@@ -143,12 +143,12 @@
   .gm-header,
   .header-left,
   .header-right,
-  .encounter-active {
+  .scene-active {
     align-items: stretch;
     flex-wrap: wrap;
   }
 
-  .encounter-active {
+  .scene-active {
     flex-direction: column;
     overflow-y: auto;
   }

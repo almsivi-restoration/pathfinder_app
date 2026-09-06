@@ -1,17 +1,17 @@
 # Game Master's Workbench
 
-A local desktop encounter manager for a single GM. Campaigns select a ruleset; the selected
+A local desktop scene manager for a single GM. Campaigns select a ruleset; the selected
 ruleset defines actor sheets, combat summaries, initiative behavior, and the local reference
 sources available through the Encyclopedia.
 
 The initial rulesets are Pathfinder 1e and Pathfinder 2e. The application core is intentionally
-ruleset-neutral so additional systems can be added without changing campaign, encounter, actor,
+ruleset-neutral so additional systems can be added without changing campaign, scene, actor,
 initiative, or persistence ownership.
 
 ## Features
 
-- Create, load, save, and delete campaigns and their saved encounters.
-- Create and save encounters with PC and NPC actors.
+- Create, load, save, and delete campaigns and their saved scenes.
+- Create and save scenes with PC and NPC actors.
 - Save reusable actor templates on a campaign.
 - Enter physical initiative results, order actors manually, and advance turns and rounds.
 - Display a separate player-facing initiative window.
@@ -21,10 +21,10 @@ initiative, or persistence ownership.
 
 ## Architecture
 
-`Campaign.ruleset` is the sole ruleset authority. Encounters, actors, and templates do not store
+`Campaign.ruleset` is the sole ruleset authority. Scenes, actors, and templates do not store
 their own competing ruleset values.
 
-The shared `Actor` model contains identity, encounter state, effects, notes, and a generic
+The shared `Actor` model contains identity, scene state, effects, notes, and a generic
 `sheet` document. Each ruleset supplies a declarative sheet definition containing fields,
 defaults, sections, summaries, player-visible resources, and initiative metadata. The React UI
 uses that definition instead of system-specific actor properties.
@@ -104,14 +104,14 @@ backend/venv/bin/python frontend/build-resources/generate_icon.py
 ## Campaign Workflow
 
 1. Create or load a campaign and choose its ruleset.
-2. Create a new encounter or load a saved encounter from the campaign encounter library; each inherits the campaign's ruleset.
+2. Create a new scene or load a saved scene from the campaign scene library; each inherits the campaign's ruleset.
 3. Add actors directly or instantiate campaign templates.
-4. Enter the GM's physical initiative results, arrange the order, and start the encounter.
+4. Enter the GM's physical initiative results, arrange the order, and start the scene.
 5. Open the player view for a second monitor when needed.
-6. Use **Save All** to persist the campaign and current encounter. The dashboard indicates unsaved campaign or encounter changes and reports save failures without discarding edits.
+6. Use **Save All** to persist the campaign and current scene. The dashboard indicates unsaved campaign or scene changes and reports save failures without discarding edits.
 
 Campaign deletion is available from the campaign selector. It removes that campaign and its
-persisted encounters after confirmation; it cannot be undone.
+persisted scenes after confirmation; it cannot be undone.
 
 ## Local References And Encyclopedia
 
@@ -188,10 +188,10 @@ The release sequence is:
 - `POST /api/campaign/save`
 - `DELETE /api/campaign/{campaign_name}`
 
-### Encounters, Actors, And Initiative
+### Scenes, Actors, And Initiative
 
-- `POST /api/encounter/new`, `GET /api/encounter/current`, `POST /api/encounter/load`, and
-	`POST /api/encounter/save`
+- `POST /api/scene/new`, `GET /api/scene/current`, `POST /api/scene/load`, and
+	`POST /api/scene/save`
 - `POST /api/actor/add`, `GET /api/actor/{actor_id}`, `PUT /api/actor/{actor_id}`, and
 	`DELETE /api/actor/{actor_id}`
 - `POST /api/initiative/set`, `POST /api/initiative/roll`, `POST /api/initiative/next`, and

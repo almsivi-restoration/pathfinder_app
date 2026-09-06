@@ -4,7 +4,7 @@ import ActorStatFields from './ActorStatFields';
 import { createDefaultSheet, setSheetValue } from '../sheet';
 import '../styles/ActorForm.css';
 
-function ActorForm({ onActorAdded, allowEncounterAdd = true }) {
+function ActorForm({ onActorAdded, allowSceneAdd = true }) {
   const rulesetConfig = useStore((state) => state.rulesetConfig);
   const fetchRulesetConfig = useStore((state) => state.fetchRulesetConfig);
   const addActor = useStore((state) => state.addActor);
@@ -88,9 +88,9 @@ function ActorForm({ onActorAdded, allowEncounterAdd = true }) {
         {operationError && <div className="operation-message error">{operationError}</div>}
 
         <div className="form-actions actor-form-actions">
-          {allowEncounterAdd && (
+          {allowSceneAdd && (
             <button type="submit" className="btn btn-primary">
-              Add to Encounter
+              Add to Scene
             </button>
           )}
           <button type="button" className="btn btn-secondary" onClick={handleSaveTemplate}>

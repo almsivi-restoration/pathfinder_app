@@ -15,7 +15,7 @@ class Actor(BaseModel):
     player_name: Optional[str] = None  # None for NPCs
     is_pc: bool
 
-    # Encounter state shared across rulesets.
+    # Scene state shared across rulesets.
     initiative_roll: Optional[int] = None  # actual rolled value (physical die + bonus), GM-entered
     effects: List[Effect] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.now)
@@ -76,7 +76,7 @@ class Actor(BaseModel):
         return actor
 
 
-class Encounter(BaseModel):
+class Scene(BaseModel):
     id: str
     name: str
     actors: List[Actor] = Field(default_factory=list)
@@ -90,9 +90,20 @@ class Campaign(BaseModel):
     name: str
     ruleset: str
     created_at: datetime = Field(default_factory=datetime.now)
-    encounters: List[str] = Field(default_factory=list)  # List of encounter IDs
+    scenes: List[str] = Field(default_factory=list)  # List of scene IDs
     actor_templates: List[Actor] = Field(default_factory=list)
     notes: str = ""
+
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_legacy_encounters(cls, value: Any) -> Any:
+        """Load campaigns saved before encounters were renamed to scenes."""
+        if not isinstance(value, dict) or "scenes" in value or "encounters" not in value:
+            return value
+
+        campaign = value.copy()
+        campaign["scenes"] = campaign.pop("encounters")
+        return campaign
 
 
 class RollRequest(BaseModel):

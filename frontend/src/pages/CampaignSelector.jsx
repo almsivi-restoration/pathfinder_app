@@ -39,7 +39,7 @@ function CampaignSelector({ onCampaignLoaded }) {
   };
 
   const handleDeleteCampaign = async (campaignName) => {
-    if (window.confirm(`Delete ${campaignName} and all of its saved encounters? This cannot be undone.`)) {
+    if (window.confirm(`Delete ${campaignName} and all of its saved scenes? This cannot be undone.`)) {
       clearOperationError();
       await deleteCampaign(campaignName);
     }

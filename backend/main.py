@@ -1,6 +1,6 @@
 """
 FastAPI backend for Game Master's Workbench.
-Provides REST API for campaign, encounter, actor, and initiative management.
+Provides REST API for campaign, scene, actor, and initiative management.
 """
 
 from fastapi import FastAPI, HTTPException
@@ -12,7 +12,7 @@ import random
 from typing import Optional
 from uuid import uuid4
 
-from models import Actor, Campaign, Encounter, RollRequest, RollResult, Effect, InitiativeOrderRequest, ReferenceImportRequest
+from models import Actor, Campaign, Scene, RollRequest, RollResult, Effect, InitiativeOrderRequest, ReferenceImportRequest
 from name_generator import generate_names, list_categories
 from reference_library import ReferenceLibrary
 from state import StateManager
@@ -90,80 +90,80 @@ def save_campaign():
 
 @app.delete("/api/campaign/{campaign_name}")
 def delete_campaign(campaign_name: str):
-    """Delete one persisted campaign and all encounters saved under it."""
+    """Delete one persisted campaign and all scenes saved under it."""
     if not state_manager.delete_campaign(campaign_name):
         raise HTTPException(status_code=404, detail="Campaign not found")
     return {"status": "removed"}
 
 
-# ==================== Encounter Routes ====================
+# ==================== Scene Routes ====================
 
-@app.post("/api/encounter/new")
-def create_encounter(name: str):
-    """Create a new encounter in the current campaign."""
+@app.post("/api/scene/new")
+def create_scene(name: str):
+    """Create a new scene in the current campaign."""
     try:
-        encounter = state_manager.create_encounter(name)
-        return encounter.model_dump()
+        scene = state_manager.create_scene(name)
+        return scene.model_dump()
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@app.get("/api/encounters")
-def list_encounters():
-    """List saved encounters for the current campaign."""
+@app.get("/api/scenes")
+def list_scenes():
+    """List saved scenes for the current campaign."""
     if not state_manager.current_campaign:
         raise HTTPException(status_code=404, detail="No campaign loaded")
-    return {"encounters": [encounter.model_dump() for encounter in state_manager.list_encounters()]}
+    return {"scenes": [scene.model_dump() for scene in state_manager.list_scenes()]}
 
 
-@app.get("/api/encounter/current")
-def get_current_encounter():
-    """Get the currently loaded encounter."""
-    if not state_manager.current_encounter:
-        raise HTTPException(status_code=404, detail="No encounter loaded")
-    return state_manager.current_encounter.model_dump()
+@app.get("/api/scene/current")
+def get_current_scene():
+    """Get the currently loaded scene."""
+    if not state_manager.current_scene:
+        raise HTTPException(status_code=404, detail="No scene loaded")
+    return state_manager.current_scene.model_dump()
 
 
-@app.post("/api/encounter/load")
-def load_encounter(encounter_id: str):
-    """Load an encounter by ID."""
-    encounter = state_manager.load_encounter(encounter_id)
-    if not encounter:
-        raise HTTPException(status_code=404, detail="Encounter not found")
-    return encounter.model_dump()
+@app.post("/api/scene/load")
+def load_scene(scene_id: str):
+    """Load an scene by ID."""
+    scene = state_manager.load_scene(scene_id)
+    if not scene:
+        raise HTTPException(status_code=404, detail="Scene not found")
+    return scene.model_dump()
 
 
-@app.post("/api/encounter/close")
-def close_encounter():
-    """Close the active encounter without deleting it."""
-    if not state_manager.close_encounter():
-        raise HTTPException(status_code=404, detail="No encounter loaded")
+@app.post("/api/scene/close")
+def close_scene():
+    """Close the active scene without deleting it."""
+    if not state_manager.close_scene():
+        raise HTTPException(status_code=404, detail="No scene loaded")
     return {"status": "closed"}
 
 
-@app.delete("/api/encounter/{encounter_id}")
-def delete_encounter(encounter_id: str):
-    """Delete one saved encounter from the current campaign."""
-    if not state_manager.delete_encounter(encounter_id):
-        raise HTTPException(status_code=404, detail="Encounter not found")
+@app.delete("/api/scene/{scene_id}")
+def delete_scene(scene_id: str):
+    """Delete one saved scene from the current campaign."""
+    if not state_manager.delete_scene(scene_id):
+        raise HTTPException(status_code=404, detail="Scene not found")
     return {"status": "removed"}
 
 
-@app.post("/api/encounter/save")
-def save_encounter():
-    """Save the current encounter."""
-    if state_manager.save_encounter():
+@app.post("/api/scene/save")
+def save_scene():
+    """Save the current scene."""
+    if state_manager.save_scene():
         return {"status": "saved"}
-    raise HTTPException(status_code=400, detail="No encounter to save")
+    raise HTTPException(status_code=400, detail="No scene to save")
 
 
 # ==================== Actor Routes ====================
 
 @app.post("/api/actor/add")
 def add_actor(actor: Actor):
-    """Add an actor to the current encounter."""
-    if not state_manager.current_encounter:
-        raise HTTPException(status_code=400, detail="No encounter loaded")
+    """Add an actor to the current scene."""
+    if not state_manager.current_scene:
+        raise HTTPException(status_code=400, detail="No scene loaded")
     
     # Assign ID if not present
     if not actor.id:
@@ -192,7 +192,7 @@ def update_actor(actor_id: str, actor: Actor):
 
 @app.delete("/api/actor/{actor_id}")
 def remove_actor(actor_id: str):
-    """Remove an actor from the current encounter."""
+    """Remove an actor from the current scene."""
     if not state_manager.remove_actor(actor_id):
         raise HTTPException(status_code=404, detail="Actor not found")
     return {"status": "removed"}
@@ -232,12 +232,12 @@ def update_actor_template(template_id: str, actor: Actor):
     return template.model_dump()
 
 
-@app.post("/api/encounter/actor/from-template/{template_id}")
+@app.post("/api/scene/actor/from-template/{template_id}")
 def add_actor_from_template(template_id: str):
-    """Instantiate a campaign actor template into the current encounter."""
+    """Instantiate a campaign actor template into the current scene."""
     actor = state_manager.instantiate_template(template_id)
     if not actor:
-        raise HTTPException(status_code=404, detail="Template or encounter not found")
+        raise HTTPException(status_code=404, detail="Template or scene not found")
     return actor.model_dump()
 
 
@@ -247,27 +247,27 @@ def add_actor_from_template(template_id: str):
 def set_initiative_order(request: InitiativeOrderRequest):
     """Explicitly set/reorder initiative (GM-controlled, e.g. from a physical die roll)."""
     if not state_manager.set_initiative_order(request.actor_ids):
-        raise HTTPException(status_code=400, detail="No encounter loaded")
+        raise HTTPException(status_code=400, detail="No scene loaded")
     
-    encounter = state_manager.current_encounter
+    scene = state_manager.current_scene
     return {
-        "initiative_order": encounter.initiative_order,
-        "round": encounter.current_round,
-        "current_turn_index": encounter.current_turn_index,
+        "initiative_order": scene.initiative_order,
+        "round": scene.current_round,
+        "current_turn_index": scene.current_turn_index,
     }
 
 
 @app.post("/api/initiative/roll")
 def roll_initiative():
-    """Roll initiative for all actors in the current encounter."""
+    """Roll initiative for all actors in the current scene."""
     if not state_manager.roll_initiative():
         raise HTTPException(status_code=400, detail="Could not roll initiative")
     
-    encounter = state_manager.current_encounter
+    scene = state_manager.current_scene
     return {
-        "initiative_order": encounter.initiative_order,
-        "round": encounter.current_round,
-        "current_turn_index": encounter.current_turn_index,
+        "initiative_order": scene.initiative_order,
+        "round": scene.current_round,
+        "current_turn_index": scene.current_turn_index,
     }
 
 
@@ -278,25 +278,25 @@ def next_turn():
     if not next_actor_id:
         raise HTTPException(status_code=400, detail="Could not advance turn")
     
-    encounter = state_manager.current_encounter
+    scene = state_manager.current_scene
     return {
         "next_actor_id": next_actor_id,
-        "round": encounter.current_round,
-        "turn_index": encounter.current_turn_index,
+        "round": scene.current_round,
+        "turn_index": scene.current_turn_index,
     }
 
 
 @app.get("/api/initiative/state")
 def get_initiative_state():
     """Get current initiative state."""
-    if not state_manager.current_encounter:
-        raise HTTPException(status_code=404, detail="No encounter loaded")
+    if not state_manager.current_scene:
+        raise HTTPException(status_code=404, detail="No scene loaded")
     
-    encounter = state_manager.current_encounter
+    scene = state_manager.current_scene
     return {
-        "initiative_order": encounter.initiative_order,
-        "round": encounter.current_round,
-        "current_turn_index": encounter.current_turn_index,
+        "initiative_order": scene.initiative_order,
+        "round": scene.current_round,
+        "current_turn_index": scene.current_turn_index,
     }
 
 

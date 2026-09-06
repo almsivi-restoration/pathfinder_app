@@ -1,5 +1,5 @@
 """
-In-memory state manager for campaigns and encounters.
+In-memory state manager for campaigns and scenes.
 Handles CRUD operations and persistence.
 """
 
@@ -8,7 +8,7 @@ import os
 import shutil
 from typing import Dict, List, Optional
 from pathlib import Path
-from models import Campaign, Encounter, Actor
+from models import Campaign, Scene, Actor
 from rules import get_ruleset
 from rules.common import get_sheet_value
 import uuid
@@ -21,8 +21,8 @@ class StateManager:
         
         # In-memory state
         self.current_campaign: Optional[Campaign] = None
-        self.current_encounter: Optional[Encounter] = None
-        self.encounters: Dict[str, Encounter] = {}
+        self.current_scene: Optional[Scene] = None
+        self.scenes: Dict[str, Scene] = {}
         self.campaigns: Dict[str, Campaign] = {}
     
     # ==================== Campaign Methods ====================
@@ -47,8 +47,8 @@ class StateManager:
             campaign = Campaign(**data)
         
         self.current_campaign = campaign
-        self.current_encounter = None
-        self.encounters = {}
+        self.current_scene = None
+        self.scenes = {}
         self.campaigns[campaign_name] = campaign
         return campaign
     
@@ -81,143 +81,150 @@ class StateManager:
         self.campaigns.pop(campaign_name, None)
         if self.current_campaign and self.current_campaign.name == campaign_name:
             self.current_campaign = None
-            self.current_encounter = None
-            self.encounters = {}
+            self.current_scene = None
+            self.scenes = {}
         return True
     
-    # ==================== Encounter Methods ====================
+    # ==================== Scene Methods ====================
     
-    def create_encounter(self, name: str) -> Encounter:
-        """Create a new encounter."""
+    def create_scene(self, name: str) -> Scene:
+        """Create a new scene."""
         if not self.current_campaign:
             raise ValueError("No campaign loaded")
 
-        encounter = Encounter(id=str(uuid.uuid4()), name=name)
-        self.encounters[encounter.id] = encounter
-        self.current_encounter = encounter
-        self.current_campaign.encounters.append(encounter.id)
+        scene = Scene(id=str(uuid.uuid4()), name=name)
+        self.scenes[scene.id] = scene
+        self.current_scene = scene
+        self.current_campaign.scenes.append(scene.id)
         
-        return encounter
+        return scene
 
-    def list_encounters(self) -> List[Encounter]:
-        """Return the current campaign's encounters from memory or persisted files."""
+    def list_scenes(self) -> List[Scene]:
+        """Return the current campaign's scenes from memory or persisted files."""
         if not self.current_campaign:
             return []
 
-        active_encounter_id = self.current_encounter.id if self.current_encounter else None
-        encounters = []
-        for encounter_id in self.current_campaign.encounters:
-            encounter = self.load_encounter(encounter_id)
-            if encounter:
-                encounters.append(encounter)
-        self.current_encounter = next(
-            (encounter for encounter in encounters if encounter.id == active_encounter_id),
+        active_scene_id = self.current_scene.id if self.current_scene else None
+        scenes = []
+        for scene_id in self.current_campaign.scenes:
+            scene = self.load_scene(scene_id)
+            if scene:
+                scenes.append(scene)
+        self.current_scene = next(
+            (scene for scene in scenes if scene.id == active_scene_id),
             None,
         )
-        return encounters
+        return scenes
 
-    def close_encounter(self) -> bool:
-        """Clear the active encounter without changing the campaign or saved encounter data."""
-        if not self.current_encounter:
+    def close_scene(self) -> bool:
+        """Clear the active scene without changing the campaign or saved scene data."""
+        if not self.current_scene:
             return False
-        encounter_path = self.campaigns_dir / self.current_campaign.name / "encounters" / f"{self.current_encounter.id}.json"
-        if not encounter_path.exists():
-            self.current_campaign.encounters.remove(self.current_encounter.id)
-        self.current_encounter = None
+        scene_path = self.campaigns_dir / self.current_campaign.name / "scenes" / f"{self.current_scene.id}.json"
+        legacy_scene_path = self.campaigns_dir / self.current_campaign.name / "encounters" / f"{self.current_scene.id}.json"
+        if not scene_path.exists() and not legacy_scene_path.exists():
+            self.current_campaign.scenes.remove(self.current_scene.id)
+        self.current_scene = None
         return True
 
-    def delete_encounter(self, encounter_id: str) -> bool:
-        """Delete one encounter belonging to the current campaign."""
-        if not self.current_campaign or encounter_id not in self.current_campaign.encounters:
+    def delete_scene(self, scene_id: str) -> bool:
+        """Delete one scene belonging to the current campaign."""
+        if not self.current_campaign or scene_id not in self.current_campaign.scenes:
             return False
 
-        encounter_path = self.campaigns_dir / self.current_campaign.name / "encounters" / f"{encounter_id}.json"
-        if encounter_path.exists():
-            encounter_path.unlink()
-        self.current_campaign.encounters.remove(encounter_id)
-        self.encounters.pop(encounter_id, None)
-        if self.current_encounter and self.current_encounter.id == encounter_id:
-            self.current_encounter = None
+        scene_path = self.campaigns_dir / self.current_campaign.name / "scenes" / f"{scene_id}.json"
+        legacy_scene_path = self.campaigns_dir / self.current_campaign.name / "encounters" / f"{scene_id}.json"
+        if scene_path.exists():
+            scene_path.unlink()
+        elif legacy_scene_path.exists():
+            legacy_scene_path.unlink()
+        self.current_campaign.scenes.remove(scene_id)
+        self.scenes.pop(scene_id, None)
+        if self.current_scene and self.current_scene.id == scene_id:
+            self.current_scene = None
         self.save_campaign()
         return True
     
-    def load_encounter(self, encounter_id: str) -> Optional[Encounter]:
-        """Load encounter from memory or disk."""
-        if encounter_id in self.encounters:
-            self.current_encounter = self.encounters[encounter_id]
-            return self.current_encounter
+    def load_scene(self, scene_id: str) -> Optional[Scene]:
+        """Load scene from memory or disk."""
+        if scene_id in self.scenes:
+            self.current_scene = self.scenes[scene_id]
+            return self.current_scene
         
         # Attempt to load from disk
         if self.current_campaign:
-            encounter_path = self.campaigns_dir / self.current_campaign.name / "encounters" / f"{encounter_id}.json"
-            if encounter_path.exists():
-                with open(encounter_path, "r") as f:
+            scene_path = self.campaigns_dir / self.current_campaign.name / "scenes" / f"{scene_id}.json"
+            legacy_scene_path = self.campaigns_dir / self.current_campaign.name / "encounters" / f"{scene_id}.json"
+            if not scene_path.exists():
+                scene_path = legacy_scene_path
+            if scene_path.exists():
+                with open(scene_path, "r") as f:
                     data = json.load(f)
-                    encounter = Encounter(**data)
-                    self.encounters[encounter_id] = encounter
-                    self.current_encounter = encounter
-                    return encounter
+                    scene = Scene(**data)
+                    self.scenes[scene_id] = scene
+                    self.current_scene = scene
+                    return scene
         
         return None
     
-    def save_encounter(self, encounter: Optional[Encounter] = None) -> bool:
-        """Persist encounter to disk."""
-        encounter = encounter or self.current_encounter
-        if not encounter or not self.current_campaign:
+    def save_scene(self, scene: Optional[Scene] = None) -> bool:
+        """Persist scene to disk."""
+        scene = scene or self.current_scene
+        if not scene or not self.current_campaign:
             return False
         
-        encounters_dir = self.campaigns_dir / self.current_campaign.name / "encounters"
-        encounters_dir.mkdir(parents=True, exist_ok=True)
+        scenes_dir = self.campaigns_dir / self.current_campaign.name / "scenes"
+        scenes_dir.mkdir(parents=True, exist_ok=True)
         
-        encounter_path = encounters_dir / f"{encounter.id}.json"
-        with open(encounter_path, "w") as f:
-            json.dump(encounter.model_dump(), f, indent=2, default=str)
+        scene_path = scenes_dir / f"{scene.id}.json"
+        with open(scene_path, "w") as f:
+            json.dump(scene.model_dump(), f, indent=2, default=str)
         
         return True
     
     # ==================== Actor Methods ====================
     
     def add_actor(self, actor: Actor) -> bool:
-        """Add actor to current encounter."""
-        if not self.current_encounter:
+        """Add actor to current scene."""
+        if not self.current_scene:
             return False
         
-        self.current_encounter.actors.append(actor)
+        self.current_scene.actors.append(actor)
         return True
     
     def remove_actor(self, actor_id: str) -> bool:
-        """Remove actor from current encounter."""
-        if not self.current_encounter:
+        """Remove actor from current scene."""
+        if not self.current_scene:
             return False
         
-        original_count = len(self.current_encounter.actors)
-        self.current_encounter.actors = [a for a in self.current_encounter.actors if a.id != actor_id]
-        if len(self.current_encounter.actors) == original_count:
+        original_count = len(self.current_scene.actors)
+        self.current_scene.actors = [a for a in self.current_scene.actors if a.id != actor_id]
+        if len(self.current_scene.actors) == original_count:
             return False
         # Remove from initiative order if present
-        if actor_id in self.current_encounter.initiative_order:
-            self.current_encounter.initiative_order.remove(actor_id)
+        if actor_id in self.current_scene.initiative_order:
+            self.current_scene.initiative_order.remove(actor_id)
         
         return True
     
     def update_actor(self, actor_id: str, updated_actor: Actor) -> bool:
-        """Update an actor in the current encounter."""
-        if not self.current_encounter:
+        """Update an actor in the current scene."""
+        if not self.current_scene:
             return False
         
-        for i, actor in enumerate(self.current_encounter.actors):
+        for i, actor in enumerate(self.current_scene.actors):
             if actor.id == actor_id:
-                self.current_encounter.actors[i] = updated_actor
+                self.current_scene.actors[i] = updated_actor
                 return True
         
         return False
     
     def get_actor(self, actor_id: str) -> Optional[Actor]:
-        """Retrieve actor by ID from current encounter."""
-        if not self.current_encounter:
+        """Retrieve actor by ID from current scene."""
+        if not self.current_scene:
             return None
         
-        for actor in self.current_encounter.actors:
+        for actor in self.current_scene.actors:
             if actor.id == actor_id:
                 return actor
         
@@ -272,8 +279,8 @@ class StateManager:
         return self.current_campaign.actor_templates
     
     def instantiate_template(self, template_id: str) -> Optional[Actor]:
-        """Copy a campaign actor template into the current encounter as a new actor."""
-        if not self.current_campaign or not self.current_encounter:
+        """Copy a campaign actor template into the current scene as a new actor."""
+        if not self.current_campaign or not self.current_scene:
             return None
         
         template = next(
@@ -283,7 +290,7 @@ class StateManager:
             return None
         
         new_actor = template.model_copy(update={"id": str(uuid.uuid4())})
-        self.current_encounter.actors.append(new_actor)
+        self.current_scene.actors.append(new_actor)
         return new_actor
     
     # ==================== Initiative Methods ====================
@@ -291,27 +298,27 @@ class StateManager:
     def set_initiative_order(self, actor_ids: List[str]) -> bool:
         """Explicitly set (or reorder) the initiative order. GM-controlled, no dice rolled.
         
-        Any current-encounter actor missing from actor_ids is appended at the end,
+        Any current-scene actor missing from actor_ids is appended at the end,
         preserving its relative order, so a newly-added actor is never silently dropped.
         """
-        if not self.current_encounter:
+        if not self.current_scene:
             return False
         
-        valid_ids = {a.id for a in self.current_encounter.actors}
+        valid_ids = {a.id for a in self.current_scene.actors}
         ordered = [aid for aid in actor_ids if aid in valid_ids]
-        missing = [aid for aid in self.current_encounter.initiative_order if aid in valid_ids and aid not in ordered]
+        missing = [aid for aid in self.current_scene.initiative_order if aid in valid_ids and aid not in ordered]
         remaining = [aid for aid in valid_ids if aid not in ordered and aid not in missing]
-        self.current_encounter.initiative_order = ordered + missing + remaining
+        self.current_scene.initiative_order = ordered + missing + remaining
         
-        if self.current_encounter.current_round == 0:
-            self.current_encounter.current_round = 1
-            self.current_encounter.current_turn_index = 0
+        if self.current_scene.current_round == 0:
+            self.current_scene.current_round = 1
+            self.current_scene.current_turn_index = 0
         
         return True
     
     def roll_initiative(self) -> bool:
-        """Roll initiative for all actors in current encounter."""
-        if not self.current_encounter or not self.current_encounter.actors:
+        """Roll initiative for all actors in current scene."""
+        if not self.current_scene or not self.current_scene.actors:
             return False
         
         import random
@@ -319,41 +326,41 @@ class StateManager:
         initiative_rolls = []
         ruleset = get_ruleset(self.current_campaign.ruleset) if self.current_campaign else None
         bonus_key = ruleset.get("actor_sheet", {}).get("initiative", {}).get("bonus_key") if ruleset else None
-        for actor in self.current_encounter.actors:
+        for actor in self.current_scene.actors:
             bonus = get_sheet_value(actor.sheet, bonus_key, 0) if bonus_key else 0
             roll = random.randint(1, 20) + bonus
             initiative_rolls.append((actor.id, roll))
         
         # Sort by roll descending
         initiative_rolls.sort(key=lambda x: x[1], reverse=True)
-        self.current_encounter.initiative_order = [actor_id for actor_id, _ in initiative_rolls]
-        self.current_encounter.current_round = 1
-        self.current_encounter.current_turn_index = 0
+        self.current_scene.initiative_order = [actor_id for actor_id, _ in initiative_rolls]
+        self.current_scene.current_round = 1
+        self.current_scene.current_turn_index = 0
         
         return True
     
     def next_turn(self) -> Optional[str]:
         """Advance to the next turn. Returns the actor ID of the next actor."""
-        if not self.current_encounter or not self.current_encounter.initiative_order:
+        if not self.current_scene or not self.current_scene.initiative_order:
             return None
         
-        self.current_encounter.current_turn_index += 1
+        self.current_scene.current_turn_index += 1
         
         # Check if we've completed a round
-        if self.current_encounter.current_turn_index >= len(self.current_encounter.initiative_order):
-            self.current_encounter.current_turn_index = 0
-            self.current_encounter.current_round += 1
+        if self.current_scene.current_turn_index >= len(self.current_scene.initiative_order):
+            self.current_scene.current_turn_index = 0
+            self.current_scene.current_round += 1
             # Decrement effect durations
             self._tick_effects()
         
-        return self.current_encounter.initiative_order[self.current_encounter.current_turn_index]
+        return self.current_scene.initiative_order[self.current_scene.current_turn_index]
     
     def _tick_effects(self) -> None:
         """Decrement effect durations at the end of each round."""
-        if not self.current_encounter:
+        if not self.current_scene:
             return
         
-        for actor in self.current_encounter.actors:
+        for actor in self.current_scene.actors:
             actor.effects = [e for e in actor.effects if e.duration_rounds > 0]
             for effect in actor.effects:
                 effect.duration_rounds -= 1

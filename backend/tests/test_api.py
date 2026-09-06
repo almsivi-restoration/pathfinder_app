@@ -45,20 +45,20 @@ def test_delete_campaign_removes_the_saved_campaign(client):
     assert client.get("/api/campaign/list").json() == {"campaigns": []}
 
 
-def test_campaign_encounter_actor_happy_path(client):
+def test_campaign_scene_actor_happy_path(client):
     res = client.post("/api/campaign/new", params={"name": "Test Camp", "ruleset": "1e"})
     assert res.status_code == 200
     assert res.json()["name"] == "Test Camp"
 
-    res = client.post("/api/encounter/new", params={"name": "Ambush"})
+    res = client.post("/api/scene/new", params={"name": "Ambush"})
     assert res.status_code == 200
     assert res.json()["actors"] == []
-    encounter_id = res.json()["id"]
+    scene_id = res.json()["id"]
 
-    res = client.post("/api/encounter/save")
+    res = client.post("/api/scene/save")
     assert res.status_code == 200
-    res = client.get("/api/encounters")
-    assert [encounter["id"] for encounter in res.json()["encounters"]] == [encounter_id]
+    res = client.get("/api/scenes")
+    assert [scene["id"] for scene in res.json()["scenes"]] == [scene_id]
 
     res = client.post("/api/actor/add", json=actor_payload())
     assert res.status_code == 200
@@ -83,17 +83,17 @@ def test_campaign_encounter_actor_happy_path(client):
     res = client.delete(f"/api/actor/{actor_id}")
     assert res.status_code == 404
 
-    res = client.post("/api/encounter/close")
+    res = client.post("/api/scene/close")
     assert res.status_code == 200
-    res = client.post("/api/encounter/load", params={"encounter_id": encounter_id})
+    res = client.post("/api/scene/load", params={"scene_id": scene_id})
     assert res.status_code == 200
-    res = client.delete(f"/api/encounter/{encounter_id}")
+    res = client.delete(f"/api/scene/{scene_id}")
     assert res.status_code == 200
 
 
 def test_actor_not_found_returns_404(client):
     client.post("/api/campaign/new", params={"name": "Camp2", "ruleset": "1e"})
-    client.post("/api/encounter/new", params={"name": "Fight"})
+    client.post("/api/scene/new", params={"name": "Fight"})
     res = client.get("/api/actor/does-not-exist")
     assert res.status_code == 404
 
@@ -158,7 +158,7 @@ def test_roll_dice_respects_die_type_and_modifier(client):
 
 def test_actor_template_endpoints(client):
     client.post("/api/campaign/new", params={"name": "Camp3", "ruleset": "1e"})
-    client.post("/api/encounter/new", params={"name": "Fight"})
+    client.post("/api/scene/new", params={"name": "Fight"})
 
     res = client.post("/api/campaign/actor-template/add", json=actor_payload(name="Orc"))
     assert res.status_code == 200
@@ -174,7 +174,7 @@ def test_actor_template_endpoints(client):
     assert res.status_code == 200
     assert res.json()["name"] == "Orc Chieftain"
 
-    res = client.post(f"/api/encounter/actor/from-template/{template_id}")
+    res = client.post(f"/api/scene/actor/from-template/{template_id}")
     assert res.status_code == 200
     assert res.json()["id"] != template_id
 

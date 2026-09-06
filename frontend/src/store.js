@@ -14,10 +14,10 @@ export const useStore = create((set, get) => ({
   referenceSources: [],
   referenceDocuments: [],
   referenceResults: [],
-  campaignEncounters: [],
+  campaignScenes: [],
 
-  // Encounter state
-  currentEncounter: null,
+  // Scene state
+  currentScene: null,
   actors: [],
   initiativeOrder: [],
   currentRound: 0,
@@ -32,9 +32,9 @@ export const useStore = create((set, get) => ({
   // UI state
   selectedActorId: null,
   selectedTemplateId: null,
-  isEncounterActive: false,
+  isSceneActive: false,
   isCampaignDirty: false,
-  isEncounterDirty: false,
+  isSceneDirty: false,
   operationError: null,
 
   clearOperationError: () => set({ operationError: null }),
@@ -112,12 +112,12 @@ export const useStore = create((set, get) => ({
       set({
         currentCampaign: res.data,
         ruleset: res.data.ruleset,
-        currentEncounter: null,
+        currentScene: null,
         actors: [],
         initiativeOrder: [],
-        campaignEncounters: [],
+        campaignScenes: [],
         isCampaignDirty: false,
-        isEncounterDirty: false,
+        isSceneDirty: false,
       });
       return res.data;
     } catch (error) {
@@ -200,122 +200,122 @@ export const useStore = create((set, get) => ({
     }
   },
 
-  // Encounter actions
-  fetchCampaignEncounters: async () => {
+  // Scene actions
+  fetchCampaignScenes: async () => {
     try {
-      const res = await axios.get(`${API_URL}/encounters`);
-      set({ campaignEncounters: res.data.encounters });
-      return res.data.encounters;
+      const res = await axios.get(`${API_URL}/scenes`);
+      set({ campaignScenes: res.data.scenes });
+      return res.data.scenes;
     } catch (error) {
-      console.error('Failed to fetch campaign encounters:', error);
+      console.error('Failed to fetch campaign scenes:', error);
       set({ operationError: getErrorMessage(error) });
       return [];
     }
   },
 
-  createEncounter: async (name) => {
+  createScene: async (name) => {
     try {
-      const res = await axios.post(`${API_URL}/encounter/new`, null, {
+      const res = await axios.post(`${API_URL}/scene/new`, null, {
         params: { name },
       });
       set({
-        currentEncounter: res.data,
+        currentScene: res.data,
         actors: res.data.actors || [],
         initiativeOrder: res.data.initiative_order || [],
         currentRound: res.data.current_round || 0,
         currentTurnIndex: res.data.current_turn_index || 0,
-        campaignEncounters: [...get().campaignEncounters, res.data],
+        campaignScenes: [...get().campaignScenes, res.data],
         isCampaignDirty: true,
-        isEncounterDirty: true,
+        isSceneDirty: true,
       });
       return res.data;
     } catch (error) {
-      console.error('Failed to create encounter:', error);
+      console.error('Failed to create scene:', error);
       set({ operationError: getErrorMessage(error) });
       return null;
     }
   },
 
-  loadEncounter: async (encounterId) => {
+  loadScene: async (sceneId) => {
     try {
-      const res = await axios.post(`${API_URL}/encounter/load`, null, {
-        params: { encounter_id: encounterId },
+      const res = await axios.post(`${API_URL}/scene/load`, null, {
+        params: { scene_id: sceneId },
       });
       set({
-        currentEncounter: res.data,
+        currentScene: res.data,
         actors: res.data.actors || [],
         initiativeOrder: res.data.initiative_order || [],
         currentRound: res.data.current_round || 0,
         currentTurnIndex: res.data.current_turn_index || 0,
-        isEncounterDirty: false,
+        isSceneDirty: false,
       });
       return res.data;
     } catch (error) {
-      console.error('Failed to load encounter:', error);
+      console.error('Failed to load scene:', error);
       set({ operationError: getErrorMessage(error) });
       return null;
     }
   },
 
-  closeEncounter: async () => {
+  closeScene: async () => {
     try {
-      await axios.post(`${API_URL}/encounter/close`);
-      set({ currentEncounter: null, actors: [], initiativeOrder: [], currentRound: 0, currentTurnIndex: 0, isEncounterActive: false, isEncounterDirty: false });
+      await axios.post(`${API_URL}/scene/close`);
+      set({ currentScene: null, actors: [], initiativeOrder: [], currentRound: 0, currentTurnIndex: 0, isSceneActive: false, isSceneDirty: false });
       return true;
     } catch (error) {
-      console.error('Failed to close encounter:', error);
+      console.error('Failed to close scene:', error);
       set({ operationError: getErrorMessage(error) });
       return false;
     }
   },
 
-  deleteEncounter: async (encounterId) => {
+  deleteScene: async (sceneId) => {
     try {
-      await axios.delete(`${API_URL}/encounter/${encounterId}`);
+      await axios.delete(`${API_URL}/scene/${sceneId}`);
       const state = get();
-      const isCurrent = state.currentEncounter?.id === encounterId;
+      const isCurrent = state.currentScene?.id === sceneId;
       set({
-        campaignEncounters: state.campaignEncounters.filter((encounter) => encounter.id !== encounterId),
+        campaignScenes: state.campaignScenes.filter((scene) => scene.id !== sceneId),
         isCampaignDirty: false,
-        ...(isCurrent ? { currentEncounter: null, actors: [], initiativeOrder: [], currentRound: 0, currentTurnIndex: 0, isEncounterActive: false, isEncounterDirty: false } : {}),
+        ...(isCurrent ? { currentScene: null, actors: [], initiativeOrder: [], currentRound: 0, currentTurnIndex: 0, isSceneActive: false, isSceneDirty: false } : {}),
       });
       return true;
     } catch (error) {
-      console.error('Failed to delete encounter:', error);
+      console.error('Failed to delete scene:', error);
       set({ operationError: getErrorMessage(error) });
       return false;
     }
   },
 
-  saveEncounter: async () => {
+  saveScene: async () => {
     try {
-      await axios.post(`${API_URL}/encounter/save`);
-      set({ isEncounterDirty: false });
+      await axios.post(`${API_URL}/scene/save`);
+      set({ isSceneDirty: false });
       return true;
     } catch (error) {
-      console.error('Failed to save encounter:', error);
+      console.error('Failed to save scene:', error);
       set({ operationError: getErrorMessage(error) });
       return false;
     }
   },
 
-  // Fetches the live encounter snapshot from the backend (source of truth shared by all windows).
-  fetchCurrentEncounter: async () => {
+  // Fetches the live scene snapshot from the backend (source of truth shared by all windows).
+  fetchCurrentScene: async () => {
     try {
-      const res = await axios.get(`${API_URL}/encounter/current`);
+      const res = await axios.get(`${API_URL}/scene/current`);
       set({
-        currentEncounter: res.data,
+        currentScene: res.data,
         actors: res.data.actors || [],
         initiativeOrder: res.data.initiative_order || [],
         currentRound: res.data.current_round || 0,
         currentTurnIndex: res.data.current_turn_index || 0,
-        isEncounterActive: (res.data.initiative_order || []).length > 0,
+        isSceneActive: (res.data.initiative_order || []).length > 0,
       });
       return res.data;
     } catch (error) {
-      // 404 simply means no encounter is loaded yet; not an error worth logging on every poll.
+      // 404 simply means no scene is loaded yet; not an error worth logging on every poll.
       if (error.response?.status !== 404) {
-        console.error('Failed to fetch current encounter:', error);
+        console.error('Failed to fetch current scene:', error);
       }
       return null;
     }
@@ -327,7 +327,7 @@ export const useStore = create((set, get) => ({
       const res = await axios.post(`${API_URL}/actor/add`, actor);
       const state = get();
       set({ actors: [...state.actors, res.data] });
-      set({ isEncounterDirty: true });
+      set({ isSceneDirty: true });
       return res.data;
     } catch (error) {
       console.error('Failed to add actor:', error);
@@ -344,7 +344,7 @@ export const useStore = create((set, get) => ({
         a.id === actorId ? res.data : a
       );
       set({ actors: updatedActors });
-      set({ isEncounterDirty: true });
+      set({ isSceneDirty: true });
       return res.data;
     } catch (error) {
       console.error('Failed to update actor:', error);
@@ -358,7 +358,7 @@ export const useStore = create((set, get) => ({
       await axios.delete(`${API_URL}/actor/${actorId}`);
       const state = get();
       set({ actors: state.actors.filter((a) => a.id !== actorId) });
-      set({ isEncounterDirty: true });
+      set({ isSceneDirty: true });
       return true;
     } catch (error) {
       console.error('Failed to remove actor:', error);
@@ -420,10 +420,10 @@ export const useStore = create((set, get) => ({
 
   addActorFromTemplate: async (templateId) => {
     try {
-      const res = await axios.post(`${API_URL}/encounter/actor/from-template/${templateId}`);
+      const res = await axios.post(`${API_URL}/scene/actor/from-template/${templateId}`);
       const state = get();
       set({ actors: [...state.actors, res.data] });
-      set({ isEncounterDirty: true });
+      set({ isSceneDirty: true });
       return res.data;
     } catch (error) {
       console.error('Failed to add actor from template:', error);
@@ -440,8 +440,8 @@ export const useStore = create((set, get) => ({
         initiativeOrder: res.data.initiative_order,
         currentRound: res.data.round,
         currentTurnIndex: res.data.current_turn_index,
-        isEncounterActive: true,
-        isEncounterDirty: true,
+        isSceneActive: true,
+        isSceneDirty: true,
       });
       return res.data;
     } catch (error) {
@@ -457,7 +457,7 @@ export const useStore = create((set, get) => ({
       set({
         currentTurnIndex: res.data.turn_index,
         currentRound: res.data.round,
-        isEncounterDirty: true,
+        isSceneDirty: true,
       });
       return res.data;
     } catch (error) {
@@ -475,8 +475,8 @@ export const useStore = create((set, get) => ({
         initiativeOrder: res.data.initiative_order,
         currentRound: res.data.round,
         currentTurnIndex: res.data.current_turn_index,
-        isEncounterActive: true,
-        isEncounterDirty: true,
+        isSceneActive: true,
+        isSceneDirty: true,
       });
       return res.data;
     } catch (error) {
@@ -504,7 +504,7 @@ export const useStore = create((set, get) => ({
   setSelectedActorId: (actorId) => set({ selectedActorId: actorId }),
   setSelectedTemplateId: (templateId) => set({ selectedTemplateId: templateId }),
 
-  // Clears all campaign/encounter session state so the app falls back to the campaign selector.
+  // Clears all campaign/scene session state so the app falls back to the campaign selector.
   returnToCampaignSelector: () => set({
     currentCampaign: null,
     ruleset: null,
@@ -512,8 +512,8 @@ export const useStore = create((set, get) => ({
     referenceSources: [],
     referenceDocuments: [],
     referenceResults: [],
-    campaignEncounters: [],
-    currentEncounter: null,
+    campaignScenes: [],
+    currentScene: null,
     actors: [],
     initiativeOrder: [],
     currentRound: 0,
@@ -522,9 +522,9 @@ export const useStore = create((set, get) => ({
     rulesetConfig: null,
     selectedActorId: null,
     selectedTemplateId: null,
-    isEncounterActive: false,
+    isSceneActive: false,
     isCampaignDirty: false,
-    isEncounterDirty: false,
+    isSceneDirty: false,
     operationError: null,
   }),
 }));

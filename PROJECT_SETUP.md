@@ -1,6 +1,6 @@
 # Game Master's Workbench
 
-A comprehensive GM tool for managing Pathfinder/D&D encounters. Includes a GM dashboard for actor management, initiative tracking, and a separate player view that displays only permitted information.
+A comprehensive GM tool for managing Pathfinder/D&D scenes. Includes a GM dashboard for actor management, initiative tracking, and a separate player view that displays only permitted information.
 
 ## Features
 
@@ -12,7 +12,7 @@ A comprehensive GM tool for managing Pathfinder/D&D encounters. Includes a GM da
   - Initiative order with current actor highlight
   - Health bars (PC: X/Y format, NPC: green→red gradient)
   - Status effects with duration
-- **Persistence:** Save/load campaigns and encounters as JSON files
+- **Persistence:** Save/load campaigns and scenes as JSON files
 
 ## Project Structure
 
@@ -112,7 +112,7 @@ pathfinder_app/
 
 1. **Launch Application:** Start the Electron app (`npm start` in frontend)
 2. **Load/Create Campaign:** Select an existing campaign or create a new one with ruleset
-3. **Create Encounter:** Name your encounter (ruleset inherits from campaign)
+3. **Create Scene:** Name your scene (ruleset inherits from campaign)
 4. **Add Actors:** Click "Add Actor" and fill in character details
    - Set name, player name (if PC), HP, AC, initiative bonus
    - Enter ability scores (STR, DEX, CON, INT, WIS, CHA)
@@ -138,14 +138,14 @@ pathfinder_app/
 - `GET /api/campaign/current` — Get active campaign
 - `POST /api/campaign/save` — Save current campaign
 
-### Encounter
-- `POST /api/encounter/new` — Create encounter
-- `GET /api/encounter/current` — Get active encounter
-- `POST /api/encounter/load` — Load encounter by ID
-- `POST /api/encounter/save` — Save encounter
+### Scene
+- `POST /api/scene/new` — Create scene
+- `GET /api/scene/current` — Get active scene
+- `POST /api/scene/load` — Load scene by ID
+- `POST /api/scene/save` — Save scene
 
 ### Actors
-- `POST /api/actor/add` — Add actor to encounter
+- `POST /api/actor/add` — Add actor to scene
 - `GET /api/actor/{id}` — Get actor details
 - `PUT /api/actor/{id}` — Update actor
 - `DELETE /api/actor/{id}` — Remove actor
@@ -191,13 +191,13 @@ pathfinder_app/
 {
   name: string
   ruleset: "1e" | "2e"
-  encounters: [encounter_id]
+  scenes: [scene_id]
   actor_templates: [Actor]
   notes: string
 }
 ```
 
-### Encounter
+### Scene
 ```
 {
   id: string
@@ -251,7 +251,7 @@ pathfinder_app/
 ### Backend
 - API runs on `http://localhost:8000` (port configurable in `main.py`)
 - Campaigns saved to `./campaigns/` directory
-- Each campaign is a folder with `campaign.json` + `encounters/` subdirectory
+- Each campaign is a folder with `campaign.json` + `scenes/` subdirectory
 
 ### Frontend
 - React dev server: `http://localhost:3000`
@@ -273,7 +273,7 @@ pathfinder_app/
 - Verify `./campaigns/CampaignName/` directory was created
 
 **Actors not showing**
-- Ensure encounter is created first
+- Ensure scene is created first
 - Check "Add Actor" form for missing required fields
 
 ## License

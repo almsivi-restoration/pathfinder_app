@@ -5,50 +5,50 @@ import InitiativeTracker from './InitiativeTracker';
 import ActorForm from './ActorForm';
 import ActorTemplateLibrary from './ActorTemplateLibrary';
 import ActorEditModal from './ActorEditModal';
-import EncounterLibrary from './EncounterLibrary';
+import SceneLibrary from './SceneLibrary';
 import '../styles/GMDashboard.css';
 
 function GMDashboard() {
   const currentCampaign = useStore((state) => state.currentCampaign);
-  const currentEncounter = useStore((state) => state.currentEncounter);
-  const createEncounter = useStore((state) => state.createEncounter);
-  const saveEncounter = useStore((state) => state.saveEncounter);
+  const currentScene = useStore((state) => state.currentScene);
+  const createScene = useStore((state) => state.createScene);
+  const saveScene = useStore((state) => state.saveScene);
   const saveCampaign = useStore((state) => state.saveCampaign);
-  const closeEncounter = useStore((state) => state.closeEncounter);
-  const fetchCampaignEncounters = useStore((state) => state.fetchCampaignEncounters);
+  const closeScene = useStore((state) => state.closeScene);
+  const fetchCampaignScenes = useStore((state) => state.fetchCampaignScenes);
   const isCampaignDirty = useStore((state) => state.isCampaignDirty);
-  const isEncounterDirty = useStore((state) => state.isEncounterDirty);
+  const isSceneDirty = useStore((state) => state.isSceneDirty);
   const operationError = useStore((state) => state.operationError);
   const clearOperationError = useStore((state) => state.clearOperationError);
   const returnToCampaignSelector = useStore((state) => state.returnToCampaignSelector);
-  const [newEncounterName, setNewEncounterName] = useState('');
+  const [newSceneName, setNewSceneName] = useState('');
   const [showActorForm, setShowActorForm] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
-    if (currentCampaign) fetchCampaignEncounters();
-  }, [currentCampaign, fetchCampaignEncounters]);
+    if (currentCampaign) fetchCampaignScenes();
+  }, [currentCampaign, fetchCampaignScenes]);
 
-  const handleCreateEncounter = async () => {
-    if (!newEncounterName.trim()) return;
+  const handleCreateScene = async () => {
+    if (!newSceneName.trim()) return;
     clearOperationError();
-    const encounter = await createEncounter(newEncounterName);
-    if (encounter) setNewEncounterName('');
+    const scene = await createScene(newSceneName);
+    if (scene) setNewSceneName('');
   };
 
   const handleSaveAll = async () => {
     clearOperationError();
-    const encounterSaved = currentEncounter ? await saveEncounter() : true;
+    const sceneSaved = currentScene ? await saveScene() : true;
     const campaignSaved = await saveCampaign();
-    setSaveMessage(encounterSaved && campaignSaved
-      ? currentEncounter ? 'Campaign and encounter saved.' : 'Campaign saved.'
+    setSaveMessage(sceneSaved && campaignSaved
+      ? currentScene ? 'Campaign and scene saved.' : 'Campaign saved.'
       : 'Save failed. Your unsaved changes remain open.');
   };
 
-  const handleCloseEncounter = async () => {
-    if (isEncounterDirty && !window.confirm('Close this encounter without saving its changes?')) return;
+  const handleCloseScene = async () => {
+    if (isSceneDirty && !window.confirm('Close this scene without saving its changes?')) return;
     clearOperationError();
-    await closeEncounter();
+    await closeScene();
   };
 
   const handleOpenPlayerView = () => {
@@ -60,7 +60,7 @@ function GMDashboard() {
   };
 
   const handleBackToCampaigns = () => {
-    if ((!isCampaignDirty && !isEncounterDirty) || window.confirm('Return to the campaign selector? Unsaved changes will be lost unless you Save All first.')) {
+    if ((!isCampaignDirty && !isSceneDirty) || window.confirm('Return to the campaign selector? Unsaved changes will be lost unless you Save All first.')) {
       returnToCampaignSelector();
     }
   };
@@ -71,7 +71,7 @@ function GMDashboard() {
         <div className="header-left">
           <h1>{currentCampaign?.name || "Game Master's Workbench"}</h1>
           <div className="ruleset-selector">Ruleset: {currentCampaign?.ruleset}</div>
-          {(isCampaignDirty || isEncounterDirty) && <span className="dirty-indicator">Unsaved changes</span>}
+          {(isCampaignDirty || isSceneDirty) && <span className="dirty-indicator">Unsaved changes</span>}
         </div>
         <div className="header-right">
           <button className="btn btn-secondary" onClick={handleBackToCampaigns}>
@@ -83,14 +83,14 @@ function GMDashboard() {
           <button className="btn btn-secondary" onClick={handleSaveAll}>
             Save All
           </button>
-          {currentEncounter && <button className="btn btn-secondary" onClick={handleCloseEncounter}>Close Encounter</button>}
+          {currentScene && <button className="btn btn-secondary" onClick={handleCloseScene}>Close Scene</button>}
         </div>
       </header>
 
       <div className="dashboard-content">
         {(operationError || saveMessage) && <div className={`operation-message ${operationError ? 'error' : 'success'}`}>{operationError || saveMessage}</div>}
-        {!currentEncounter ? (
-          <div className="encounter-creator">
+        {!currentScene ? (
+          <div className="scene-creator">
             <h2>Campaign Actors</h2>
             <button
               className="btn btn-primary"
@@ -100,25 +100,25 @@ function GMDashboard() {
             </button>
             <ActorTemplateLibrary />
 
-            <h2>Create or Load Encounter</h2>
-            <EncounterLibrary />
+            <h2>Create or Load Scene</h2>
+            <SceneLibrary />
             <input
               type="text"
-              placeholder="Encounter name"
-              value={newEncounterName}
-              onChange={(e) => setNewEncounterName(e.target.value)}
+              placeholder="Scene name"
+              value={newSceneName}
+              onChange={(e) => setNewSceneName(e.target.value)}
             />
             <button
               className="btn btn-primary"
-              onClick={handleCreateEncounter}
-              disabled={!newEncounterName.trim()}
+              onClick={handleCreateScene}
+              disabled={!newSceneName.trim()}
             >
-              Create Encounter
+              Create Scene
             </button>
 
           </div>
         ) : (
-          <div className="encounter-active">
+          <div className="scene-active">
             <div className="left-panel">
               <h2>Actors</h2>
               <button
@@ -141,7 +141,7 @@ function GMDashboard() {
 
       {showActorForm && (
         <ActorForm
-          allowEncounterAdd={Boolean(currentEncounter)}
+          allowSceneAdd={Boolean(currentScene)}
           onActorAdded={() => setShowActorForm(false)}
         />
       )}

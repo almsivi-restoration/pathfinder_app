@@ -9,14 +9,14 @@ function ActorTemplateLibrary() {
   const addActorFromTemplate = useStore((state) => state.addActorFromTemplate);
   const removeActorTemplate = useStore((state) => state.removeActorTemplate);
   const setSelectedTemplateId = useStore((state) => state.setSelectedTemplateId);
-  const currentEncounter = useStore((state) => state.currentEncounter);
+  const currentScene = useStore((state) => state.currentScene);
   const rulesetConfig = useStore((state) => state.rulesetConfig);
 
   useEffect(() => {
     listActorTemplates();
   }, [listActorTemplates]);
 
-  const handleAddToEncounter = async (templateId) => {
+  const handleAddToScene = async (templateId) => {
     await addActorFromTemplate(templateId);
   };
 
@@ -39,7 +39,7 @@ function ActorTemplateLibrary() {
   if (actorTemplates.length === 0) {
     return (
       <div className="actor-template-library empty">
-        No campaign actors yet. Create one to reuse it in any encounter for this campaign.
+        No campaign actors yet. Create one to reuse it in any scene for this campaign.
       </div>
     );
   }
@@ -56,11 +56,11 @@ function ActorTemplateLibrary() {
           <div className="template-actions">
             <button
               className="btn-small btn-add"
-              onClick={() => handleAddToEncounter(template.id)}
-              disabled={!currentEncounter}
-              title={!currentEncounter ? 'Create an encounter first' : 'Add to current encounter'}
+              onClick={() => handleAddToScene(template.id)}
+              disabled={!currentScene}
+              title={!currentScene ? 'Create an scene first' : 'Add to current scene'}
             >
-              Add to Encounter
+              Add to Scene
             </button>
             <button className="btn-small btn-edit" onClick={() => setSelectedTemplateId(template.id)}>
               Edit

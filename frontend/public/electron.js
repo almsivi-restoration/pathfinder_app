@@ -239,7 +239,7 @@ function showHelp() {
     message: "Game Master's Workbench",
     detail:
       `Version ${app.getVersion()}\n\n` +
-      'Workflow: create or load a campaign, open an encounter, add actors, then run initiative from the GM Dashboard. Open a second, player-safe view with View > Open Player View.\n\n' +
+      'Workflow: create or load a campaign, open an scene, add actors, then run initiative from the GM Dashboard. Open a second, player-safe view with View > Open Player View.\n\n' +
       'Encyclopedia: GM Tools > Encyclopedia searches rulebook PDFs you supply. Drop PDFs for a ruleset into its source directory, then Index them there.\n\n' +
       'Data lives under:\n' +
       path.join(app.getPath('userData'), 'data') +

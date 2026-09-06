@@ -53,55 +53,55 @@ def test_delete_campaign_removes_only_the_selected_campaign(state_manager):
     assert state_manager.delete_campaign("../Keep") is False
 
 
-def test_create_encounter_registers_on_campaign(state_manager):
+def test_create_scene_registers_on_campaign(state_manager):
     state_manager.create_campaign("Camp", "1e")
-    encounter = state_manager.create_encounter("Goblin Ambush")
-    assert encounter.id in state_manager.current_campaign.encounters
-    assert state_manager.current_encounter is encounter
-    assert not hasattr(encounter, "ruleset")
+    scene = state_manager.create_scene("Goblin Ambush")
+    assert scene.id in state_manager.current_campaign.scenes
+    assert state_manager.current_scene is scene
+    assert not hasattr(scene, "ruleset")
 
 
-def test_list_close_and_delete_encounter(state_manager):
+def test_list_close_and_delete_scene(state_manager):
     state_manager.create_campaign("Camp", "1e")
-    encounter = state_manager.create_encounter("Fight")
-    assert state_manager.save_encounter() is True
+    scene = state_manager.create_scene("Fight")
+    assert state_manager.save_scene() is True
 
-    assert [item.id for item in state_manager.list_encounters()] == [encounter.id]
-    assert state_manager.close_encounter() is True
-    assert state_manager.current_encounter is None
-    assert [item.id for item in state_manager.list_encounters()] == [encounter.id]
-    assert state_manager.current_encounter is None
-    assert state_manager.delete_encounter(encounter.id) is True
-    assert state_manager.list_encounters() == []
+    assert [item.id for item in state_manager.list_scenes()] == [scene.id]
+    assert state_manager.close_scene() is True
+    assert state_manager.current_scene is None
+    assert [item.id for item in state_manager.list_scenes()] == [scene.id]
+    assert state_manager.current_scene is None
+    assert state_manager.delete_scene(scene.id) is True
+    assert state_manager.list_scenes() == []
 
 
-def test_closing_an_unsaved_encounter_discards_its_campaign_reference(state_manager):
+def test_closing_an_unsaved_scene_discards_its_campaign_reference(state_manager):
     campaign = state_manager.create_campaign("Camp", "1e")
-    encounter = state_manager.create_encounter("Unsaved Fight")
+    scene = state_manager.create_scene("Unsaved Fight")
 
-    assert state_manager.close_encounter() is True
-    assert encounter.id not in campaign.encounters
+    assert state_manager.close_scene() is True
+    assert scene.id not in campaign.scenes
 
 
-def test_loading_campaign_clears_encounter_from_the_previous_campaign(state_manager):
+def test_loading_campaign_clears_scene_from_the_previous_campaign(state_manager):
     first_campaign = state_manager.create_campaign("First", "1e")
     state_manager.save_campaign(first_campaign)
-    state_manager.create_encounter("First Fight")
+    state_manager.create_scene("First Fight")
     state_manager.create_campaign("Second", "1e")
     state_manager.save_campaign()
 
     state_manager.load_campaign("First")
 
-    assert state_manager.current_encounter is None
+    assert state_manager.current_scene is None
 
 
 def test_add_update_remove_actor(state_manager):
     state_manager.create_campaign("Camp", "1e")
-    state_manager.create_encounter("Fight")
+    state_manager.create_scene("Fight")
 
     actor = make_actor()
     assert state_manager.add_actor(actor) is True
-    assert len(state_manager.current_encounter.actors) == 1
+    assert len(state_manager.current_scene.actors) == 1
 
     actor.sheet["hp"] = {"current": 5}
     assert state_manager.update_actor(actor.id, actor) is True
@@ -113,32 +113,32 @@ def test_add_update_remove_actor(state_manager):
 
 def test_remove_actor_clears_it_from_initiative_order(state_manager):
     state_manager.create_campaign("Camp", "1e")
-    state_manager.create_encounter("Fight")
+    state_manager.create_scene("Fight")
     actor = make_actor()
     state_manager.add_actor(actor)
-    state_manager.current_encounter.initiative_order = [actor.id]
+    state_manager.current_scene.initiative_order = [actor.id]
 
     state_manager.remove_actor(actor.id)
-    assert actor.id not in state_manager.current_encounter.initiative_order
+    assert actor.id not in state_manager.current_scene.initiative_order
     assert state_manager.remove_actor(actor.id) is False
 
 
 def test_roll_initiative_orders_all_actors_and_starts_round_1(state_manager):
     state_manager.create_campaign("Camp", "1e")
-    state_manager.create_encounter("Fight")
+    state_manager.create_scene("Fight")
     a1, a2 = make_actor(name="A"), make_actor(name="B")
     state_manager.add_actor(a1)
     state_manager.add_actor(a2)
 
     assert state_manager.roll_initiative() is True
-    assert set(state_manager.current_encounter.initiative_order) == {a1.id, a2.id}
-    assert state_manager.current_encounter.current_round == 1
-    assert state_manager.current_encounter.current_turn_index == 0
+    assert set(state_manager.current_scene.initiative_order) == {a1.id, a2.id}
+    assert state_manager.current_scene.current_round == 1
+    assert state_manager.current_scene.current_turn_index == 0
 
 
 def test_set_initiative_order_is_gm_controlled_and_keeps_missing_actors(state_manager):
     state_manager.create_campaign("Camp", "1e")
-    state_manager.create_encounter("Fight")
+    state_manager.create_scene("Fight")
     a1, a2, a3 = make_actor(name="A"), make_actor(name="B"), make_actor(name="C")
     state_manager.add_actor(a1)
     state_manager.add_actor(a2)
@@ -146,34 +146,34 @@ def test_set_initiative_order_is_gm_controlled_and_keeps_missing_actors(state_ma
 
     # GM only specifies two of the three actors - the third must not be silently dropped
     assert state_manager.set_initiative_order([a2.id, a1.id]) is True
-    order = state_manager.current_encounter.initiative_order
+    order = state_manager.current_scene.initiative_order
     assert order[:2] == [a2.id, a1.id]
     assert a3.id in order
     assert len(order) == 3
-    assert state_manager.current_encounter.current_round == 1
+    assert state_manager.current_scene.current_round == 1
 
 
 def test_next_turn_advances_round_and_ticks_effects(state_manager):
     state_manager.create_campaign("Camp", "1e")
-    state_manager.create_encounter("Fight")
+    state_manager.create_scene("Fight")
     a1, a2 = make_actor(name="A"), make_actor(name="B")
     a1.effects.append(Effect(name="Poisoned", duration_rounds=1))
     state_manager.add_actor(a1)
     state_manager.add_actor(a2)
-    state_manager.current_encounter.initiative_order = [a1.id, a2.id]
-    state_manager.current_encounter.current_round = 1
-    state_manager.current_encounter.current_turn_index = 0
+    state_manager.current_scene.initiative_order = [a1.id, a2.id]
+    state_manager.current_scene.current_round = 1
+    state_manager.current_scene.current_turn_index = 0
 
     next_actor = state_manager.next_turn()
     assert next_actor == a2.id
-    assert state_manager.current_encounter.current_round == 1
+    assert state_manager.current_scene.current_round == 1
 
     # completing the round ticks effect durations down by one (current behavior: an effect
     # is not dropped until the round AFTER it reaches 0 - it lingers with duration_rounds=0
     # for one full round before the next tick's filter removes it).
     next_actor = state_manager.next_turn()
     assert next_actor == a1.id
-    assert state_manager.current_encounter.current_round == 2
+    assert state_manager.current_scene.current_round == 2
     remaining_effects = state_manager.get_actor(a1.id).effects
     assert len(remaining_effects) == 1
     assert remaining_effects[0].duration_rounds == 0
@@ -181,7 +181,7 @@ def test_next_turn_advances_round_and_ticks_effects(state_manager):
 
 def test_actor_template_lifecycle(state_manager):
     state_manager.create_campaign("Camp", "1e")
-    state_manager.create_encounter("Fight")
+    state_manager.create_scene("Fight")
 
     template = make_actor(name="Goblin Template")
     saved = state_manager.add_actor_template(template)
@@ -195,7 +195,7 @@ def test_actor_template_lifecycle(state_manager):
     instantiated = state_manager.instantiate_template(saved.id)
     assert instantiated is not None
     assert instantiated.id != saved.id  # a copy with a fresh id, not the template itself
-    assert instantiated in state_manager.current_encounter.actors
+    assert instantiated in state_manager.current_scene.actors
 
     assert state_manager.remove_actor_template(saved.id) is True
     assert state_manager.list_actor_templates() == []

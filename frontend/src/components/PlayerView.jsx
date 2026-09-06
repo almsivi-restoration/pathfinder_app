@@ -10,8 +10,8 @@ function PlayerView() {
   const initiativeOrder = useStore((state) => state.initiativeOrder);
   const currentRound = useStore((state) => state.currentRound);
   const currentTurnIndex = useStore((state) => state.currentTurnIndex);
-  const isEncounterActive = useStore((state) => state.isEncounterActive);
-  const fetchCurrentEncounter = useStore((state) => state.fetchCurrentEncounter);
+  const isSceneActive = useStore((state) => state.isSceneActive);
+  const fetchCurrentScene = useStore((state) => state.fetchCurrentScene);
   const rulesetConfig = useStore((state) => state.rulesetConfig);
   const fetchRulesetConfig = useStore((state) => state.fetchRulesetConfig);
 
@@ -19,11 +19,11 @@ function PlayerView() {
   // has no knowledge of anything the GM window did. Poll the backend (the shared
   // source of truth) instead of relying on any state passed in at window-open time.
   useEffect(() => {
-    fetchCurrentEncounter();
+    fetchCurrentScene();
     fetchRulesetConfig();
-    const intervalId = setInterval(fetchCurrentEncounter, POLL_INTERVAL_MS);
+    const intervalId = setInterval(fetchCurrentScene, POLL_INTERVAL_MS);
     return () => clearInterval(intervalId);
-  }, [fetchCurrentEncounter, fetchRulesetConfig]);
+  }, [fetchCurrentScene, fetchRulesetConfig]);
 
   const getActorById = (actorId) => {
     return actors.find((a) => a.id === actorId);
@@ -40,7 +40,7 @@ function PlayerView() {
     <div className="player-view">
       <header className="player-header">
         <h1>Combat Tracker</h1>
-        {isEncounterActive && (
+        {isSceneActive && (
           <div className="combat-info">
             <span className="round-badge">Round {currentRound}</span>
           </div>
@@ -49,15 +49,15 @@ function PlayerView() {
 
       <div className="player-content">
         {actors.length === 0 ? (
-          <div className="waiting">Waiting for encounter to start...</div>
+          <div className="waiting">Waiting for scene to start...</div>
         ) : (
           <div className="initiative-section">
-            <h2>{isEncounterActive ? 'Initiative Order' : 'Actors in Scene'}</h2>
+            <h2>{isSceneActive ? 'Initiative Order' : 'Actors in Scene'}</h2>
             <div className="actor-list-player">
               {displayOrder.map((actorId, index) => {
                 const actor = getActorById(actorId);
                 if (!actor) return null;
-                const isCurrent = isEncounterActive && actorId === getCurrentActorId();
+                const isCurrent = isSceneActive && actorId === getCurrentActorId();
                 return (
                   <PlayerActorRow
                     key={actorId}
