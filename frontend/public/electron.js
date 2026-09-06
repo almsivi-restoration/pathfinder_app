@@ -190,6 +190,24 @@ ipcMain.handle('open-player-window', () => {
   createPlayerWindow();
 });
 
+function showHelp() {
+  const window = BrowserWindow.getFocusedWindow() || mainWindow;
+  if (!window) return;
+  dialog.showMessageBox(window, {
+    type: 'info',
+    title: 'Help',
+    message: "Game Master's Workbench",
+    detail:
+      `Version ${app.getVersion()}\n\n` +
+      'Workflow: create or load a campaign, open an encounter, add actors, then run initiative from the GM Dashboard. Open a second, player-safe view with View > Open Player View.\n\n' +
+      'Encyclopedia: GM Tools > Encyclopedia searches rulebook PDFs you supply. Drop PDFs for a ruleset into its source directory, then Index them there.\n\n' +
+      'Data lives under:\n' +
+      path.join(app.getPath('userData'), 'data') +
+      '\n\nKeyboard: Ctrl+R restart · Ctrl+Q quit · Ctrl+Shift+I developer tools.',
+    buttons: ['Close'],
+  });
+}
+
 // Menu
 const template = [
   {
@@ -225,21 +243,8 @@ const template = [
         label: 'Toggle Developer Tools',
         accelerator: 'CmdOrCtrl+Shift+I',
         click: () => {
-          if (mainWindow) mainWindow.webContents.toggleDevTools();
-        },
-      },
-      { type: 'separator' },
-      {
-        label: 'About',
-        click: () => {
-          if (mainWindow) {
-            dialog.showMessageBox(mainWindow, {
-              type: 'info',
-              title: 'About',
-              message: `Game Master's Workbench`,
-              detail: `Version ${app.getVersion()}`,
-            });
-          }
+          const window = BrowserWindow.getFocusedWindow() || mainWindow;
+          if (window) window.webContents.toggleDevTools();
         },
       },
     ],
@@ -250,7 +255,34 @@ const template = [
       {
         label: 'Encyclopedia',
         click: () => {
-          if (mainWindow) mainWindow.webContents.send('open-encyclopedia');
+          const window = BrowserWindow.getFocusedWindow() || mainWindow;
+          if (window) window.webContents.send('open-encyclopedia');
+        },
+      },
+    ],
+  },
+  {
+    label: 'Help',
+    submenu: [
+      {
+        label: 'How to Use',
+        accelerator: 'F1',
+        click: () => {
+          showHelp();
+        },
+      },
+      {
+        label: `About (v${app.getVersion()})`,
+        click: () => {
+          const window = BrowserWindow.getFocusedWindow() || mainWindow;
+          if (window) {
+            dialog.showMessageBox(window, {
+              type: 'info',
+              title: 'About',
+              message: "Game Master's Workbench",
+              detail: `Version ${app.getVersion()}`,
+            });
+          }
         },
       },
     ],
