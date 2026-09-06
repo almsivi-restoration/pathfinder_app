@@ -204,7 +204,22 @@ app.on('ready', async () => {
     try {
       await waitForBackend();
     } catch (error) {
+      // A stale or foreign backend holding the port must not be silently used —
+      // the frontend would call routes the running server does not have (the
+      // v0.6.0 scene 404s). Surface it and refuse to open against it.
       console.error(error);
+      await dialog.showMessageBox({
+        type: 'error',
+        title: 'Backend Version Mismatch',
+        message: 'Cannot start: the backend on port 8000 is not this version of the app.',
+        detail:
+          `${error.message}\n\n` +
+          'Another copy of Game Masters Workbench (or a leftover backend) is likely still running. Quit it fully — including any orphaned process — and relaunch.',
+        buttons: ['Quit'],
+      });
+      stopBackend();
+      app.quit();
+      return;
     }
     setupAutoUpdater();
   }
