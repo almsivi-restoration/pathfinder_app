@@ -43,6 +43,18 @@
   color: var(--mw-text);
 }
 
+.reader-page-input {
+  width: 4.5em;
+  min-width: 0;
+  padding: 2px 4px;
+  text-align: center;
+  font: inherit;
+  color: var(--mw-text);
+  background: var(--mw-panel);
+  border: 1px solid var(--mw-frame);
+  box-sizing: border-box;
+}
+
 .reader-page {
   display: flex;
   justify-content: center;

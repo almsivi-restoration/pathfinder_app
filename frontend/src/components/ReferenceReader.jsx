@@ -8,22 +8,31 @@ GlobalWorkerOptions.workerSrc = workerUrl;
 
 function ReferenceReader({ filename, initialPage = 1, onBack }) {
   const canvasRef = useRef(null);
+  const pageContainerRef = useRef(null);
   const [document, setDocument] = useState(null);
   const [pageNumber, setPageNumber] = useState(initialPage);
-  const [scale, setScale] = useState(1.15);
+  const [pageInput, setPageInput] = useState(String(initialPage));
+  const [fitScale, setFitScale] = useState(1);
+  const [manualScale, setManualScale] = useState(null);
   const [error, setError] = useState('');
+
+  const scale = manualScale ?? fitScale;
 
   useEffect(() => {
     let active = true;
     setDocument(null);
     setError('');
+    setManualScale(null);
     setPageNumber(initialPage);
+    setPageInput(String(initialPage));
 
     getDocument(`${API_URL}/references/current/files/${encodeURIComponent(filename)}`).promise
       .then((pdfDocument) => {
         if (active) {
           setDocument(pdfDocument);
-          setPageNumber(Math.min(Math.max(initialPage, 1), pdfDocument.numPages));
+          const clamped = Math.min(Math.max(initialPage, 1), pdfDocument.numPages);
+          setPageNumber(clamped);
+          setPageInput(String(clamped));
         }
       })
       .catch(() => {
@@ -34,6 +43,31 @@ function ReferenceReader({ filename, initialPage = 1, onBack }) {
       active = false;
     };
   }, [filename, initialPage]);
+
+  useEffect(() => {
+    if (!document) return undefined;
+    let active = true;
+
+    const measureFit = () => {
+      document.getPage(1).then((page) => {
+        if (!active) return;
+        const baseViewport = page.getViewport({ scale: 1 });
+        const container = pageContainerRef.current;
+        const availableWidth = (container ? container.clientWidth : 1080) - 40;
+        const containerTop = container ? container.getBoundingClientRect().top : 220;
+        const availableHeight = window.innerHeight - containerTop - 24;
+        const fit = Math.min(availableWidth / baseViewport.width, availableHeight / baseViewport.height);
+        setFitScale(Math.min(Math.max(fit, 0.2), 2.5));
+      }).catch(() => {});
+    };
+
+    measureFit();
+    window.addEventListener('resize', measureFit);
+    return () => {
+      active = false;
+      window.removeEventListener('resize', measureFit);
+    };
+  }, [document]);
 
   useEffect(() => {
     if (!document || !canvasRef.current) return undefined;
@@ -59,6 +93,26 @@ function ReferenceReader({ filename, initialPage = 1, onBack }) {
     };
   }, [document, pageNumber, scale]);
 
+  const changePage = (target) => {
+    if (!document) return;
+    const clamped = Math.min(Math.max(target, 1), document.numPages);
+    setPageNumber(clamped);
+    setPageInput(String(clamped));
+  };
+
+  const submitPageInput = (raw) => {
+    const parsed = Number(raw);
+    if (document && Number.isInteger(parsed) && parsed >= 1 && parsed <= document.numPages) {
+      changePage(parsed);
+    } else {
+      setPageInput(String(pageNumber));
+    }
+  };
+
+  const zoomTo = (next) => {
+    setManualScale(Math.min(Math.max(parseFloat(next.toFixed(2)), 0.2), 3));
+  };
+
   return (
     <main className="reference-reader">
       <header className="reference-reader-header">
@@ -76,13 +130,30 @@ function ReferenceReader({ filename, initialPage = 1, onBack }) {
       ) : (
         <>
           <div className="reader-controls">
-            <button className="btn-small" disabled={pageNumber <= 1} onClick={() => setPageNumber(pageNumber - 1)}>Previous Page</button>
-            <span>Page {pageNumber} of {document.numPages}</span>
-            <button className="btn-small" disabled={pageNumber >= document.numPages} onClick={() => setPageNumber(pageNumber + 1)}>Next Page</button>
-            <button className="btn-small" disabled={scale <= 0.65} onClick={() => setScale(scale - 0.15)}>Zoom Out</button>
-            <button className="btn-small btn-add" disabled={scale >= 2.5} onClick={() => setScale(scale + 0.15)}>Zoom In</button>
+            <button className="btn-small" disabled={pageNumber <= 1} onClick={() => changePage(pageNumber - 1)}>Previous Page</button>
+            <span>
+              Page{' '}
+              <input
+                className="reader-page-input"
+                type="number"
+                min={1}
+                max={document.numPages}
+                value={pageInput}
+                onChange={(event) => setPageInput(event.target.value)}
+                onBlur={(event) => submitPageInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') submitPageInput(event.target.value);
+                }}
+                aria-label="Page number"
+              />
+              {' '}of {document.numPages}
+            </span>
+            <button className="btn-small" disabled={pageNumber >= document.numPages} onClick={() => changePage(pageNumber + 1)}>Next Page</button>
+            <button className="btn-small" disabled={scale <= 0.2} onClick={() => zoomTo(scale - 0.15)}>Zoom Out</button>
+            <button className="btn-small" onClick={() => setManualScale(null)} disabled={manualScale === null}>Fit Page</button>
+            <button className="btn-small btn-add" disabled={scale >= 3} onClick={() => zoomTo(scale + 0.15)}>Zoom In</button>
           </div>
-          <div className="reader-page"><canvas ref={canvasRef} /></div>
+          <div className="reader-page" ref={pageContainerRef}><canvas ref={canvasRef} /></div>
         </>
       )}
     </main>
