@@ -61,6 +61,13 @@ cd ../frontend && CI=true npm run react-test -- --watchAll=false   # frontend te
 
 ### 3. Build
 
+The backend binary is a stale-artifact trap: electron-builder bundles
+`backend/dist/gm-workbench-backend`, which is NOT rebuilt by `npm run build`.
+You MUST refreeze it from current source first — v0.6.0 shipped a 0.5.0 backend
+(the scene routes were missing) because this step was skipped. Verify the
+binary actually serves the newest routes after freezing (a missing-route `404`
+vs. a route-exists `422`).
+
 ```bash
 cd backend && venv/bin/pyinstaller --noconfirm gm-workbench-backend.spec
 cd ../frontend && cp public/electron.js public/preload.js build/
