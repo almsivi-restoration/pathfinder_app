@@ -20,7 +20,11 @@ def actor_payload(name="Goblin", is_pc=False):
 def test_health_check(client):
     res = client.get("/health")
     assert res.status_code == 200
-    assert res.json() == {"status": "ok"}
+    body = res.json()
+    assert body["status"] == "ok"
+    # Version identifies the backend to the desktop shell; "unknown" when the
+    # shell (which sets GM_WORKBENCH_VERSION) is not driving.
+    assert "version" in body
 
 
 def test_campaign_rulesets_come_from_the_registry(client):

@@ -48,6 +48,9 @@ function CampaignSelector({ onCampaignLoaded }) {
   return (
     <div className="campaign-selector">
       <h1>Game Master's Workbench</h1>
+      {window.electron?.appVersion && (
+        <div className="app-version">v{window.electron.appVersion}</div>
+      )}
 
       <div className="selector-content">
         {operationError && <div className="operation-message error">{operationError}</div>}

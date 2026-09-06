@@ -14,7 +14,7 @@ from uuid import uuid4
 from models import Actor, Campaign, Encounter, RollRequest, RollResult, Effect, InitiativeOrderRequest, ReferenceImportRequest
 from reference_library import ReferenceLibrary
 from state import StateManager
-from rules import get_ruleset, list_rulesets
+from rules import RULESETS, get_ruleset, list_rulesets
 
 app = FastAPI(title="Game Master's Workbench API")
 
@@ -34,6 +34,12 @@ campaigns_dir = os.environ.get("GM_WORKBENCH_CAMPAIGNS_DIR", "./campaigns")
 # Initialize state manager
 state_manager = StateManager(campaigns_dir=campaigns_dir)
 reference_library = ReferenceLibrary()
+
+# Create the per-ruleset PDF drop directories so users can find them without
+# reading documentation; reference PDFs themselves are user-supplied.
+reference_library.ensure_source_directories(
+    [config["reference_directory"] for config in RULESETS.values()]
+)
 
 # ==================== Campaign Routes ====================
 
@@ -400,8 +406,10 @@ def get_current_ruleset_config():
 
 @app.get("/health")
 def health_check():
-    """Health check endpoint."""
-    return {"status": "ok"}
+    """Health check endpoint. Includes the app version so the desktop shell can
+    tell its own freshly spawned backend apart from a stale or foreign server
+    already holding the port."""
+    return {"status": "ok", "version": os.environ.get("GM_WORKBENCH_VERSION", "unknown")}
 
 
 # ==================== Main ====================

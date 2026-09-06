@@ -31,6 +31,19 @@ class ReferenceLibrary:
             return []
         return sorted(path.name for path in source_dir.glob("*.pdf"))
 
+    def ensure_source_directories(self, source_directories: List[str]) -> List[Path]:
+        """Create the per-ruleset source directories users drop PDFs into.
+
+        Called once at startup with every registered ruleset's
+        reference_directory so the expected drop locations always exist.
+        """
+        created = []
+        for directory in source_directories:
+            source_dir = self._source_dir(directory)
+            source_dir.mkdir(parents=True, exist_ok=True)
+            created.append(source_dir)
+        return created
+
     def get_source_path(self, ruleset: str, filename: str, source_directory: Optional[str] = None) -> Optional[Path]:
         """Return a PDF only when it is directly inside the configured source directory."""
         source_dir = self._source_dir(source_directory or ruleset).resolve()

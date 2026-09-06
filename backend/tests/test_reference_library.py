@@ -44,3 +44,15 @@ def test_source_path_is_limited_to_the_configured_directory(tmp_path):
 
     assert library.get_source_path("1e", "core_rulebook.pdf", "pathfinder_1e") == source_path
     assert library.get_source_path("1e", "../core_rulebook.pdf", "pathfinder_1e") is None
+
+
+def test_ensure_source_directories_creates_ruleset_drop_locations(tmp_path):
+    library = ReferenceLibrary(tmp_path / "reference_library")
+
+    created = library.ensure_source_directories(["pathfinder_1e", "pathfinder_2e"])
+    created_again = library.ensure_source_directories(["pathfinder_1e", "pathfinder_2e"])
+
+    for directory in ("pathfinder_1e", "pathfinder_2e"):
+        assert (library.root_dir / "sources" / directory).is_dir()
+    assert created == created_again
+    assert library.available_sources("1e", "pathfinder_1e") == []

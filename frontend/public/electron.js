@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, dialog, ipcMain } = require('electron');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const http = require('http');
@@ -45,6 +45,7 @@ function startBackend() {
       GM_WORKBENCH_REFERENCE_DIR: referenceDir,
       GM_WORKBENCH_HOST: '127.0.0.1',
       GM_WORKBENCH_PORT: '8000',
+      GM_WORKBENCH_VERSION: app.getVersion(),
     },
   });
   backendProcess.on('error', (err) => console.error('Backend failed to start:', err));
@@ -62,8 +63,23 @@ function waitForBackend(maxAttempts = 50) {
   return new Promise((resolve, reject) => {
     const attempt = (remaining) => {
       const request = http.get('http://127.0.0.1:8000/health', (response) => {
-        response.resume();
-        resolve();
+        let body = '';
+        response.on('data', (chunk) => (body += chunk));
+        response.on('end', () => {
+          // A 200 alone is not enough: a leftover backend from a previous run
+          // (or anything else) may already hold the port. Only accept the
+          // server if it identifies as our version.
+          try {
+            const health = JSON.parse(body);
+            if (health.version === app.getVersion()) {
+              resolve();
+            } else {
+              reject(new Error(`Port 8000 is held by an incompatible backend (version ${health.version || 'unknown'}, expected ${app.getVersion()})`));
+            }
+          } catch {
+            reject(new Error('Port 8000 answered /health with an unrecognized response'));
+          }
+        });
       });
       request.on('error', () => {
         if (remaining <= 0) {
@@ -77,10 +93,26 @@ function waitForBackend(maxAttempts = 50) {
   });
 }
 
+// Only one instance: a second launch would spawn a backend that cannot bind
+// the port and then attach to the first instance's server. Hand focus to the
+// running instance instead.
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
+    title: `Game Master's Workbench v${app.getVersion()}`,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -127,6 +159,7 @@ function createPlayerWindow() {
 }
 
 app.on('ready', async () => {
+  if (!gotSingleInstanceLock) return;
   if (!isDev) {
     startBackend();
     try {
@@ -193,6 +226,20 @@ const template = [
         accelerator: 'CmdOrCtrl+Shift+I',
         click: () => {
           if (mainWindow) mainWindow.webContents.toggleDevTools();
+        },
+      },
+      { type: 'separator' },
+      {
+        label: 'About',
+        click: () => {
+          if (mainWindow) {
+            dialog.showMessageBox(mainWindow, {
+              type: 'info',
+              title: 'About',
+              message: `Game Master's Workbench`,
+              detail: `Version ${app.getVersion()}`,
+            });
+          }
         },
       },
     ],

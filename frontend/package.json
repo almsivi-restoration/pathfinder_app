@@ -1,6 +1,6 @@
 {
   "name": "gm-workbench",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Ruleset-neutral tabletop campaign and encounter manager",
   "private": true,
   "homepage": "./",
@@ -77,6 +77,17 @@
       "category": "Utility",
       "icon": "public/icons",
       "maintainer": "almsivi-restoration <almsivi-restoration@proton.me>"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "public/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "differentialPackage": true
     }
   }
 }

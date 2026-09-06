@@ -10,7 +10,14 @@
 
 .campaign-selector h1 {
   font-size: 42px;
-  margin-bottom: 40px;
+  margin-bottom: 8px;
+}
+
+.app-version {
+  color: var(--mw-text-dim);
+  font-family: var(--mw-font-body);
+  font-size: 14px;
+  margin-bottom: 32px;
 }
 
 .selector-content {
