@@ -177,6 +177,10 @@ The release sequence is:
 4. Create an annotated tag with the selected version and push the branch and tag.
 5. Create the corresponding GitHub release using the same tag and summarize the changes.
 
+The authoritative, step-by-step release runbook — including the exact build
+commands, the artifact-verification gates, and the required `latest-linux.yml`
+asset for auto-update — lives in [.github/copilot-instructions.md](.github/copilot-instructions.md).
+
 ## API Overview
 
 ### Campaigns
