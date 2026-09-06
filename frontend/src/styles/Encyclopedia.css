@@ -77,6 +77,28 @@
 
 .reference-results {
   margin-top: 16px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--mw-frame-lo) var(--mw-well);
+}
+
+.reference-results::-webkit-scrollbar {
+  width: 8px;
+}
+
+.reference-results::-webkit-scrollbar-track {
+  background: var(--mw-well);
+}
+
+.reference-results::-webkit-scrollbar-thumb {
+  background: var(--mw-frame-lo);
+  border: 1px solid var(--mw-frame-dark);
+}
+
+.reference-results::-webkit-scrollbar-thumb:hover {
+  background: var(--mw-gold);
 }
 
 .reference-result {

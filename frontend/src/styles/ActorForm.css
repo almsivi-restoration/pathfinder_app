@@ -115,7 +115,6 @@
   padding-top: 8px;
   min-width: 0;
   width: 100%;
-  overflow-x: auto;
 }
 
 .sheet-collection-heading {
@@ -127,8 +126,7 @@
 
 .sheet-collection-item {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
-  min-width: 760px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 6px;
   align-items: end;
   border-top: 1px solid var(--mw-border-dark);
