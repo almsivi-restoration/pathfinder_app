@@ -1,0 +1,63 @@
+.name-generator-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.name-generator {
+  width: 420px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.name-generator-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  padding: 14px;
+}
+
+.name-generator-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--mw-text-dim);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.name-generator-controls select,
+.name-generator-controls input {
+  background: var(--mw-well);
+  color: var(--mw-text);
+  border: 1px solid var(--mw-frame-lo);
+  padding: 5px 8px;
+  font-family: var(--mw-font-body);
+}
+
+.name-generator-results {
+  list-style: none;
+  margin: 0;
+  padding: 0 14px 14px;
+  color: var(--mw-text-bright);
+}
+
+.name-generator-results li {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--mw-border-dark);
+}
+
+.name-generator-footer {
+  padding: 0 14px 14px;
+  display: flex;
+  justify-content: flex-end;
+}

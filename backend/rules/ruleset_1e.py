@@ -48,9 +48,13 @@ SKILLS_1E = {
 
 SAVES_1E = ["fort", "ref", "will"]
 
+# Fantasy races used by the name generator's actor category.
+RACES_1E = ["human", "elf", "dwarf", "gnome", "halfling", "half-orc"]
+
 RULESET_CONFIG_1E = {
     "name": "Pathfinder 1e",
     "reference_directory": "pathfinder_1e",
+    "races": RACES_1E,
     "abilities": ABILITIES,
     "skills": SKILLS_1E,
     "saves": SAVES_1E,

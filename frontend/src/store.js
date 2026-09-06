@@ -39,6 +39,36 @@ export const useStore = create((set, get) => ({
 
   clearOperationError: () => set({ operationError: null }),
 
+  // Name generator
+  fetchNameCategories: async () => {
+    try {
+      const res = await axios.get(`${API_URL}/names/categories`);
+      return res.data;
+    } catch (error) {
+      console.error('Failed to fetch name categories:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
+    }
+  },
+
+  generateNames: async ({ category, count, race, placeLevel }) => {
+    try {
+      const res = await axios.get(`${API_URL}/names/generate`, {
+        params: {
+          category,
+          count,
+          ...(race ? { race } : {}),
+          ...(placeLevel ? { place_level: placeLevel } : {}),
+        },
+      });
+      return res.data.names;
+    } catch (error) {
+      console.error('Failed to generate names:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
+    }
+  },
+
   // Campaign actions
   listCampaigns: async () => {
     try {

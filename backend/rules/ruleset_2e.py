@@ -30,9 +30,13 @@ SKILLS_2E = {
 
 SAVES_2E = ["fort", "ref", "will"]
 
+# Ancestries used by the name generator's actor category.
+RACES_2E = ["human", "elf", "dwarf", "gnome", "halfling", "orc"]
+
 RULESET_CONFIG_2E = {
     "name": "Pathfinder 2e",
     "reference_directory": "pathfinder_2e",
+    "races": RACES_2E,
     "abilities": ABILITIES,
     "skills": SKILLS_2E,
     "saves": SAVES_2E,

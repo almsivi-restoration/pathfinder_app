@@ -12,6 +12,14 @@ try {
 } catch {
   isDev = false;
 }
+// electron-updater ships as a runtime dependency; guard the require so a
+// missing module can never block startup.
+let autoUpdater = null;
+try {
+  autoUpdater = require('electron-updater').autoUpdater;
+} catch {
+  autoUpdater = null;
+}
 
 let mainWindow;
 let playerWindow;
@@ -158,6 +166,37 @@ function createPlayerWindow() {
   });
 }
 
+// In-app auto-update. Applies to the AppImage (and NSIS on Windows); the deb
+// is managed by apt and does not self-update. User data under the per-user
+// data directory is never touched by an update — only the application image
+// in /opt or the AppImage file is replaced.
+function setupAutoUpdater() {
+  // Only self-update when running as an AppImage (Linux) or NSIS (Windows);
+  // a deb install is managed by apt and must not try to replace itself.
+  const isAppImage = !!process.env.APPIMAGE;
+  if (isDev || !autoUpdater || (process.platform !== 'win32' && !isAppImage)) {
+    return;
+  }
+  autoUpdater.autoDownload = true;
+  autoUpdater.on('update-downloaded', () => {
+    const window = BrowserWindow.getFocusedWindow() || mainWindow;
+    if (!window) return;
+    dialog
+      .showMessageBox(window, {
+        type: 'info',
+        title: 'Update Ready',
+        message: 'A new version has been downloaded.',
+        detail: 'Restart the application to apply it. Your campaigns and reference library are not affected.',
+        buttons: ['Restart Now', 'Later'],
+      })
+      .then(({ response }) => {
+        if (response === 0) autoUpdater.quitAndInstall();
+      });
+  });
+  autoUpdater.on('error', (error) => console.error('auto-updater:', error));
+  autoUpdater.checkForUpdates().catch((error) => console.error('update check failed:', error));
+}
+
 app.on('ready', async () => {
   if (!gotSingleInstanceLock) return;
   if (!isDev) {
@@ -167,6 +206,7 @@ app.on('ready', async () => {
     } catch (error) {
       console.error(error);
     }
+    setupAutoUpdater();
   }
   createWindow();
 });
@@ -257,6 +297,14 @@ const template = [
         click: () => {
           const window = BrowserWindow.getFocusedWindow() || mainWindow;
           if (window) window.webContents.send('open-encyclopedia');
+        },
+      },
+      {
+        label: 'Name Generator',
+        accelerator: 'CmdOrCtrl+N',
+        click: () => {
+          const window = BrowserWindow.getFocusedWindow() || mainWindow;
+          if (window) window.webContents.send('open-name-generator');
         },
       },
     ],

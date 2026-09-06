@@ -9,9 +9,11 @@ from fastapi.responses import FileResponse, JSONResponse
 import os
 import uvicorn
 import random
+from typing import Optional
 from uuid import uuid4
 
 from models import Actor, Campaign, Encounter, RollRequest, RollResult, Effect, InitiativeOrderRequest, ReferenceImportRequest
+from name_generator import generate_names, list_categories
 from reference_library import ReferenceLibrary
 from state import StateManager
 from rules import RULESETS, get_ruleset, list_rulesets
@@ -403,6 +405,27 @@ def get_current_ruleset_config():
 
 
 # ==================== Health Check ====================
+
+@app.get("/api/names/categories")
+def name_categories():
+    """Describe the name generator categories and per-ruleset races for the UI."""
+    base = list_categories()
+    races = []
+    if state_manager.current_campaign:
+        config = get_ruleset(state_manager.current_campaign.ruleset)
+        if config:
+            races = config.get("races", [])
+    return {**base, "races": races}
+
+
+@app.get("/api/names/generate")
+def generate_name(category: str, count: int = 5, race: Optional[str] = None, place_level: Optional[str] = None):
+    """Generate random fantasy names for the GM Tools name generator."""
+    try:
+        return {"names": generate_names(category, count, race, place_level)}
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+
 
 @app.get("/health")
 def health_check():

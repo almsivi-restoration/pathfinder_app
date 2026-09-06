@@ -8,4 +8,9 @@ contextBridge.exposeInMainWorld('electron', {
     ipcRenderer.on('open-encyclopedia', listener);
     return () => ipcRenderer.removeListener('open-encyclopedia', listener);
   },
+  onOpenNameGenerator: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on('open-name-generator', listener);
+    return () => ipcRenderer.removeListener('open-name-generator', listener);
+  },
 });
