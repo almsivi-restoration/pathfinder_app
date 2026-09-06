@@ -113,6 +113,22 @@ replace only the app image; user data under `~/.config/Game Masters
 Workbench/data/` is preserved — if a release ever breaks that, state it plainly
 and mark it incompatible), and a verification summary.
 
+### Release notes format (follow it exactly)
+
+- **Title:** `vX.Y.Z — <short imperative title>` (em dash, not just the tag).
+- **Body** uses Markdown sections, in this order, omitting any that don't apply:
+  - `## New` — features added.
+  - `## Changed` — behavior or naming changes.
+  - `## Fixed` — bug fixes, each with a one-line cause.
+  - `## Data compatibility` — always present. State whether prior data is
+    preserved/compatible, or plainly mark the release incompatible if not.
+  - `## Verification` — always present. Test counts, artifact checks
+    (deb scripts, package identity, updater metadata), and what was exercised.
+- **Pass real newlines, not literal `\n`.** Write `--notes` with actual line
+  breaks (the shell heredoc/`$'...'` form), never an escaped `\n` sequence —
+  that is what made v0.6.0 render as one run-on line. Preview with
+  `gh release view <tag> --json body` after creating.
+
 ## Auto-update
 
 electron-updater runs in the packaged main process, gated to AppImage
