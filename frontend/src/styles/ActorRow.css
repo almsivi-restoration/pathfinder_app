@@ -72,6 +72,43 @@
   opacity: 1;
 }
 
+.color-swatch-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.color-swatch {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  padding: 0;
+  border: 1px solid var(--mw-border-dark);
+  border-radius: 2px;
+  background: var(--mw-well);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.color-swatch:not(.assigned) {
+  background: transparent;
+  opacity: 0.5;
+}
+
+.color-swatch:hover {
+  opacity: 1;
+  outline-color: var(--mw-gold);
+}
+
+.color-swatch-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .btn-edit {
   outline-color: var(--mw-gold);
   color: var(--mw-gold-bright);
