@@ -3,6 +3,7 @@ import { useStore } from './store';
 import GMDashboard from './components/GMDashboard';
 import PlayerView from './components/PlayerView';
 import NameGenerator from './components/NameGenerator';
+import Chronicle from './components/Chronicle';
 import CampaignSelector from './pages/CampaignSelector';
 import Encyclopedia from './pages/Encyclopedia';
 import Bestiary from './pages/Bestiary';
@@ -13,6 +14,7 @@ function App() {
   const listCampaigns = useStore((state) => state.listCampaigns);
   const [view, setView] = useState('campaign-selector'); // 'campaign-selector', 'gm', 'player'
   const [showNameGenerator, setShowNameGenerator] = useState(false);
+  const [showChronicle, setShowChronicle] = useState(false);
 
   useEffect(() => {
     listCampaigns();
@@ -31,6 +33,11 @@ function App() {
   useEffect(() => {
     if (!window.electron?.onOpenBestiary) return undefined;
     return window.electron.onOpenBestiary(() => setView('bestiary'));
+  }, []);
+
+  useEffect(() => {
+    if (!window.electron?.onOpenChronicle) return undefined;
+    return window.electron.onOpenChronicle(() => setShowChronicle(true));
   }, []);
 
   // Determine view based on URL or state
@@ -55,6 +62,7 @@ function App() {
       {view === 'bestiary' && <Bestiary onBack={() => setView('gm')} />}
       {view === 'player' && <PlayerView />}
       {showNameGenerator && <NameGenerator onClose={() => setShowNameGenerator(false)} />}
+      {showChronicle && <Chronicle onClose={() => setShowChronicle(false)} />}
     </div>
   );
 }

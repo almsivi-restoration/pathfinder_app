@@ -18,4 +18,9 @@ contextBridge.exposeInMainWorld('electron', {
     ipcRenderer.on('open-bestiary', listener);
     return () => ipcRenderer.removeListener('open-bestiary', listener);
   },
+  onOpenChronicle: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on('open-chronicle', listener);
+    return () => ipcRenderer.removeListener('open-chronicle', listener);
+  },
 });

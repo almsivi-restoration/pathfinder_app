@@ -14,8 +14,10 @@ export const useStore = create((set, get) => ({
   referenceSources: [],
   referenceDocuments: [],
   referenceResults: [],
+  ocrAvailable: false,
   bestiaryStatus: null,
   bestiaryResults: [],
+  chronicleEntries: [],
   campaignScenes: [],
 
   // Scene state
@@ -120,6 +122,7 @@ export const useStore = create((set, get) => ({
         actors: [],
         initiativeOrder: [],
         campaignScenes: [],
+        chronicleEntries: [],
         isCampaignDirty: false,
         isSceneDirty: false,
       });
@@ -172,6 +175,7 @@ export const useStore = create((set, get) => ({
       set({
         referenceSources: res.data.source_files,
         referenceDocuments: res.data.documents,
+        ocrAvailable: !!res.data.ocr_available,
       });
       return res.data;
     } catch (error) {
@@ -270,6 +274,59 @@ export const useStore = create((set, get) => ({
       console.error('Failed to map bestiary entry:', error);
       set({ operationError: getErrorMessage(error) });
       return null;
+    }
+  },
+
+  // Chronicle actions
+  fetchChronicle: async () => {
+    try {
+      const res = await axios.get(`${API_URL}/campaign/chronicle`);
+      set({ chronicleEntries: res.data.entries });
+      return res.data.entries;
+    } catch (error) {
+      if (error.response?.status !== 404) {
+        console.error('Failed to fetch chronicle:', error);
+        set({ operationError: getErrorMessage(error) });
+      }
+      return [];
+    }
+  },
+
+  addChronicleEntry: async ({ title, body }) => {
+    try {
+      const res = await axios.post(`${API_URL}/campaign/chronicle/add`, { title, body });
+      set({ chronicleEntries: [...get().chronicleEntries, res.data] });
+      return res.data;
+    } catch (error) {
+      console.error('Failed to add chronicle entry:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
+    }
+  },
+
+  updateChronicleEntry: async (entryId, { title, body }) => {
+    try {
+      const res = await axios.put(`${API_URL}/campaign/chronicle/${entryId}`, { title, body });
+      set({
+        chronicleEntries: get().chronicleEntries.map((entry) => (entry.id === entryId ? res.data : entry)),
+      });
+      return res.data;
+    } catch (error) {
+      console.error('Failed to update chronicle entry:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
+    }
+  },
+
+  deleteChronicleEntry: async (entryId) => {
+    try {
+      await axios.delete(`${API_URL}/campaign/chronicle/${entryId}`);
+      set({ chronicleEntries: get().chronicleEntries.filter((entry) => entry.id !== entryId) });
+      return true;
+    } catch (error) {
+      console.error('Failed to delete chronicle entry:', error);
+      set({ operationError: getErrorMessage(error) });
+      return false;
     }
   },
 

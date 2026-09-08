@@ -13,7 +13,7 @@ from typing import Optional
 from uuid import uuid4
 
 from bestiary import BestiaryLibrary
-from models import Actor, Campaign, Scene, RollRequest, RollResult, Effect, InitiativeOrderRequest, ReferenceImportRequest
+from models import Actor, Campaign, Scene, RollRequest, RollResult, Effect, InitiativeOrderRequest, ReferenceImportRequest, ChronicleEntryRequest
 from name_generator import generate_names, list_categories
 from reference_library import ReferenceLibrary
 from state import StateManager
@@ -243,6 +243,46 @@ def add_actor_from_template(template_id: str):
     return actor.model_dump()
 
 
+# ==================== Chronicle Routes ====================
+
+@app.post("/api/campaign/chronicle/add")
+def add_chronicle_entry(entry: ChronicleEntryRequest):
+    """Append a journal entry to the current campaign's chronicle."""
+    if not entry.title.strip():
+        raise HTTPException(status_code=400, detail="Title is required")
+    created = state_manager.add_chronicle_entry(entry.title.strip(), entry.body)
+    if not created:
+        raise HTTPException(status_code=400, detail="No campaign loaded")
+    return created.model_dump()
+
+
+@app.get("/api/campaign/chronicle")
+def list_chronicle_entries():
+    """List the current campaign's chronicle entries, oldest first."""
+    if not state_manager.current_campaign:
+        raise HTTPException(status_code=404, detail="No campaign loaded")
+    return {"entries": [e.model_dump() for e in state_manager.list_chronicle_entries()]}
+
+
+@app.put("/api/campaign/chronicle/{entry_id}")
+def update_chronicle_entry(entry_id: str, entry: ChronicleEntryRequest):
+    """Update a chronicle entry on the current campaign."""
+    if not entry.title.strip():
+        raise HTTPException(status_code=400, detail="Title is required")
+    updated = state_manager.update_chronicle_entry(entry_id, entry.title.strip(), entry.body)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Chronicle entry not found")
+    return updated.model_dump()
+
+
+@app.delete("/api/campaign/chronicle/{entry_id}")
+def remove_chronicle_entry(entry_id: str):
+    """Remove a chronicle entry from the current campaign."""
+    if not state_manager.remove_chronicle_entry(entry_id):
+        raise HTTPException(status_code=404, detail="Chronicle entry not found")
+    return {"status": "removed"}
+
+
 # ==================== Initiative Routes ====================
 
 @app.post("/api/initiative/set")
@@ -349,6 +389,7 @@ def get_current_references():
         "ruleset": ruleset,
         "source_files": reference_library.available_sources(ruleset, config["reference_directory"]),
         "documents": reference_library.list_documents(ruleset),
+        "ocr_available": reference_library.ocr_available(),
     }
 
 

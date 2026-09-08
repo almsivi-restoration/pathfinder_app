@@ -77,6 +77,14 @@ class Actor(BaseModel):
         return actor
 
 
+class ChronicleEntry(BaseModel):
+    id: str
+    title: str
+    body: str = ""  # markdown source; rendered client-side
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+
+
 class Scene(BaseModel):
     id: str
     name: str
@@ -93,6 +101,7 @@ class Campaign(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now)
     scenes: List[str] = Field(default_factory=list)  # List of scene IDs
     actor_templates: List[Actor] = Field(default_factory=list)
+    chronicle: List[ChronicleEntry] = Field(default_factory=list)  # campaign journal entries
     notes: str = ""
 
     @model_validator(mode="before")
@@ -122,6 +131,11 @@ class RollResult(BaseModel):
 
 class InitiativeOrderRequest(BaseModel):
     actor_ids: List[str]  # explicit ordering of actor IDs, GM-controlled
+
+
+class ChronicleEntryRequest(BaseModel):
+    title: str
+    body: str = ""  # markdown source
 
 
 class ReferenceImportRequest(BaseModel):

@@ -74,6 +74,7 @@
   --mw-text-bright: #ece4c4;
   --mw-ink: #2b1d0e;
   --mw-ink-light: #4a3417;
+  --mw-ink-red: #7a2018; /* journal entry headings, as in the game's journal */
   --mw-parchment-text: #efe0bb;
 
   /* Stat bars (Morrowind: red health, blue magicka, green fatigue) */

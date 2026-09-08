@@ -8,7 +8,8 @@ import os
 import shutil
 from typing import Dict, List, Optional
 from pathlib import Path
-from models import Campaign, Scene, Actor
+from datetime import datetime
+from models import Campaign, Scene, Actor, ChronicleEntry
 from rules import get_ruleset
 from rules.common import get_sheet_value
 import uuid
@@ -292,7 +293,54 @@ class StateManager:
         new_actor = template.model_copy(update={"id": str(uuid.uuid4())})
         self.current_scene.actors.append(new_actor)
         return new_actor
-    
+
+    # ==================== Chronicle Methods ====================
+
+    def add_chronicle_entry(self, title: str, body: str) -> Optional[ChronicleEntry]:
+        """Append a journal entry to the current campaign's chronicle and persist it."""
+        if not self.current_campaign:
+            return None
+
+        entry = ChronicleEntry(id=str(uuid.uuid4()), title=title, body=body)
+        self.current_campaign.chronicle.append(entry)
+        self.save_campaign()
+        return entry
+
+    def list_chronicle_entries(self) -> List[ChronicleEntry]:
+        """List the current campaign's chronicle entries, oldest first."""
+        if not self.current_campaign:
+            return []
+        return self.current_campaign.chronicle
+
+    def update_chronicle_entry(self, entry_id: str, title: str, body: str) -> Optional[ChronicleEntry]:
+        """Update a chronicle entry on the current campaign and persist it."""
+        if not self.current_campaign:
+            return None
+
+        for i, entry in enumerate(self.current_campaign.chronicle):
+            if entry.id == entry_id:
+                self.current_campaign.chronicle[i] = entry.model_copy(
+                    update={"title": title, "body": body, "updated_at": datetime.now()}
+                )
+                self.save_campaign()
+                return self.current_campaign.chronicle[i]
+
+        return None
+
+    def remove_chronicle_entry(self, entry_id: str) -> bool:
+        """Remove a chronicle entry from the current campaign and persist the removal."""
+        if not self.current_campaign:
+            return False
+
+        original_count = len(self.current_campaign.chronicle)
+        self.current_campaign.chronicle = [
+            e for e in self.current_campaign.chronicle if e.id != entry_id
+        ]
+        removed = len(self.current_campaign.chronicle) != original_count
+        if removed:
+            self.save_campaign()
+        return removed
+
     # ==================== Initiative Methods ====================
     
     def set_initiative_order(self, actor_ids: List[str]) -> bool:

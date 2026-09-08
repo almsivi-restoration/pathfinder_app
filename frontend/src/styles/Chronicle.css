@@ -1,0 +1,243 @@
+/* Chronicle — the campaign journal, styled as an open parchment book: two
+   pages with a center gutter, ink text, red entry headings. Parchment and ink
+   come from theme.css tokens; only shadow alphas are literal, matching the
+   token file's own shadow precedent. */
+
+.chronicle-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.chronicle-book {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr auto;
+  width: min(1080px, 94vw);
+  height: min(720px, 88vh);
+  background: linear-gradient(
+    105deg,
+    var(--mw-parchment-dark),
+    var(--mw-parchment) 12%,
+    var(--mw-parchment-light) 50%,
+    var(--mw-parchment) 88%,
+    var(--mw-parchment-dark)
+  );
+  border: 3px solid var(--mw-parchment-shadow);
+  border-radius: 4px;
+  box-shadow:
+    0 0 0 1px var(--mw-frame-dark),
+    inset 0 0 40px rgba(0, 0, 0, 0.25),
+    0 10px 32px var(--mw-shadow);
+}
+
+/* The gutter between the two pages. */
+.chronicle-book::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 56px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.3) 50%, transparent);
+  pointer-events: none;
+}
+
+.chronicle-page {
+  min-width: 0;
+  padding: 26px 32px 12px;
+  overflow-y: auto;
+  color: var(--mw-ink);
+  font-family: var(--mw-font-body);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.chronicle-page-label {
+  font-family: var(--mw-font-display);
+  font-variant: small-caps;
+  letter-spacing: 1px;
+  color: var(--mw-ink-red);
+  border-bottom: 1px solid var(--mw-parchment-shadow);
+  padding-bottom: 4px;
+  margin-bottom: 10px;
+}
+
+/* ---------- Reading ---------- */
+
+.chronicle-entry-title {
+  font-family: var(--mw-font-display);
+  color: var(--mw-ink-red);
+  font-size: 20px;
+  margin: 0 0 2px;
+}
+
+.chronicle-entry-date {
+  color: var(--mw-ink-red);
+  font-size: 13px;
+  font-variant: small-caps;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.chronicle-empty {
+  margin-top: 30%;
+  text-align: center;
+  font-style: italic;
+  color: var(--mw-ink-light);
+}
+
+/* ---------- Rendered markdown ---------- */
+
+.chronicle-markdown h1,
+.chronicle-markdown h2,
+.chronicle-markdown h3,
+.chronicle-markdown h4 {
+  color: var(--mw-ink-red);
+  font-family: var(--mw-font-display);
+  margin: 0.8em 0 0.3em;
+}
+
+.chronicle-markdown p {
+  margin: 0 0 0.7em;
+}
+
+.chronicle-markdown ul,
+.chronicle-markdown ol {
+  margin: 0 0 0.7em;
+  padding-left: 1.4em;
+}
+
+.chronicle-markdown blockquote {
+  margin: 0 0 0.7em 0.6em;
+  padding-left: 0.8em;
+  border-left: 2px solid var(--mw-parchment-shadow);
+  color: var(--mw-ink-light);
+  font-style: italic;
+}
+
+.chronicle-markdown code {
+  background: rgba(0, 0, 0, 0.08);
+  padding: 0 3px;
+  font-size: 0.9em;
+}
+
+.chronicle-markdown hr {
+  border: none;
+  border-top: 1px solid var(--mw-parchment-shadow);
+  margin: 1em 0;
+}
+
+.chronicle-markdown a {
+  color: var(--mw-ink-red);
+}
+
+/* ---------- Writing ---------- */
+
+.chronicle-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 10px;
+}
+
+.chronicle-title-input,
+.chronicle-body-input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  background: rgba(255, 246, 214, 0.35);
+  border: 1px solid var(--mw-parchment-shadow);
+  color: var(--mw-ink);
+  font-family: var(--mw-font-body);
+  font-size: 15px;
+  padding: 6px 8px;
+}
+
+.chronicle-title-input {
+  font-family: var(--mw-font-display);
+  font-size: 18px;
+}
+
+.chronicle-body-input {
+  flex: 1;
+  resize: none;
+  line-height: 1.45;
+}
+
+/* ---------- Formatting guide ---------- */
+
+.chronicle-guide table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.chronicle-guide td {
+  padding: 4px 6px;
+  vertical-align: top;
+  border-bottom: 1px dotted var(--mw-parchment-dark);
+}
+
+.chronicle-guide td:first-child {
+  width: 45%;
+}
+
+.chronicle-guide code {
+  color: var(--mw-ink);
+  background: rgba(0, 0, 0, 0.06);
+  padding: 1px 4px;
+}
+
+/* ---------- Footer bar ---------- */
+
+.chronicle-footer {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-top: 2px solid var(--mw-parchment-shadow);
+  background: linear-gradient(180deg, var(--mw-parchment), var(--mw-parchment-dark));
+}
+
+.chronicle-footer-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chronicle-pages {
+  color: var(--mw-ink-light);
+  font-variant: small-caps;
+  min-width: 52px;
+  text-align: center;
+}
+
+.chronicle-btn {
+  background: linear-gradient(180deg, var(--mw-parchment-light), var(--mw-parchment));
+  border: 1px solid var(--mw-parchment-shadow);
+  box-shadow: 0 1px 0 var(--mw-frame-dark);
+  color: var(--mw-ink);
+  font-family: var(--mw-font-display);
+  font-variant: small-caps;
+  letter-spacing: 0.5px;
+  font-size: 14px;
+  padding: 3px 14px;
+  cursor: pointer;
+}
+
+.chronicle-btn:hover:not(:disabled) {
+  color: var(--mw-ink-red);
+}
+
+.chronicle-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

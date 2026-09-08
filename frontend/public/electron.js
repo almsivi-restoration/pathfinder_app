@@ -259,9 +259,10 @@ function showHelp() {
       'Bestiary: GM Tools > Bestiary (Ctrl+B) searches a monster CSV you supply. Drop a file named bestiary.csv into the ruleset sources directory (alongside your reference PDFs), Import it, then view entries, create NPCs directly from them, or save them as campaign templates.\n\n' +
       'Encyclopedia: GM Tools > Encyclopedia searches rulebook PDFs you supply. Drop PDFs for a ruleset into its source directory, then Index them there.\n\n' +
       'Name Generator: GM Tools > Name Generator (Ctrl+N) generates fantasy names for characters, places, items, factions, and events.\n\n' +
+      'Chronicle: GM Tools > Chronicle (Ctrl+J) is the campaign journal — markdown-formatted entries for session recaps and anything else worth recording, with a formatting guide on the right page.\n\n' +
       'Data lives under:\n' +
       path.join(app.getPath('userData'), 'data') +
-      '\n\nKeyboard: Ctrl+B bestiary · Ctrl+N name generator · Ctrl+R restart · Ctrl+Q quit · Ctrl+Shift+I developer tools.',
+      '\n\nKeyboard: Ctrl+B bestiary · Ctrl+J chronicle · Ctrl+N name generator · Ctrl+R restart · Ctrl+Q quit · Ctrl+Shift+I developer tools.',
     buttons: ['Close'],
   });
 }
@@ -323,6 +324,14 @@ const template = [
         click: () => {
           const window = BrowserWindow.getFocusedWindow() || mainWindow;
           if (window) window.webContents.send('open-bestiary');
+        },
+      },
+      {
+        label: 'Chronicle',
+        accelerator: 'CmdOrCtrl+J',
+        click: () => {
+          const window = BrowserWindow.getFocusedWindow() || mainWindow;
+          if (window) window.webContents.send('open-chronicle');
         },
       },
       {
