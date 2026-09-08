@@ -4,6 +4,7 @@ import GMDashboard from './components/GMDashboard';
 import PlayerView from './components/PlayerView';
 import NameGenerator from './components/NameGenerator';
 import Chronicle from './components/Chronicle';
+import QuickRoll from './components/QuickRoll';
 import CampaignSelector from './pages/CampaignSelector';
 import Encyclopedia from './pages/Encyclopedia';
 import Bestiary from './pages/Bestiary';
@@ -15,6 +16,7 @@ function App() {
   const [view, setView] = useState('campaign-selector'); // 'campaign-selector', 'gm', 'player'
   const [showNameGenerator, setShowNameGenerator] = useState(false);
   const [showChronicle, setShowChronicle] = useState(false);
+  const [showQuickRoll, setShowQuickRoll] = useState(false);
 
   useEffect(() => {
     listCampaigns();
@@ -40,6 +42,11 @@ function App() {
     return window.electron.onOpenChronicle(() => setShowChronicle(true));
   }, []);
 
+  useEffect(() => {
+    if (!window.electron?.onOpenQuickRoll) return undefined;
+    return window.electron.onOpenQuickRoll(() => setShowQuickRoll(true));
+  }, []);
+
   // Determine view based on URL or state
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -63,6 +70,7 @@ function App() {
       {view === 'player' && <PlayerView />}
       {showNameGenerator && <NameGenerator onClose={() => setShowNameGenerator(false)} />}
       {showChronicle && <Chronicle onClose={() => setShowChronicle(false)} />}
+      {showQuickRoll && <QuickRoll onClose={() => setShowQuickRoll(false)} />}
     </div>
   );
 }

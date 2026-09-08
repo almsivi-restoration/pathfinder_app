@@ -23,4 +23,9 @@ contextBridge.exposeInMainWorld('electron', {
     ipcRenderer.on('open-chronicle', listener);
     return () => ipcRenderer.removeListener('open-chronicle', listener);
   },
+  onOpenQuickRoll: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on('open-quick-roll', listener);
+    return () => ipcRenderer.removeListener('open-quick-roll', listener);
+  },
 });

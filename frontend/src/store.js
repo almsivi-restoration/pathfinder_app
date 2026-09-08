@@ -236,7 +236,7 @@ export const useStore = create((set, get) => ({
     }
   },
 
-  searchBestiary: async ({ query, crMin, crMax, monsterType }) => {
+  searchBestiary: async ({ query, crMin, crMax, monsterType, limit = 50, offset = 0 }) => {
     try {
       const res = await axios.get(`${API_URL}/bestiary/current/search`, {
         params: {
@@ -244,14 +244,16 @@ export const useStore = create((set, get) => ({
           ...(crMin !== '' && crMin != null ? { cr_min: crMin } : {}),
           ...(crMax !== '' && crMax != null ? { cr_max: crMax } : {}),
           ...(monsterType ? { monster_type: monsterType } : {}),
+          limit,
+          offset,
         },
       });
       set({ bestiaryResults: res.data.results });
-      return res.data.results;
+      return res.data;
     } catch (error) {
       console.error('Failed to search bestiary:', error);
       set({ operationError: getErrorMessage(error) });
-      return [];
+      return { results: [], total: 0 };
     }
   },
 
@@ -557,6 +559,22 @@ export const useStore = create((set, get) => ({
       return res.data;
     } catch (error) {
       console.error('Failed to add actor from template:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
+    }
+  },
+
+  // Dice roll action - the backend owns the RNG so every window sees the same roll behavior.
+  rollDice: async ({ dieType = 20, modifier = 0, bonusDice = 0 }) => {
+    try {
+      const res = await axios.post(`${API_URL}/roll`, {
+        die_type: dieType,
+        modifier,
+        bonus_dice: bonusDice,
+      });
+      return res.data;
+    } catch (error) {
+      console.error('Failed to roll dice:', error);
       set({ operationError: getErrorMessage(error) });
       return null;
     }

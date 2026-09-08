@@ -442,11 +442,16 @@ class BestiaryLibrary:
         cr_max: Optional[float] = None,
         monster_type: Optional[str] = None,
         limit: int = 50,
-    ) -> List[Dict[str, Any]]:
-        """Search indexed monsters; filters are ANDed, query is optional FTS5."""
+        offset: int = 0,
+    ) -> Dict[str, Any]:
+        """Search indexed monsters; filters are ANDed, query is optional FTS5.
+
+        Returns {"results": [...], "total": n} where total is the full match
+        count so callers can paginate past the default 50-row page.
+        """
         database = self._database_path(ruleset)
         if not database.exists():
-            return []
+            return {"results": [], "total": 0}
 
         clauses: List[str] = []
         params: List[Any] = []
@@ -464,25 +469,32 @@ class BestiaryLibrary:
             clauses.append("lower(monsters.type) = lower(?)")
             params.append(monster_type.strip())
 
+        where_sql = (" where " + " and ".join(clauses)) if clauses else ""
+
         sql = (
             "select monsters.id, monsters.name, monsters.cr_display, monsters.type, "
             "monsters.size, monsters.alignment, monsters.source, monsters.page from monsters"
+            + where_sql
+            + " order by monsters.cr, monsters.name limit ? offset ?"
         )
-        if clauses:
-            sql += " where " + " and ".join(clauses)
-        sql += " order by monsters.cr, monsters.name limit ?"
-        params.append(max(1, min(limit, 200)))
+        page_params = params + [max(1, min(limit, 200)), max(0, offset)]
 
         with sqlite3.connect(database) as connection:
             self._initialize_database(connection)
-            rows = connection.execute(sql, params).fetchall()
-        return [
-            {
-                "id": row[0], "name": row[1], "cr_display": row[2], "type": row[3],
-                "size": row[4], "alignment": row[5], "source": row[6], "page": row[7],
-            }
-            for row in rows
-        ]
+            total = connection.execute(
+                "select count(*) from monsters" + where_sql, params
+            ).fetchone()[0]
+            rows = connection.execute(sql, page_params).fetchall()
+        return {
+            "results": [
+                {
+                    "id": row[0], "name": row[1], "cr_display": row[2], "type": row[3],
+                    "size": row[4], "alignment": row[5], "source": row[6], "page": row[7],
+                }
+                for row in rows
+            ],
+            "total": total,
+        }
 
     def get_entry(self, ruleset: str, entry_id: int) -> Optional[Dict[str, Any]]:
         """Return one full normalized monster record."""

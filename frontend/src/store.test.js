@@ -135,3 +135,25 @@ test('returnToCampaignSelector clears the full session without touching the netw
   expect(axios.post).not.toHaveBeenCalled();
   expect(axios.get).not.toHaveBeenCalled();
 });
+
+test('rollDice posts the roll spec to /roll and returns the result', async () => {
+  const result = { total: 19, die_roll: 14, modifier: 5, bonus_dice_roll: null };
+  axios.post.mockResolvedValueOnce({ data: result });
+
+  const returned = await useStore.getState().rollDice({ dieType: 20, modifier: 5 });
+
+  expect(axios.post).toHaveBeenCalledWith(
+    expect.stringContaining('/roll'),
+    { die_type: 20, modifier: 5, bonus_dice: 0 }
+  );
+  expect(returned).toEqual(result);
+});
+
+test('rollDice surfaces a failure via operationError and returns null', async () => {
+  axios.post.mockRejectedValueOnce({ response: { data: { detail: 'Roll failed' } } });
+
+  const returned = await useStore.getState().rollDice({ dieType: 20, modifier: 5 });
+
+  expect(returned).toBeNull();
+  expect(useStore.getState().operationError).toBe('Roll failed');
+});

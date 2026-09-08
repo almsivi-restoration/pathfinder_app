@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useStore } from '../store';
 
+const PAGE_SIZE = 50;
+
 export function BestiarySearchPanel({ onSelect, selectLabel = 'View' }) {
   const bestiaryResults = useStore((state) => state.bestiaryResults);
   const searchBestiary = useStore((state) => state.searchBestiary);
@@ -8,15 +10,35 @@ export function BestiarySearchPanel({ onSelect, selectLabel = 'View' }) {
   const [crMin, setCrMin] = useState('');
   const [crMax, setCrMax] = useState('');
   const [monsterType, setMonsterType] = useState('');
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+
+  const runSearch = async (pageIndex) => {
+    const data = await searchBestiary({
+      query,
+      crMin,
+      crMax,
+      monsterType,
+      limit: PAGE_SIZE,
+      offset: pageIndex * PAGE_SIZE,
+    });
+    setTotal(data.total || 0);
+    setPage(pageIndex);
+  };
 
   useEffect(() => {
-    searchBestiary({ query: '', crMin: '', crMax: '', monsterType: '' });
+    searchBestiary({ query: '', crMin: '', crMax: '', monsterType: '' }).then((data) => {
+      setTotal(data.total || 0);
+      setPage(0);
+    });
   }, [searchBestiary]);
 
   const handleSearch = async (event) => {
     event?.preventDefault();
-    await searchBestiary({ query, crMin, crMax, monsterType });
+    await runSearch(0);
   };
+
+  const pageCount = Math.ceil(total / PAGE_SIZE);
 
   return (
     <div className="bestiary-search-panel">
@@ -74,6 +96,29 @@ export function BestiarySearchPanel({ onSelect, selectLabel = 'View' }) {
           <p className="bestiary-empty">No monsters match the search.</p>
         )}
       </div>
+      {total > PAGE_SIZE && (
+        <div className="bestiary-pager">
+          <button
+            type="button"
+            className="btn-small"
+            onClick={() => runSearch(page - 1)}
+            disabled={page <= 0}
+          >
+            Previous
+          </button>
+          <span className="bestiary-pager-status">
+            Page {page + 1} of {pageCount} · {total} monsters
+          </span>
+          <button
+            type="button"
+            className="btn-small"
+            onClick={() => runSearch(page + 1)}
+            disabled={page >= pageCount - 1}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }

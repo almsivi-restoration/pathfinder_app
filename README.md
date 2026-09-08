@@ -19,15 +19,20 @@ initiative, or persistence ownership.
   fields omitted, effects and marker color up top. Available for scene actors and campaign
   templates alike.
 - Save reusable actor templates on a campaign.
-- Enter physical initiative results, order actors manually, and advance turns and rounds.
+- Enter physical initiative results, order actors manually, and advance turns and rounds. An
+	actor's assigned marker color shows as a ring around its position number in the initiative order.
+- Roll checks on the spot through **GM Tools > Quick Roll** (Ctrl+D): pick a scene actor and roll a
+	skill, save, or ability check using the modifier straight off their sheet, or any custom die and
+	modifier, with a running history of results.
 - Display a separate player-facing initiative window.
 - Render actor sheets from the active ruleset definition, including scalar fields, notes, and
 	repeatable records such as weapons, skills, armor, gear, and spells. NPCs created from the
 	bestiary use a ruleset-defined monster sheet that shares the tracker's summary contract.
-- Search user-supplied local rulebook PDFs through **GM Tools > Encyclopedia** — scanned PDFs
+- Search user-supplied local rulebook PDFs through **GM Tools > Encyclopedia** (Ctrl+E) — scanned PDFs
 	with no embedded text are OCR'd with Tesseract when it is installed.
 - Search a user-supplied bestiary CSV through **GM Tools > Bestiary** (Ctrl+B), view full
-	monster entries, and create NPC actors or campaign templates directly from them.
+	monster entries, and create NPC actors or campaign templates directly from them. Results
+	page 50 at a time so every match is reachable.
 - Generate names for actors (per-race, tuned syllable grammars), places, items, factions, and
 	events through **GM Tools > Name Generator** (Ctrl+N).
 - Keep a campaign journal through **GM Tools > Chronicle** (Ctrl+J): markdown-formatted entries
@@ -261,7 +266,7 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
 - **File > Restart App** relaunches Electron.
 - **File > Exit** closes the application.
 - **View > Open Player View** opens the player-facing window.
-- **GM Tools > Encyclopedia** opens the active ruleset's local reference search.
+- **GM Tools > Encyclopedia** (Ctrl+E) opens the active ruleset's local reference search.
 - **GM Tools > Bestiary** (Ctrl+B) opens the bestiary search.
 - **GM Tools > Chronicle** (Ctrl+J) opens the campaign journal.
 - **GM Tools > Name Generator** (Ctrl+N) opens the name generator.

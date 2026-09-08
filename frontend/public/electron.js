@@ -311,12 +311,13 @@ function showHelp() {
       'Workflow: create or load a campaign, open a scene, add actors, then run initiative from the GM Dashboard. Open a second, player-safe view with View > Open Player View.\n\n' +
       'Actors: the Clone button duplicates any actor in the scene (handy for groups of identical monsters). The color swatch assigns a marker color, shown as a dot and accent border on the player view to match your physical grid. Save frequently used actors as campaign templates and reuse them in any scene.\n\n' +
       'Bestiary: GM Tools > Bestiary (Ctrl+B) searches a monster CSV you supply. Drop a file named bestiary.csv into the ruleset sources directory (alongside your reference PDFs), Import it, then view entries, create NPCs directly from them, or save them as campaign templates.\n\n' +
-      'Encyclopedia: GM Tools > Encyclopedia searches rulebook PDFs you supply. Drop PDFs for a ruleset into its source directory, then Index them there.\n\n' +
+      'Encyclopedia: GM Tools > Encyclopedia (Ctrl+E) searches rulebook PDFs you supply. Drop PDFs for a ruleset into its source directory, then Index them there.\n\n' +
       'Name Generator: GM Tools > Name Generator (Ctrl+N) generates fantasy names for characters, places, items, factions, and events.\n\n' +
       'Chronicle: GM Tools > Chronicle (Ctrl+J) is the campaign journal — markdown-formatted entries for session recaps and anything else worth recording, with a formatting guide on the right page.\n\n' +
+      'Quick Roll: GM Tools > Quick Roll (Ctrl+D) rolls checks for any actor in the open scene using the skill, save, or ability modifier from their sheet, or any custom die and modifier, with a running history of results.\n\n' +
       'Data lives under:\n' +
       path.join(app.getPath('userData'), 'data') +
-      '\n\nKeyboard: Ctrl+B bestiary · Ctrl+J chronicle · Ctrl+N name generator · Ctrl+R restart · Ctrl+Q quit · Ctrl+Shift+I developer tools.',
+      '\n\nKeyboard: Ctrl+B bestiary · Ctrl+D quick roll · Ctrl+E encyclopedia · Ctrl+J chronicle · Ctrl+N name generator · Ctrl+R restart · Ctrl+Q quit · Ctrl+Shift+I developer tools.',
     buttons: ['Close'],
   });
 }
@@ -367,6 +368,7 @@ const template = [
     submenu: [
       {
         label: 'Encyclopedia',
+        accelerator: 'CmdOrCtrl+E',
         click: () => {
           const window = BrowserWindow.getFocusedWindow() || mainWindow;
           if (window) window.webContents.send('open-encyclopedia');
@@ -396,6 +398,14 @@ const template = [
           if (window) window.webContents.send('open-name-generator');
         },
       },
+      {
+        label: 'Quick Roll',
+        accelerator: 'CmdOrCtrl+D',
+        click: () => {
+          const window = BrowserWindow.getFocusedWindow() || mainWindow;
+          if (window) window.webContents.send('open-quick-roll');
+        },
+      },
     ],
   },
   {
@@ -419,7 +429,7 @@ const template = [
               message: "Game Master's Workbench",
               detail:
                 `Version ${app.getVersion()}\n\n` +
-                'A tabletop GM companion for Pathfinder 1e and 2e: scene and initiative tracking, reusable actor templates, a searchable rules encyclopedia, a bestiary, a name generator, and a player-safe second-screen view.\n\n' +
+                'A tabletop GM companion for Pathfinder 1e and 2e: scene and initiative tracking, reusable actor templates, a searchable rules encyclopedia, a bestiary, a name generator, quick rolls, and a player-safe second-screen view.\n\n' +
                 'Reference PDFs and bestiary CSVs are user-supplied and are never included with the app.\n\n' +
                 'Data directory:\n' +
                 path.join(app.getPath('userData'), 'data'),

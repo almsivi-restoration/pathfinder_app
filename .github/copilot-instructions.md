@@ -91,6 +91,13 @@ every time, not just when a feature "feels big":
   and the files in `.github/blueprints/` still match the code being released?
   New domain terms, new architectural shapes, or justified deviations from this
   release's work are recorded in the same commit, never deferred.
+- **Help dialog** (`frontend/public/electron.js` `showHelp()`) — every feature
+  this release adds/changes/removes is reflected in the relevant paragraph, and
+  the trailing `Keyboard:` line lists every GM Tools accelerator.
+- **About dialog** (`frontend/public/electron.js` Help > About) — the description
+  string names what the app does; add this release's new user-facing capability,
+  and confirm the version line reads from `app.getVersion()` (it should — never
+  hardcode).
 - **Skills/instruction files** (`.github/skills/`, user prompts) — only when
   the release taught a durable lesson in their domain; otherwise leave them.
 - Rule of thumb: if a doc mentions a version, a test count, a feature list,

@@ -140,22 +140,42 @@ def test_search_filters_by_query_cr_and_type(tmp_path):
     library.import_source("1e", "pathfinder_1e")
 
     goblins = library.search("1e", "goblin")
-    assert [g["name"] for g in goblins] == ["Test Goblin"]
+    assert [g["name"] for g in goblins["results"]] == ["Test Goblin"]
+    assert goblins["total"] == 1
 
     low_cr = library.search("1e", "", cr_max=1)
-    assert [g["name"] for g in low_cr] == ["Test Goblin"]
+    assert [g["name"] for g in low_cr["results"]] == ["Test Goblin"]
 
     constructs = library.search("1e", "", monster_type="construct")
-    assert [c["name"] for c in constructs] == ["Test Construct"]
+    assert [c["name"] for c in constructs["results"]] == ["Test Construct"]
 
     everything = library.search("1e", "")
-    assert len(everything) == 2
-    assert {e["cr_display"] for e in everything} == {"0.5", "7"}
+    assert len(everything["results"]) == 2
+    assert everything["total"] == 2
+    assert {e["cr_display"] for e in everything["results"]} == {"0.5", "7"}
+
+
+def test_search_paginates_with_offset_and_reports_full_total(tmp_path):
+    library = make_library(tmp_path)
+    library.import_source("1e", "pathfinder_1e")
+
+    first_page = library.search("1e", "", limit=1, offset=0)
+    second_page = library.search("1e", "", limit=1, offset=1)
+
+    # total reflects ALL matches, not the page length — this is what lets the UI
+    # offer a pager for results beyond the default 50-row page.
+    assert first_page["total"] == 2
+    assert second_page["total"] == 2
+    assert len(first_page["results"]) == 1
+    assert len(second_page["results"]) == 1
+    assert first_page["results"][0]["id"] != second_page["results"][0]["id"]
+    # Offset past the end yields an empty page, not an error.
+    assert library.search("1e", "", limit=1, offset=5)["results"] == []
 
 
 def test_search_without_index_returns_empty(tmp_path):
     library = BestiaryLibrary(tmp_path / "reference_library")
-    assert library.search("1e", "goblin") == []
+    assert library.search("1e", "goblin") == {"results": [], "total": 0}
 
 
 def test_get_entry_returns_full_record_and_404_case(tmp_path):
@@ -252,7 +272,7 @@ def test_ruleset_isolation(tmp_path):
     library = make_library(tmp_path)
     library.import_source("1e", "pathfinder_1e")
 
-    assert library.search("2e", "goblin") == []
+    assert library.search("2e", "goblin") == {"results": [], "total": 0}
     assert library.get_entry("2e", 1) is None
 
 

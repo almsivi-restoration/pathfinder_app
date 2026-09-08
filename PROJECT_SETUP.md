@@ -9,7 +9,8 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 - **Actor Management:** Add/remove/clone actors (PCs and NPCs) with ruleset-driven stat sheets (Pathfinder 1e and 2e); optional GM-assigned marker colors shown on the player view; read-only **View** card renders an actor's sheet grouped by section with empty fields omitted (works for scene actors and campaign templates)
 - **Scenes:** Create/save/load scenes via the Scene Library, with full actor CRUD
 - **Actor Templates:** Save/edit/delete/view actor templates and instantiate them into a scene; template marker colors are inherited by instantiated actors
-- **Initiative Tracking:** Manual initiative entry, sort-by-roll, manual reorder, round tracking
+- **Initiative Tracking:** Manual initiative entry, sort-by-roll, manual reorder, round tracking; an actor's marker color rings its position number
+- **Quick Roll:** GM Tools > Quick Roll (Ctrl+D) rolls a scene actor's skill/save/ability check using the modifier from their sheet, or a custom die and modifier, with a session roll history
 - **Effect Countdown:** Effect durations decrement automatically at the end of each round
 - **Reference Library:** Index user-supplied rulebook PDFs into a local SQLite FTS5 index and search them per-ruleset from the Encyclopedia page; scanned pages (no embedded text) are OCR'd with Tesseract when available
 - **Reference Reader:** In-app PDF reading with page-number jump and fit-to-view zoom
@@ -205,7 +206,8 @@ pathfinder_app/
 ### Bestiary
 - `GET /api/bestiary/current/status` — CSV presence and index state for the active ruleset
 - `POST /api/bestiary/current/import` — Parse and index the ruleset's `bestiary.csv`
-- `GET /api/bestiary/current/search` — Text search with CR-range and type filters
+- `GET /api/bestiary/current/search` — Text search with CR-range and type filters; paginated
+  via `limit` (default 50, max 200) and `offset`, returns `{results, total}`
 - `GET /api/bestiary/current/entry/{entry_id}` — Full normalized monster record
 - `GET /api/bestiary/current/entry/{entry_id}/actor` — Map an entry to a new NPC actor payload
 

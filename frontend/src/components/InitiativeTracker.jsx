@@ -92,7 +92,12 @@ function InitiativeTracker() {
           const isCurrent = isSceneActive && index === currentTurnIndex;
           return (
             <div key={actorId} className={`initiative-item ${isCurrent ? 'active' : ''}`}>
-              <span className="position">{index + 1}</span>
+              <span
+                className="position"
+                style={actor.color ? { boxShadow: `0 0 0 2px ${actor.color}` } : undefined}
+              >
+                {index + 1}
+              </span>
               <span className="name">{actor.name}</span>
               <label className="roll-label">
                 Roll:

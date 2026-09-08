@@ -450,10 +450,11 @@ def search_current_bestiary(
     cr_max: Optional[float] = None,
     monster_type: Optional[str] = None,
     limit: int = 50,
+    offset: int = 0,
 ):
     """Search the indexed bestiary for the active campaign's ruleset."""
     ruleset, _ = get_current_ruleset_definition()
-    return {"results": bestiary_library.search(ruleset, query, cr_min, cr_max, monster_type, limit)}
+    return bestiary_library.search(ruleset, query, cr_min, cr_max, monster_type, limit, offset)
 
 
 @app.get("/api/bestiary/current/entry/{entry_id}")
