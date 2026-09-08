@@ -6,9 +6,9 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 
 ### Phase 1 (Current)
 - **Campaign Management:** Create/load campaigns with ruleset selection (1e/2e); only a campaign persists a ruleset — scenes and actors inherit it
-- **Actor Management:** Add/remove/clone actors (PCs and NPCs) with ruleset-driven stat sheets (Pathfinder 1e and 2e); optional GM-assigned marker colors shown on the player view
+- **Actor Management:** Add/remove/clone actors (PCs and NPCs) with ruleset-driven stat sheets (Pathfinder 1e and 2e); optional GM-assigned marker colors shown on the player view; read-only **View** card renders an actor's sheet grouped by section with empty fields omitted
 - **Scenes:** Create/save/load scenes via the Scene Library, with full actor CRUD
-- **Actor Templates:** Save/edit/delete actor templates and instantiate them into a scene
+- **Actor Templates:** Save/edit/delete actor templates and instantiate them into a scene; template marker colors are inherited by instantiated actors
 - **Initiative Tracking:** Manual initiative entry, sort-by-roll, manual reorder, round tracking
 - **Effect Countdown:** Effect durations decrement automatically at the end of each round
 - **Reference Library:** Index user-supplied rulebook PDFs into a local SQLite FTS5 index and search them per-ruleset from the Encyclopedia page
@@ -60,7 +60,7 @@ pathfinder_app/
 │   │   ├── components/
 │   │   │   ├── GMDashboard.jsx
 │   │   │   ├── ActorList.jsx / ActorRow.jsx / ActorForm.jsx
-│   │   │   ├── ActorEditModal.jsx / ActorStatFields.jsx
+│   │   │   ├── ActorEditModal.jsx / ActorViewModal.jsx / ActorStatFields.jsx
 │   │   │   ├── ActorTemplateLibrary.jsx
 │   │   │   ├── InitiativeTracker.jsx
 │   │   │   ├── NameGenerator.jsx

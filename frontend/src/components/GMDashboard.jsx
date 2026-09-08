@@ -5,6 +5,7 @@ import InitiativeTracker from './InitiativeTracker';
 import ActorForm from './ActorForm';
 import ActorTemplateLibrary from './ActorTemplateLibrary';
 import ActorEditModal from './ActorEditModal';
+import ActorViewModal from './ActorViewModal';
 import SceneLibrary from './SceneLibrary';
 import '../styles/GMDashboard.css';
 
@@ -146,6 +147,7 @@ function GMDashboard() {
         />
       )}
       <ActorEditModal />
+      <ActorViewModal />
     </div>
   );
 }

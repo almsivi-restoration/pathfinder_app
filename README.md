@@ -13,6 +13,9 @@ initiative, or persistence ownership.
 - Create, load, save, and delete campaigns and their saved scenes.
 - Create and save scenes with PC and NPC actors.
 - Clone any scene actor in one click, and assign marker colors that appear on the player view.
+  Colors assigned to a campaign template are inherited by every actor created from it.
+- Open a read-only actor card with the **View** button: sheet values grouped by section, empty
+  fields omitted, effects and marker color up top.
 - Save reusable actor templates on a campaign.
 - Enter physical initiative results, order actors manually, and advance turns and rounds.
 - Display a separate player-facing initiative window.

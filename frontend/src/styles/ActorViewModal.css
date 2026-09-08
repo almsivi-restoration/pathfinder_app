@@ -1,0 +1,118 @@
+.actor-view-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.actor-view-modal {
+  width: min(900px, 90vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: linear-gradient(165deg, var(--mw-panel-hi), var(--mw-panel) 55%, var(--mw-panel-lo));
+  border: 2px solid var(--mw-frame);
+  border-top-width: 10px;
+  box-shadow:
+    0 0 0 1px var(--mw-frame-dark),
+    inset 0 0 0 1px var(--mw-frame-dark),
+    inset 0 0 22px rgba(0, 0, 0, 0.55),
+    0 8px 24px var(--mw-shadow);
+  border-radius: 2px;
+  padding: 24px;
+  color: var(--mw-text);
+}
+
+.actor-view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--mw-border-dark);
+  padding-bottom: 12px;
+}
+
+.actor-view-header h2 {
+  margin: 0;
+  font-size: 22px;
+  color: var(--mw-text-bright);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.actor-view-type {
+  font-size: 12px;
+  font-variant: small-caps;
+  color: var(--mw-text-dim);
+}
+
+.actor-view-effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.actor-view-body {
+  column-width: 340px;
+  column-gap: 28px;
+}
+
+.actor-view-section {
+  break-inside: avoid;
+  margin-bottom: 18px;
+}
+
+.actor-view-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: var(--mw-gold-bright);
+  border-bottom: 1px solid var(--mw-border-dark);
+  padding-bottom: 4px;
+}
+
+.actor-view-fields {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 14px;
+  margin: 0;
+}
+
+.actor-view-fields dt {
+  font-weight: 600;
+  color: var(--mw-text-dim);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.actor-view-fields dd {
+  margin: 0;
+  color: var(--mw-text);
+  font-size: 14px;
+}
+
+.actor-view-collection {
+  grid-column: 1 / -1;
+}
+
+.actor-view-collection dt {
+  margin-bottom: 4px;
+}
+
+.actor-view-collection ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.actor-view-collection li {
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.actor-view-longtext {
+  white-space: pre-wrap;
+  grid-column: 2;
+}

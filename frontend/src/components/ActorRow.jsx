@@ -8,6 +8,7 @@ function ActorRow({ actor, summaryFields }) {
   const updateActor = useStore((state) => state.updateActor);
   const addActor = useStore((state) => state.addActor);
   const setSelectedActorId = useStore((state) => state.setSelectedActorId);
+  const setViewingActorId = useStore((state) => state.setViewingActorId);
   const resource = summaryFields.find((field) => field.secondary_key);
   const [isEditing, setIsEditing] = useState(false);
   const [editedResource, setEditedResource] = useState('');
@@ -95,6 +96,9 @@ function ActorRow({ actor, summaryFields }) {
             ×
           </button>
         )}
+        <button className="btn-small" onClick={() => setViewingActorId(actor.id)} title="View actor details">
+          View
+        </button>
         <button className="btn-small btn-add" onClick={handleClone} title="Duplicate this actor">
           Clone
         </button>

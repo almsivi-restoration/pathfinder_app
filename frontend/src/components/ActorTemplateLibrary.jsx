@@ -7,6 +7,7 @@ function ActorTemplateLibrary() {
   const actorTemplates = useStore((state) => state.actorTemplates);
   const listActorTemplates = useStore((state) => state.listActorTemplates);
   const addActorFromTemplate = useStore((state) => state.addActorFromTemplate);
+  const updateActorTemplate = useStore((state) => state.updateActorTemplate);
   const removeActorTemplate = useStore((state) => state.removeActorTemplate);
   const setSelectedTemplateId = useStore((state) => state.setSelectedTemplateId);
   const currentScene = useStore((state) => state.currentScene);
@@ -24,6 +25,10 @@ function ActorTemplateLibrary() {
     if (window.confirm(`Delete template "${name}"?`)) {
       await removeActorTemplate(templateId);
     }
+  };
+
+  const handleColorChange = async (template, color) => {
+    await updateActorTemplate(template.id, { ...template, color });
   };
 
   const summaryFields = rulesetConfig?.actor_sheet?.summary || [];
@@ -53,6 +58,18 @@ function ActorTemplateLibrary() {
           <span className="template-stats">
             {formatSummary(template)}
           </span>
+          <input
+            type="color"
+            className={`actor-color-swatch ${template.color ? 'assigned' : ''}`}
+            value={template.color || '#6b5f4a'}
+            onChange={(event) => handleColorChange(template, event.target.value)}
+            title={template.color ? `Marker color ${template.color}` : 'Assign a marker color (inherited by scene actors)'}
+          />
+          {template.color && (
+            <button className="btn-small" onClick={() => handleColorChange(template, null)} title="Clear marker color">
+              ×
+            </button>
+          )}
           <div className="template-actions">
             <button
               className="btn-small btn-add"
