@@ -8,6 +8,7 @@ function Encyclopedia({ onBack }) {
   const referenceSources = useStore((state) => state.referenceSources);
   const referenceDocuments = useStore((state) => state.referenceDocuments);
   const referenceResults = useStore((state) => state.referenceResults);
+  const ocrAvailable = useStore((state) => state.ocrAvailable);
   const fetchCurrentReferences = useStore((state) => state.fetchCurrentReferences);
   const importCurrentReference = useStore((state) => state.importCurrentReference);
   const searchCurrentReferences = useStore((state) => state.searchCurrentReferences);
@@ -32,7 +33,17 @@ function Encyclopedia({ onBack }) {
     setIndexingFilename(filename);
     clearOperationError();
     const document = await importCurrentReference(filename);
-    if (document) setIndexMessage(`Indexed ${document.title}: ${document.page_count} pages.`);
+    if (document) {
+      const ocr = document.ocr;
+      let ocrNote = '';
+      if (ocr && ocr.pages_ocr > 0) {
+        ocrNote = ` ${ocr.pages_ocr} scanned page${ocr.pages_ocr === 1 ? '' : 's'} recovered by OCR.`;
+      }
+      if (ocr && !ocr.available && ocr.pages_empty > 0) {
+        ocrNote = ` ${ocr.pages_empty} page${ocr.pages_empty === 1 ? '' : 's'} had no embedded text (install tesseract for OCR).`;
+      }
+      setIndexMessage(`Indexed ${document.title}: ${document.page_count} pages.${ocrNote}`);
+    }
     setIndexingFilename(null);
   };
 
@@ -74,6 +85,9 @@ function Encyclopedia({ onBack }) {
 
       <section className="reference-sources">
         <h2>Local References</h2>
+        {ocrAvailable && (
+          <p className="ocr-note">OCR available — scanned PDFs will be text-recognized on index (slow for large books).</p>
+        )}
         {(operationError || indexMessage) && <div className={`operation-message ${operationError ? 'error' : 'success'}`}>{operationError || indexMessage}</div>}
         {referenceSources.length === 0 ? (
           <p className="empty-reference-state">No PDFs found for this ruleset.</p>

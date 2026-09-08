@@ -11,9 +11,10 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 - **Actor Templates:** Save/edit/delete/view actor templates and instantiate them into a scene; template marker colors are inherited by instantiated actors
 - **Initiative Tracking:** Manual initiative entry, sort-by-roll, manual reorder, round tracking
 - **Effect Countdown:** Effect durations decrement automatically at the end of each round
-- **Reference Library:** Index user-supplied rulebook PDFs into a local SQLite FTS5 index and search them per-ruleset from the Encyclopedia page
+- **Reference Library:** Index user-supplied rulebook PDFs into a local SQLite FTS5 index and search them per-ruleset from the Encyclopedia page; scanned pages (no embedded text) are OCR'd with Tesseract when available
 - **Reference Reader:** In-app PDF reading with page-number jump and fit-to-view zoom
-- **Name Generator:** Syllable-bank generator for races (per ruleset), places, items, factions, and events
+- **Name Generator:** Per-race syllable-grammar generator for actors, plus multi-template engines for places, items, factions, and events; batches are deduplicated
+- **Chronicle:** Campaign journal (GM Tools > Chronicle, Ctrl+J) styled as an open book — markdown-formatted entries with a formatting guide and live preview, persisted with the campaign
 - **Bestiary:** Import a user-supplied `bestiary.csv` from the ruleset sources directory into a per-ruleset SQLite FTS5 index; search with CR/type filters, view full monster entries, and create NPC actors or campaign templates from them (1e)
 - **Player View:** Pop-out window showing only player-visible information
   - Initiative order with current actor highlight
@@ -31,9 +32,9 @@ pathfinder_app/
 │   ├── main.py                 # FastAPI application
 │   ├── models.py               # Pydantic data models
 │   ├── state.py                # State management & persistence
-│   ├── reference_library.py    # PDF indexing & page-aware search (SQLite FTS5)
+│   ├── reference_library.py    # PDF indexing & page-aware search (SQLite FTS5, OCR fallback)
 │   ├── bestiary.py             # Bestiary CSV parsing, indexing & search (SQLite FTS5)
-│   ├── name_generator.py       # Syllable-bank name generator
+│   ├── name_generator.py       # Per-race syllable grammars + multi-template name engines
 │   ├── gm-workbench-backend.spec  # PyInstaller spec for the packaged backend
 │   ├── rules/
 │   │   ├── __init__.py         # Ruleset registry
@@ -64,6 +65,7 @@ pathfinder_app/
 │   │   │   ├── ActorTemplateLibrary.jsx
 │   │   │   ├── InitiativeTracker.jsx
 │   │   │   ├── NameGenerator.jsx
+│   │   │   ├── Chronicle.jsx
 │   │   │   ├── ReferenceReader.jsx
 │   │   │   ├── SceneLibrary.jsx
 │   │   │   ├── PlayerView.jsx / PlayerActorRow.jsx
@@ -189,10 +191,16 @@ pathfinder_app/
 - `GET /api/initiative/state` — Get current initiative state
 
 ### Reference Library
-- `GET /api/references/current` — Get reference index state for the active ruleset
-- `POST /api/references/current/import` — Import/index selected local PDFs
+- `GET /api/references/current` — Get reference index state for the active ruleset (includes `ocr_available`)
+- `POST /api/references/current/import` — Import/index a selected local PDF (OCR fallback for scanned pages)
 - `GET /api/references/current/search` — Page-aware search of indexed content
 - `GET /api/references/current/files/{filename}` — Serve an indexed PDF (Reference Reader)
+
+### Chronicle
+- `POST /api/campaign/chronicle/add` — Append a journal entry to the active campaign
+- `GET /api/campaign/chronicle` — List the campaign's chronicle entries
+- `PUT /api/campaign/chronicle/{entry_id}` — Update a chronicle entry
+- `DELETE /api/campaign/chronicle/{entry_id}` — Delete a chronicle entry
 
 ### Bestiary
 - `GET /api/bestiary/current/status` — CSV presence and index state for the active ruleset
@@ -240,6 +248,7 @@ on load by the Actor model validator.
   ruleset: "1e" | "2e"
   scenes: [scene_id]
   actor_templates: [Actor]
+  chronicle: [ChronicleEntry]
   notes: string
 }
 ```
@@ -254,6 +263,17 @@ on load by the Actor model validator.
   initiative_order: [actor_id]
   current_round: int
   current_turn_index: int
+}
+```
+
+### ChronicleEntry
+```
+{
+  id: string
+  title: string
+  body: string          // markdown source
+  created_at: datetime
+  updated_at: datetime
 }
 ```
 
@@ -272,7 +292,7 @@ Statuses reconciled against shipped releases (through v0.7.0, 2026-09-05).
 - Full Pathfinder mechanics (feats, conditions, skills DC) — open; derived totals (AC, saves, CMB/CMD, etc.) are manual entry today
 - Grid/token map visualization — deferred indefinitely; the GM uses a physical dry-erase grid
 - Spell/ability tracking — partial: spells are editable sheet data with per-day fields; no slot usage tracking or reset
-- Campaign history/logging — open
+- ~~Campaign history/logging~~ — **shipped** (v0.10.0): the Chronicle is the campaign journal (markdown entries, persisted with the campaign)
 - Import from D&D Beyond / Pathfinder tools — open
 
 ## Development

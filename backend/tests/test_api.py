@@ -166,7 +166,12 @@ def test_reference_routes_require_and_scope_to_the_current_campaign(client, tmp_
     response = client.get("/api/references/current")
 
     assert response.status_code == 200
-    assert response.json() == {"ruleset": "1e", "source_files": [], "documents": []}
+    assert response.json() == {
+        "ruleset": "1e",
+        "source_files": [],
+        "documents": [],
+        "ocr_available": main.reference_library.ocr_available(),
+    }
 
     assert client.get("/api/references/current/files/../campaign.json").status_code == 404
 

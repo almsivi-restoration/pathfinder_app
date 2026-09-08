@@ -7,3 +7,8 @@ python-socketio==5.10.0
 python-engineio==4.8.0
 aiofiles==23.2.1
 pypdf==5.9.0
+# OCR fallback for scanned reference PDFs. Requires the tesseract system binary
+# on PATH; the backend degrades to embedded-text-only without it.
+pymupdf==1.28.2
+pytesseract==0.3.13
+Pillow>=10.0.0

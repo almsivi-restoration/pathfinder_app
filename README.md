@@ -24,9 +24,14 @@ initiative, or persistence ownership.
 - Render actor sheets from the active ruleset definition, including scalar fields, notes, and
 	repeatable records such as weapons, skills, armor, gear, and spells. NPCs created from the
 	bestiary use a ruleset-defined monster sheet that shares the tracker's summary contract.
-- Search user-supplied local rulebook PDFs through **GM Tools > Encyclopedia**.
+- Search user-supplied local rulebook PDFs through **GM Tools > Encyclopedia** — scanned PDFs
+	with no embedded text are OCR'd with Tesseract when it is installed.
 - Search a user-supplied bestiary CSV through **GM Tools > Bestiary** (Ctrl+B), view full
 	monster entries, and create NPC actors or campaign templates directly from them.
+- Generate names for actors (per-race, tuned syllable grammars), places, items, factions, and
+	events through **GM Tools > Name Generator** (Ctrl+N).
+- Keep a campaign journal through **GM Tools > Chronicle** (Ctrl+J): markdown-formatted entries
+	with a built-in formatting guide, styled as an open book.
 
 ## Architecture
 
@@ -139,7 +144,10 @@ Indexing extracts page text with `pypdf`, creates a local SQLite FTS5 index, and
 metadata under `artifacts/local/reference_library/`. Results are limited to the active campaign's
 ruleset and include the source PDF and page number. Reindex a source after replacing its PDF.
 
-PDFs without embedded text require OCR support, which is not currently included.
+Pages with no usable embedded text (scans) are recovered by OCR at import time when a `tesseract`
+binary is on `PATH` (install the `tesseract-ocr` system package); each import reports how many
+pages were OCR'd. Without Tesseract those pages index as empty. OCR is roughly a second or more
+per page, so indexing a large scanned book takes a while.
 
 ## Bestiary
 
@@ -154,6 +162,13 @@ Searching supports free text plus CR-range and creature-type filters. From an en
 view the full stat block, create an NPC actor in the current scene, or save the monster as a
 campaign template. Monster actors use the ruleset's monster sheet definition, which shares the
 summary keys the initiative tracker and player view rely on.
+
+## Chronicle
+
+**GM Tools > Chronicle** (Ctrl+J) is the campaign journal — a log for end-of-session recaps and
+anything else worth recording about the campaign, styled as an open book. Entries support
+markdown formatting; a formatting guide sits on the right page while reading, and a live preview
+replaces it while writing. Entries persist with the campaign.
 
 ## Testing
 
@@ -228,9 +243,18 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
 
 - `GET /api/rulesets` lists supported rulesets.
 - `GET /api/rules/current` returns the active campaign's sheet definition.
-- `GET /api/references/current` lists local PDFs and indexed documents for the active ruleset.
-- `POST /api/references/current/import` indexes a selected local PDF.
+- `GET /api/references/current` lists local PDFs and indexed documents for the active ruleset,
+	and reports whether OCR is available (`ocr_available`).
+- `POST /api/references/current/import` indexes a selected local PDF (OCR fallback for scanned
+	pages; the result reports per-page OCR counts).
 - `GET /api/references/current/search` searches the active ruleset's local index.
+
+### Chronicle
+
+- `POST /api/campaign/chronicle/add` appends a journal entry.
+- `GET /api/campaign/chronicle` lists the campaign's entries.
+- `PUT /api/campaign/chronicle/{entry_id}` updates an entry.
+- `DELETE /api/campaign/chronicle/{entry_id}` removes an entry.
 
 ## Native Menu
 
@@ -238,6 +262,9 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
 - **File > Exit** closes the application.
 - **View > Open Player View** opens the player-facing window.
 - **GM Tools > Encyclopedia** opens the active ruleset's local reference search.
+- **GM Tools > Bestiary** (Ctrl+B) opens the bestiary search.
+- **GM Tools > Chronicle** (Ctrl+J) opens the campaign journal.
+- **GM Tools > Name Generator** (Ctrl+N) opens the name generator.
 
 ## License
 

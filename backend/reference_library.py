@@ -10,12 +10,21 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from pypdf import PdfReader
+
+# Pages whose embedded text is thinner than this are treated as scans and
+# offered to the OCR fallback. Low enough that a heading-only page of real
+# text still counts as text; high enough that watermark/glyph junk from a
+# scan's vestigial layer does not.
+_OCR_MIN_PAGE_WORDS = 10
+# Tesseract input resolution; 300 DPI is the practical floor for book scans.
+_OCR_RENDER_DPI = 300
 
 
 class ReferenceLibrary:
@@ -59,7 +68,56 @@ class ReferenceLibrary:
 
         reader = PdfReader(str(source_path))
         pages = [page.extract_text() or "" for page in reader.pages]
-        return self.index_pages(ruleset, filename, source_path.stem.replace("_", " ").title(), pages, source_path)
+        scan_pages = [i for i, text in enumerate(pages) if len(text.split()) < _OCR_MIN_PAGE_WORDS]
+
+        ocr_report: Dict[str, Any] = {"available": self.ocr_available(), "pages_ocr": 0, "pages_empty": 0}
+        if scan_pages and ocr_report["available"]:
+            pages, ocr_report = self._ocr_pages(source_path, pages, scan_pages)
+        elif scan_pages:
+            # No OCR engine on PATH: the page count is still the honest answer.
+            ocr_report["pages_empty"] = len(scan_pages)
+
+        record = self.index_pages(ruleset, filename, source_path.stem.replace("_", " ").title(), pages, source_path)
+        record["ocr"] = ocr_report
+        return record
+
+    @staticmethod
+    def ocr_available() -> bool:
+        """True when a tesseract binary is on PATH (OCR fallback is usable)."""
+        return shutil.which("tesseract") is not None
+
+    def _ocr_pages(
+        self,
+        source_path: Path,
+        pages: List[str],
+        scan_pages: List[int],
+    ) -> tuple[List[str], Dict[str, Any]]:
+        """Re-read scan pages through Tesseract, replacing their page text in place.
+
+        PyMuPDF, pytesseract, and Pillow import lazily here so the embedded-text
+        path (and a packaged backend built without the OCR stack) never touches
+        them. A page Tesseract still finds nothing on counts as genuinely empty.
+        """
+        import pymupdf
+        import pytesseract
+        from PIL import Image
+
+        report = {"available": True, "pages_ocr": 0, "pages_empty": 0}
+        document = pymupdf.open(str(source_path))
+        try:
+            for page_index in scan_pages:
+                page = document[page_index]
+                pixmap = page.get_pixmap(dpi=_OCR_RENDER_DPI)
+                image = Image.frombytes("RGB", (pixmap.width, pixmap.height), pixmap.samples)
+                text = pytesseract.image_to_string(image).strip()
+                if len(text.split()) >= _OCR_MIN_PAGE_WORDS:
+                    pages[page_index] = text
+                    report["pages_ocr"] += 1
+                else:
+                    report["pages_empty"] += 1
+        finally:
+            document.close()
+        return pages, report
 
     def index_pages(
         self,
