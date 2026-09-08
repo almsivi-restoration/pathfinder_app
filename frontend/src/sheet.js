@@ -24,3 +24,22 @@ export function createDefaultSheet(actorSheet) {
     {}
   );
 }
+
+export function defaultSheetForActor(actorSheet) {
+  const sheet = createDefaultSheet(actorSheet);
+  // Collection fields hold shared default arrays in the definition; deep-copy
+  // so two actors never mutate the same list.
+  (actorSheet?.fields || []).forEach((field) => {
+    if (field.type === 'collection' && Array.isArray(field.default)) {
+      const segments = field.key.split('.');
+      const leaf = segments[segments.length - 1];
+      let bucket = sheet;
+      segments.slice(0, -1).forEach((segment) => {
+        bucket[segment] = bucket[segment] || {};
+        bucket = bucket[segment];
+      });
+      bucket[leaf] = JSON.parse(JSON.stringify(field.default));
+    }
+  });
+  return sheet;
+}

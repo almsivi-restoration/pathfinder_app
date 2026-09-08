@@ -14,6 +14,8 @@ export const useStore = create((set, get) => ({
   referenceSources: [],
   referenceDocuments: [],
   referenceResults: [],
+  bestiaryStatus: null,
+  bestiaryResults: [],
   campaignScenes: [],
 
   // Scene state
@@ -197,6 +199,75 @@ export const useStore = create((set, get) => ({
     } catch (error) {
       console.error('Failed to search local references:', error);
       return [];
+    }
+  },
+
+  // Bestiary actions
+  fetchBestiaryStatus: async () => {
+    try {
+      const res = await axios.get(`${API_URL}/bestiary/current/status`);
+      set({ bestiaryStatus: res.data });
+      return res.data;
+    } catch (error) {
+      if (error.response?.status !== 404) {
+        console.error('Failed to fetch bestiary status:', error);
+        set({ operationError: getErrorMessage(error) });
+      }
+      set({ bestiaryStatus: null });
+      return null;
+    }
+  },
+
+  importBestiary: async () => {
+    try {
+      const res = await axios.post(`${API_URL}/bestiary/current/import`);
+      await get().fetchBestiaryStatus();
+      return res.data;
+    } catch (error) {
+      console.error('Failed to import bestiary:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
+    }
+  },
+
+  searchBestiary: async ({ query, crMin, crMax, monsterType }) => {
+    try {
+      const res = await axios.get(`${API_URL}/bestiary/current/search`, {
+        params: {
+          query: query || '',
+          ...(crMin !== '' && crMin != null ? { cr_min: crMin } : {}),
+          ...(crMax !== '' && crMax != null ? { cr_max: crMax } : {}),
+          ...(monsterType ? { monster_type: monsterType } : {}),
+        },
+      });
+      set({ bestiaryResults: res.data.results });
+      return res.data.results;
+    } catch (error) {
+      console.error('Failed to search bestiary:', error);
+      set({ operationError: getErrorMessage(error) });
+      return [];
+    }
+  },
+
+  fetchBestiaryEntry: async (entryId) => {
+    try {
+      const res = await axios.get(`${API_URL}/bestiary/current/entry/${entryId}`);
+      return res.data;
+    } catch (error) {
+      console.error('Failed to fetch bestiary entry:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
+    }
+  },
+
+  fetchBestiaryEntryActor: async (entryId) => {
+    try {
+      const res = await axios.get(`${API_URL}/bestiary/current/entry/${entryId}/actor`);
+      return res.data;
+    } catch (error) {
+      console.error('Failed to map bestiary entry:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
     }
   },
 

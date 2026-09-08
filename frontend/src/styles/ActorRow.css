@@ -51,6 +51,25 @@
   flex: 1;
   display: flex;
   gap: 4px;
+  align-items: center;
+}
+
+.actor-color-swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--mw-border-dark);
+  border-radius: 2px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.actor-color-swatch:not(.assigned) {
+  opacity: 0.45;
+}
+
+.actor-color-swatch:hover {
+  opacity: 1;
 }
 
 .btn-edit {

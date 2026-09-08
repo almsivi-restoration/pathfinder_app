@@ -18,10 +18,16 @@ function PlayerActorRow({ actor, position, isCurrent, rulesetConfig }) {
   }
 
   return (
-    <div className={`player-actor-row ${isCurrent ? 'current-turn' : ''}`}>
+    <div
+      className={`player-actor-row ${isCurrent ? 'current-turn' : ''}`}
+      style={actor.color ? { borderLeft: `8px solid ${actor.color}` } : undefined}
+    >
       <div className="position-badge">{position}</div>
       <div className="actor-info">
         <div className="name-row">
+          {actor.color && (
+            <span className="actor-color-dot" style={{ backgroundColor: actor.color }} />
+          )}
           <span className="actor-name">{actor.name}</span>
           {actor.is_pc && <span className="pc-badge">PC</span>}
         </div>

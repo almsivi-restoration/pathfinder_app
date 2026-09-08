@@ -17,6 +17,37 @@ def actor_payload(name="Goblin", is_pc=False):
     }
 
 
+def test_actor_color_roundtrips_and_legacy_actors_default_to_none(client):
+    client.post("/api/campaign/new", params={"name": "Colors", "ruleset": "1e"})
+    client.post("/api/scene/new", params={"name": "Grid"})
+
+    # Payload without the color key (pre-color campaigns) loads as None.
+    res = client.post("/api/actor/add", json=actor_payload())
+    assert res.status_code == 200
+    assert res.json()["color"] is None
+    actor_id = res.json()["id"]
+
+    # Assigning a color persists through update and re-read.
+    actor = client.get(f"/api/actor/{actor_id}").json()
+    actor["color"] = "#8e44ad"
+    res = client.put(f"/api/actor/{actor_id}", json=actor)
+    assert res.status_code == 200
+    assert res.json()["color"] == "#8e44ad"
+    assert client.get(f"/api/actor/{actor_id}").json()["color"] == "#8e44ad"
+
+    # Cloning (a payload copy with a blank id) preserves the color but earns a new id.
+    clone = {**actor, "id": "", "effects": [], "initiative_roll": None}
+    res = client.post("/api/actor/add", json=clone)
+    assert res.status_code == 200
+    assert res.json()["color"] == "#8e44ad"
+    assert res.json()["id"] != actor_id
+
+    # Clearing the color returns to None.
+    actor["color"] = None
+    res = client.put(f"/api/actor/{actor_id}", json=actor)
+    assert res.json()["color"] is None
+
+
 def test_health_check(client):
     res = client.get("/health")
     assert res.status_code == 200

@@ -13,4 +13,9 @@ contextBridge.exposeInMainWorld('electron', {
     ipcRenderer.on('open-name-generator', listener);
     return () => ipcRenderer.removeListener('open-name-generator', listener);
   },
+  onOpenBestiary: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on('open-bestiary', listener);
+    return () => ipcRenderer.removeListener('open-bestiary', listener);
+  },
 });

@@ -3,7 +3,7 @@ Pathfinder 1e ruleset configuration.
 Defines skills, saves, and ability modifiers for 1e campaigns.
 """
 
-from .common import build_pathfinder_1e_actor_sheet
+from .common import build_pathfinder_1e_actor_sheet, build_pathfinder_1e_monster_sheet, map_bestiary_entry_to_actor
 
 ABILITIES = ["str", "dex", "con", "int", "wis", "cha"]
 
@@ -61,4 +61,6 @@ RULESET_CONFIG_1E = {
     "max_level": 20,
     "ability_modifier_calc": lambda ability_score: (ability_score - 10) // 2,
     "actor_sheet": build_pathfinder_1e_actor_sheet(SKILLS_1E, SAVES_1E),
+    "monster_sheet": build_pathfinder_1e_monster_sheet(),
+    "bestiary_mapper": map_bestiary_entry_to_actor,
 }

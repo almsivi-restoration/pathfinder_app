@@ -6,6 +6,7 @@ import '../styles/ActorRow.css';
 function ActorRow({ actor, summaryFields }) {
   const removeActor = useStore((state) => state.removeActor);
   const updateActor = useStore((state) => state.updateActor);
+  const addActor = useStore((state) => state.addActor);
   const setSelectedActorId = useStore((state) => state.setSelectedActorId);
   const resource = summaryFields.find((field) => field.secondary_key);
   const [isEditing, setIsEditing] = useState(false);
@@ -19,6 +20,24 @@ function ActorRow({ actor, summaryFields }) {
     if (window.confirm(`Remove ${actor.name}?`)) {
       await removeActor(actor.id);
     }
+  };
+
+  const handleClone = async () => {
+    await addActor({
+      ...actor,
+      id: '',
+      effects: [],
+      initiative_roll: null,
+      created_at: undefined,
+    });
+  };
+
+  const handleColorChange = async (event) => {
+    await updateActor(actor.id, { ...actor, color: event.target.value });
+  };
+
+  const handleColorClear = async () => {
+    await updateActor(actor.id, { ...actor, color: null });
   };
 
   const handleResourceChange = async () => {
@@ -64,6 +83,21 @@ function ActorRow({ actor, summaryFields }) {
         );
       })}
       <span className="col-actions">
+        <input
+          type="color"
+          className={`actor-color-swatch ${actor.color ? 'assigned' : ''}`}
+          value={actor.color || '#6b5f4a'}
+          onChange={handleColorChange}
+          title={actor.color ? `Marker color ${actor.color}` : 'Assign a marker color (shown on the player view)'}
+        />
+        {actor.color && (
+          <button className="btn-small" onClick={handleColorClear} title="Clear marker color">
+            ×
+          </button>
+        )}
+        <button className="btn-small btn-add" onClick={handleClone} title="Duplicate this actor">
+          Clone
+        </button>
         <button className="btn-small btn-edit" onClick={handleSelect}>
           Edit
         </button>

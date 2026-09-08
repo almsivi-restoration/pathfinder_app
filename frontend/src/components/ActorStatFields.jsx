@@ -53,9 +53,10 @@ function ActorStatFields({
   formData,
   onChange,
   rulesetConfig,
+  sheetDefinition,
   onSheetChange,
 }) {
-  const fields = rulesetConfig?.actor_sheet?.fields || [];
+  const fields = (sheetDefinition || rulesetConfig?.actor_sheet)?.fields || [];
   const sections = fields.reduce((groups, field) => {
     const section = field.section || 'Details';
     groups[section] = [...(groups[section] || []), field];

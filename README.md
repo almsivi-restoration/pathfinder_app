@@ -12,12 +12,16 @@ initiative, or persistence ownership.
 
 - Create, load, save, and delete campaigns and their saved scenes.
 - Create and save scenes with PC and NPC actors.
+- Clone any scene actor in one click, and assign marker colors that appear on the player view.
 - Save reusable actor templates on a campaign.
 - Enter physical initiative results, order actors manually, and advance turns and rounds.
 - Display a separate player-facing initiative window.
 - Render actor sheets from the active ruleset definition, including scalar fields, notes, and
-	repeatable records such as weapons, skills, armor, gear, and spells.
+	repeatable records such as weapons, skills, armor, gear, and spells. NPCs created from the
+	bestiary use a ruleset-defined monster sheet that shares the tracker's summary contract.
 - Search user-supplied local rulebook PDFs through **GM Tools > Encyclopedia**.
+- Search a user-supplied bestiary CSV through **GM Tools > Bestiary** (Ctrl+B), view full
+	monster entries, and create NPC actors or campaign templates directly from them.
 
 ## Architecture
 
@@ -131,6 +135,20 @@ metadata under `artifacts/local/reference_library/`. Results are limited to the 
 ruleset and include the source PDF and page number. Reindex a source after replacing its PDF.
 
 PDFs without embedded text require OCR support, which is not currently included.
+
+## Bestiary
+
+The bestiary is user-supplied game content and follows the same rules as reference PDFs: never
+committed, never shipped. Drop a file named exactly `bestiary.csv` into the ruleset's source
+directory (the same folder the Encyclopedia reads PDFs from), load a campaign, then choose
+**GM Tools > Bestiary** and click **Import**. The importer parses the stat-block export
+(including its Python-repr structured cells), indexes the monsters into a per-ruleset SQLite
+FTS5 database, and reports any rows with malformed data as warnings.
+
+Searching supports free text plus CR-range and creature-type filters. From an entry you can
+view the full stat block, create an NPC actor in the current scene, or save the monster as a
+campaign template. Monster actors use the ruleset's monster sheet definition, which shares the
+summary keys the initiative tracker and player view rely on.
 
 ## Testing
 

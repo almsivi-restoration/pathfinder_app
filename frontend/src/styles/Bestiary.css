@@ -1,0 +1,170 @@
+.bestiary-page {
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+.bestiary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bestiary-header h1 {
+  margin: 0;
+}
+
+.bestiary-header p {
+  margin: 0.25rem 0 0;
+  opacity: 0.75;
+}
+
+.bestiary-source-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.bestiary-body {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) 2fr;
+  gap: 1.5rem;
+  min-height: 0;
+  flex: 1;
+}
+
+.bestiary-search-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 0;
+}
+
+.bestiary-search-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.bestiary-search-form input[type='search'] {
+  flex: 1 1 100%;
+}
+
+.bestiary-results {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.bestiary-result-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.15rem 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--mw-frame-dark, #3a332a);
+  border-radius: 4px;
+  align-items: center;
+}
+
+.bestiary-result-name {
+  font-weight: 600;
+}
+
+.bestiary-result-meta,
+.bestiary-result-source {
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+.bestiary-result-row .btn-small {
+  grid-row: 1 / span 3;
+  grid-column: 2;
+}
+
+.bestiary-detail {
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.bestiary-entry-header h3 {
+  margin: 0;
+}
+
+.bestiary-entry-subtitle {
+  margin: 0.25rem 0 0.5rem;
+  opacity: 0.8;
+}
+
+.bestiary-entry-desc-short {
+  font-style: italic;
+}
+
+.bestiary-entry-stats {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+}
+
+.bestiary-entry-stats dt {
+  font-weight: 600;
+}
+
+.bestiary-entry-stats dd {
+  margin: 0;
+}
+
+.bestiary-entry h4 {
+  margin-bottom: 0.25rem;
+}
+
+.bestiary-entry-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.bestiary-entry-sources {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.bestiary-empty {
+  opacity: 0.7;
+}
+
+.bestiary-picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+}
+
+.bestiary-picker {
+  background: var(--mw-panel, #1b1815);
+  border: 1px solid var(--mw-frame-dark, #3a332a);
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  width: min(720px, 90vw);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bestiary-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bestiary-picker-header h3 {
+  margin: 0;
+}

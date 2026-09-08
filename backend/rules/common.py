@@ -1,5 +1,6 @@
 """Reusable primitives for declarative ruleset sheet definitions."""
 
+import json
 from typing import Any, Dict, Iterable
 
 
@@ -331,3 +332,231 @@ def build_pathfinder_2e_actor_sheet(skills: Dict[str, str], saves: Iterable[str]
         ]},
     ])
     return actor_sheet
+
+
+def build_pathfinder_1e_monster_sheet() -> Dict[str, Any]:
+    """Return the Pathfinder 1e monster sheet definition for bestiary-derived NPCs.
+
+    Shares the summary/initiative/player-resource contract keys (hp.current,
+    hp.max, defenses.ac, initiative.bonus) with the character sheet so the
+    tracker, actor rows, and player view work unchanged; only the field list
+    differs.
+    """
+    fields = [
+        {"key": "monster.cr", "label": "CR", "type": "text", "default": "", "section": "Identity"},
+        {"key": "monster.xp", "label": "XP", "type": "number", "default": 0, "section": "Identity"},
+        {"key": "monster.type", "label": "Type", "type": "text", "default": "", "section": "Identity"},
+        {"key": "monster.subtypes", "label": "Subtypes", "type": "text", "default": "", "section": "Identity"},
+        {"key": "monster.alignment", "label": "Alignment", "type": "text", "default": "", "section": "Identity"},
+        {"key": "monster.size", "label": "Size", "type": "text", "default": "Medium", "section": "Identity"},
+        {"key": "hp.current", "label": "Current HP", "type": "number", "default": 1, "section": "Vitals"},
+        {"key": "hp.max", "label": "Max HP", "type": "number", "default": 1, "section": "Vitals"},
+        {"key": "hp.hd", "label": "Hit Dice", "type": "text", "default": "", "section": "Vitals"},
+        {"key": "hp.fast_healing", "label": "Fast Healing", "type": "number", "default": 0, "section": "Vitals"},
+        {"key": "hp.regeneration", "label": "Regeneration", "type": "number", "default": 0, "section": "Vitals"},
+        {"key": "defenses.ac", "label": "AC", "type": "number", "default": 10, "section": "Defenses"},
+        {"key": "defenses.touch_ac", "label": "Touch AC", "type": "number", "default": 10, "section": "Defenses"},
+        {"key": "defenses.flat_footed_ac", "label": "Flat-Footed AC", "type": "number", "default": 10, "section": "Defenses"},
+        {"key": "defenses.sr", "label": "Spell Resistance", "type": "number", "default": 0, "section": "Defenses"},
+        {"key": "defenses.dr", "label": "Damage Reduction", "type": "text", "default": "", "section": "Defenses"},
+        {"key": "defenses.immunities", "label": "Immunities", "type": "text", "default": "", "section": "Defenses"},
+        {"key": "defenses.resistances", "label": "Resistances", "type": "text", "default": "", "section": "Defenses"},
+        {"key": "defenses.weaknesses", "label": "Weaknesses", "type": "text", "default": "", "section": "Defenses"},
+        {"key": "defenses.defensive_abilities", "label": "Defensive Abilities", "type": "textarea", "default": "", "section": "Defenses"},
+        {"key": "saves", "label": "Saving Throws", "type": "collection", "section": "Defenses", "default": [
+            {"name": "Fortitude", "total": 0, "note": ""},
+            {"name": "Reflex", "total": 0, "note": ""},
+            {"name": "Will", "total": 0, "note": ""},
+        ], "item_fields": [
+            {"key": "name", "label": "Save", "type": "text", "default": ""},
+            {"key": "total", "label": "Total", "type": "number", "default": 0},
+            {"key": "note", "label": "Notes", "type": "text", "default": ""},
+        ]},
+        {"key": "initiative.bonus", "label": "Initiative Bonus", "type": "number", "default": 0, "section": "Offense"},
+        {"key": "movement.speeds", "label": "Speed", "type": "text", "default": "", "section": "Offense"},
+        {"key": "offense.space", "label": "Space", "type": "text", "default": "", "section": "Offense"},
+        {"key": "offense.reach", "label": "Reach", "type": "text", "default": "", "section": "Offense"},
+        {"key": "combat.bab", "label": "Base Attack Bonus", "type": "number", "default": 0, "section": "Offense"},
+        {"key": "combat.cmb", "label": "CMB", "type": "text", "default": "", "section": "Offense"},
+        {"key": "combat.cmd", "label": "CMD", "type": "text", "default": "", "section": "Offense"},
+        {"key": "attacks", "label": "Attacks", "type": "collection", "section": "Offense", "default": [], "item_fields": [
+            {"key": "category", "label": "Melee / Ranged", "type": "text", "default": "melee"},
+            {"key": "name", "label": "Attack", "type": "text", "default": ""},
+            {"key": "text", "label": "Text", "type": "text", "default": ""},
+        ]},
+        {"key": "offense.special_attacks", "label": "Special Attacks", "type": "textarea", "default": "", "section": "Offense"},
+        {"key": "offense.spell_like_abilities", "label": "Spell-Like Abilities", "type": "textarea", "default": "", "section": "Offense"},
+        {"key": "offense.spells", "label": "Spells", "type": "textarea", "default": "", "section": "Offense"},
+        {"key": "abilities.str", "label": "STR", "type": "text", "default": "", "section": "Abilities"},
+        {"key": "abilities.dex", "label": "DEX", "type": "text", "default": "", "section": "Abilities"},
+        {"key": "abilities.con", "label": "CON", "type": "text", "default": "", "section": "Abilities"},
+        {"key": "abilities.int", "label": "INT", "type": "text", "default": "", "section": "Abilities"},
+        {"key": "abilities.wis", "label": "WIS", "type": "text", "default": "", "section": "Abilities"},
+        {"key": "abilities.cha", "label": "CHA", "type": "text", "default": "", "section": "Abilities"},
+        {"key": "skills", "label": "Skills", "type": "collection", "section": "Skills & Feats", "default": [], "item_fields": [
+            {"key": "name", "label": "Skill", "type": "text", "default": ""},
+            {"key": "total", "label": "Total", "type": "text", "default": ""},
+            {"key": "note", "label": "Notes", "type": "text", "default": ""},
+        ]},
+        {"key": "monster.feats", "label": "Feats", "type": "textarea", "default": "", "section": "Skills & Feats"},
+        {"key": "monster.languages", "label": "Languages", "type": "textarea", "default": "", "section": "Skills & Feats"},
+        {"key": "monster.senses", "label": "Senses", "type": "textarea", "default": "", "section": "Special"},
+        {"key": "monster.auras", "label": "Auras", "type": "textarea", "default": "", "section": "Special"},
+        {"key": "monster.special_abilities", "label": "Special Abilities", "type": "textarea", "default": "", "section": "Special"},
+        {"key": "monster.special_qualities", "label": "Special Qualities", "type": "textarea", "default": "", "section": "Special"},
+        {"key": "monster.environment", "label": "Environment", "type": "text", "default": "", "section": "Ecology"},
+        {"key": "monster.organization", "label": "Organization", "type": "text", "default": "", "section": "Ecology"},
+        {"key": "monster.treasure", "label": "Treasure", "type": "text", "default": "", "section": "Ecology"},
+        {"key": "monster.description", "label": "Description", "type": "textarea", "default": "", "section": "Ecology"},
+        {"key": "bestiary.source", "label": "Bestiary Source", "type": "text", "default": "", "section": "Ecology"},
+        {"key": "bestiary.url", "label": "Bestiary URL", "type": "text", "default": "", "section": "Ecology"},
+    ]
+    return {
+        "fields": fields,
+        "summary": [
+            {"label": "HP", "value_key": "hp.current", "secondary_key": "hp.max"},
+            {"label": "AC", "value_key": "defenses.ac"},
+            {"label": "Init", "value_key": "initiative.bonus", "signed": True},
+        ],
+        "player_resource": {
+            "label": "HP",
+            "current_key": "hp.current",
+            "max_key": "hp.max",
+        },
+        "initiative": {"bonus_key": "initiative.bonus"},
+    }
+
+
+# Group keys that are numeric distances and get a " ft." suffix; others are labels.
+_DISTANCE_GROUP_KEYS = {
+    "base", "fly", "swim", "climb", "burrow", "jet",
+    "darkvision", "blindsight", "blindsense", "tremorsense", "low-light vision",
+}
+
+
+def _format_kv_group(group: Dict[str, Any], default_unit: str = "") -> str:
+    """Render a parsed CSV group dict (speeds, senses, resistances) as display text."""
+    parts = []
+    for key, value in group.items():
+        label = key.replace("_", " ")
+        unit = default_unit if key in _DISTANCE_GROUP_KEYS or key.endswith("vision") else ""
+        if value in (True, "TRUE", "true"):
+            parts.append(label)
+        elif unit:
+            parts.append(f"{label} {value}{unit}")
+        else:
+            parts.append(f"{label} {value}".strip())
+    return ", ".join(parts)
+
+
+def _ability_display(value: Any) -> str:
+    """Blank ability scores (construct/undead CON etc.) render as an em dash."""
+    if value is None or value == "":
+        return "—"
+    return str(value)
+
+
+def map_bestiary_entry_to_sheet(entry: Dict[str, Any]) -> Dict[str, Any]:
+    """Map a normalized bestiary record onto the 1e monster sheet data shape."""
+    sheet = {
+        "monster": {
+            "cr": entry.get("cr_display", ""),
+            "xp": entry.get("xp") or 0,
+            "type": entry.get("type", ""),
+            "subtypes": ", ".join(entry.get("subtypes", [])),
+            "alignment": entry.get("alignment", ""),
+            "size": entry.get("size", ""),
+            "feats": ", ".join(entry.get("feats", [])),
+            "languages": entry.get("languages", ""),
+            "senses": _format_kv_group(entry.get("senses", {}), " ft."),
+            "auras": "; ".join(
+                f"{aura['name']} ({aura['radius']} ft.{', DC ' + aura['dc'] if aura.get('dc') else ''})"
+                for aura in entry.get("auras", [])
+            ),
+            "special_abilities": "\n\n".join(entry.get("special_abilities", [])),
+            "special_qualities": "\n".join(
+                str(item) for item in (entry.get("special_qualities") or [])
+            ),
+            "environment": entry.get("environment", ""),
+            "organization": entry.get("organization", ""),
+            "treasure": entry.get("treasure", ""),
+            "description": entry.get("desc_long", "") or entry.get("desc_short", ""),
+        },
+        "hp": {
+            "current": entry.get("hp", {}).get("total") or 1,
+            "max": entry.get("hp", {}).get("total") or 1,
+            "hd": entry.get("hp", {}).get("hd", ""),
+            "fast_healing": entry.get("hp", {}).get("fast_healing") or 0,
+            "regeneration": entry.get("hp", {}).get("regeneration") or 0,
+        },
+        "defenses": {
+            "ac": entry.get("ac", {}).get("total") or 10,
+            "touch_ac": entry.get("ac", {}).get("touch") or 10,
+            "flat_footed_ac": entry.get("ac", {}).get("flat_footed") or 10,
+            "sr": entry.get("sr") or 0,
+            "dr": "; ".join(
+                f"{dr['amount']}/{dr['weakness']}".strip("/") for dr in entry.get("damage_reduction", [])
+            ),
+            "immunities": entry.get("immunities", ""),
+            "resistances": _format_kv_group(entry.get("resistances", {})),
+            "weaknesses": ", ".join(entry.get("weaknesses", [])),
+            "defensive_abilities": ", ".join(entry.get("defensive_abilities", [])),
+        },
+        "saves": [
+            {"name": "Fortitude", "total": entry.get("saves", {}).get("fort") or 0, "note": ""},
+            {"name": "Reflex", "total": entry.get("saves", {}).get("ref") or 0, "note": ""},
+            {"name": "Will", "total": entry.get("saves", {}).get("will") or 0, "note": entry.get("saves", {}).get("other", "")},
+        ],
+        "initiative": {"bonus": entry.get("initiative", {}).get("bonus") or 0},
+        "movement": {"speeds": _format_kv_group(entry.get("speeds", {}), " ft.")},
+        "offense": {
+            "space": entry.get("space", ""),
+            "reach": entry.get("reach", "") or entry.get("reach_other", ""),
+            "special_attacks": ", ".join(entry.get("special_attacks", [])),
+            "spell_like_abilities": "\n".join(entry.get("spell_like_abilities", [])),
+            "spells": "\n".join(entry.get("spells", [])),
+        },
+        "combat": {
+            "bab": entry.get("bab") or 0,
+            "cmb": " ".join(filter(None, [
+                f"+{entry['cmb']}" if isinstance(entry.get("cmb"), (int, float)) else "",
+                entry.get("cmb_other", ""),
+            ])).strip(),
+            "cmd": " ".join(filter(None, [
+                str(entry["cmd"]) if entry.get("cmd") is not None else "",
+                entry.get("cmd_other", ""),
+            ])).strip(),
+        },
+        "attacks": [
+            {"category": attack.get("category", "melee"), "name": attack.get("name", ""), "text": attack.get("text", "")}
+            for attack in entry.get("attacks", [])
+        ],
+        "abilities": {
+            ability: _ability_display(entry.get("abilities", {}).get(ability))
+            for ability in ["str", "dex", "con", "int", "wis", "cha"]
+        },
+        "skills": [
+            {"name": skill["name"], "total": "" if skill["total"] is None else str(skill["total"]), "note": skill.get("note", "")}
+            for skill in entry.get("skills", [])
+        ],
+        "bestiary": {
+            "entry_id": entry.get("id"),
+            "source": "; ".join(
+                f"{source['name']} p. {source['page']}".rstrip(" p. ")
+                for source in entry.get("sources", [])
+            ),
+            "url": entry.get("url", ""),
+        },
+    }
+    return sheet
+
+
+def map_bestiary_entry_to_actor(entry: Dict[str, Any]) -> Dict[str, Any]:
+    """Build a new NPC actor payload from a normalized bestiary record."""
+    return {
+        "name": entry.get("name", ""),
+        "is_pc": False,
+        "player_name": None,
+        "sheet": map_bestiary_entry_to_sheet(entry),
+        "notes": json.dumps({"bestiary_entry_id": entry.get("id")}) if entry.get("id") is not None else "",
+    }

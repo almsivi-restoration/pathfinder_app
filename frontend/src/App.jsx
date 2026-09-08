@@ -5,6 +5,7 @@ import PlayerView from './components/PlayerView';
 import NameGenerator from './components/NameGenerator';
 import CampaignSelector from './pages/CampaignSelector';
 import Encyclopedia from './pages/Encyclopedia';
+import Bestiary from './pages/Bestiary';
 import './App.css';
 
 function App() {
@@ -27,6 +28,11 @@ function App() {
     return window.electron.onOpenNameGenerator(() => setShowNameGenerator(true));
   }, []);
 
+  useEffect(() => {
+    if (!window.electron?.onOpenBestiary) return undefined;
+    return window.electron.onOpenBestiary(() => setView('bestiary'));
+  }, []);
+
   // Determine view based on URL or state
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -46,6 +52,7 @@ function App() {
       )}
       {view === 'gm' && <GMDashboard />}
       {view === 'encyclopedia' && <Encyclopedia onBack={() => setView('gm')} />}
+      {view === 'bestiary' && <Bestiary onBack={() => setView('gm')} />}
       {view === 'player' && <PlayerView />}
       {showNameGenerator && <NameGenerator onClose={() => setShowNameGenerator(false)} />}
     </div>

@@ -69,3 +69,23 @@ test('the current-turn actor gets the highlight class', () => {
 
   expect(container.querySelector('.player-actor-row')).toHaveClass('current-turn');
 });
+
+test('an assigned marker color renders a dot and a left accent border', () => {
+  const actor = { ...baseActor, color: '#8e44ad' };
+  const { container } = render(
+    <PlayerActorRow actor={actor} position={1} isCurrent={false} rulesetConfig={rulesetConfig} />
+  );
+
+  const dot = container.querySelector('.actor-color-dot');
+  expect(dot).toHaveStyle({ backgroundColor: '#8e44ad' });
+  expect(container.querySelector('.player-actor-row')).toHaveStyle({ borderLeft: '8px solid #8e44ad' });
+});
+
+test('no color assigned renders no dot and no accent border', () => {
+  const { container } = render(
+    <PlayerActorRow actor={baseActor} position={1} isCurrent={false} rulesetConfig={rulesetConfig} />
+  );
+
+  expect(container.querySelector('.actor-color-dot')).not.toBeInTheDocument();
+  expect(container.querySelector('.player-actor-row').style.borderLeft).toBe('');
+});

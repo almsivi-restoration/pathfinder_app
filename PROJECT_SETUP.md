@@ -6,7 +6,7 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 
 ### Phase 1 (Current)
 - **Campaign Management:** Create/load campaigns with ruleset selection (1e/2e); only a campaign persists a ruleset — scenes and actors inherit it
-- **Actor Management:** Add/remove actors (PCs and NPCs) with ruleset-driven stat sheets (Pathfinder 1e and 2e)
+- **Actor Management:** Add/remove/clone actors (PCs and NPCs) with ruleset-driven stat sheets (Pathfinder 1e and 2e); optional GM-assigned marker colors shown on the player view
 - **Scenes:** Create/save/load scenes via the Scene Library, with full actor CRUD
 - **Actor Templates:** Save/edit/delete actor templates and instantiate them into a scene
 - **Initiative Tracking:** Manual initiative entry, sort-by-roll, manual reorder, round tracking
@@ -14,10 +14,12 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 - **Reference Library:** Index user-supplied rulebook PDFs into a local SQLite FTS5 index and search them per-ruleset from the Encyclopedia page
 - **Reference Reader:** In-app PDF reading with page-number jump and fit-to-view zoom
 - **Name Generator:** Syllable-bank generator for races (per ruleset), places, items, factions, and events
+- **Bestiary:** Import a user-supplied `bestiary.csv` from the ruleset sources directory into a per-ruleset SQLite FTS5 index; search with CR/type filters, view full monster entries, and create NPC actors or campaign templates from them (1e)
 - **Player View:** Pop-out window showing only player-visible information
   - Initiative order with current actor highlight
   - Health bars (PC: X/Y format, NPC: green→red gradient)
   - Status effects with duration
+  - GM-assigned marker color (dot and accent border)
 - **Persistence:** Save/load campaigns and scenes as JSON files
 - **Packaged Desktop App:** Installable AppImage and deb builds with auto-update (AppImage) and an apt-managed deb
 
@@ -30,6 +32,7 @@ pathfinder_app/
 │   ├── models.py               # Pydantic data models
 │   ├── state.py                # State management & persistence
 │   ├── reference_library.py    # PDF indexing & page-aware search (SQLite FTS5)
+│   ├── bestiary.py             # Bestiary CSV parsing, indexing & search (SQLite FTS5)
 │   ├── name_generator.py       # Syllable-bank name generator
 │   ├── gm-workbench-backend.spec  # PyInstaller spec for the packaged backend
 │   ├── rules/
@@ -67,7 +70,8 @@ pathfinder_app/
 │   │   │   └── *.test.js(x)    # Jest + React Testing Library tests
 │   │   ├── pages/
 │   │   │   ├── CampaignSelector.jsx
-│   │   │   └── Encyclopedia.jsx
+│   │   │   ├── Encyclopedia.jsx
+│   │   │   └── Bestiary.jsx
 │   │   └── styles/
 │   │       ├── theme.css       # Morrowind-inspired theme tokens
 │   │       └── *.css           # Per-component styles
@@ -190,6 +194,13 @@ pathfinder_app/
 - `GET /api/references/current/search` — Page-aware search of indexed content
 - `GET /api/references/current/files/{filename}` — Serve an indexed PDF (Reference Reader)
 
+### Bestiary
+- `GET /api/bestiary/current/status` — CSV presence and index state for the active ruleset
+- `POST /api/bestiary/current/import` — Parse and index the ruleset's `bestiary.csv`
+- `GET /api/bestiary/current/search` — Text search with CR-range and type filters
+- `GET /api/bestiary/current/entry/{entry_id}` — Full normalized monster record
+- `GET /api/bestiary/current/entry/{entry_id}/actor` — Map an entry to a new NPC actor payload
+
 ### Name Generator
 - `GET /api/names/categories` — List categories (+ races for the loaded campaign)
 - `GET /api/names/generate?category&count&race&place_level` — Generate names
@@ -213,20 +224,14 @@ Exact request/response shapes are defined in `backend/main.py` and `backend/mode
   player_name: string (optional)
   ruleset: "1e" | "2e"
   is_pc: boolean
-  hp_current: int
-  hp_max: int
-  ac: int
-  initiative_bonus: int
-  speed: int
-  abilities: {str, dex, con, int, wis, cha: int}
-  skills: {skill_name: modifier}
-  saves: {fort, ref, will: modifier}
-  resistances: {type: value}
-  weapons: [{name, damage_dice, damage_type, modifier}]
+  color: string (optional hex marker color, shown on the player view)
+  sheet: {...}   // ruleset-defined; keys come from the active sheet definition
   effects: [{name, duration_rounds, description}]
   notes: string
 }
 ```
+Legacy flat fields (hp_current, ac, skills, saves, weapons, ...) are migrated into `sheet`
+on load by the Actor model validator.
 
 ### Campaign
 ```

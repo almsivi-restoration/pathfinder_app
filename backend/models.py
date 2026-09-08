@@ -14,6 +14,7 @@ class Actor(BaseModel):
     name: str
     player_name: Optional[str] = None  # None for NPCs
     is_pc: bool
+    color: Optional[str] = None  # GM-assigned marker color (hex), shown on the player view
 
     # Scene state shared across rulesets.
     initiative_roll: Optional[int] = None  # actual rolled value (physical die + bonus), GM-entered

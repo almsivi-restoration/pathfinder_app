@@ -12,6 +12,7 @@ import random
 from typing import Optional
 from uuid import uuid4
 
+from bestiary import BestiaryLibrary
 from models import Actor, Campaign, Scene, RollRequest, RollResult, Effect, InitiativeOrderRequest, ReferenceImportRequest
 from name_generator import generate_names, list_categories
 from reference_library import ReferenceLibrary
@@ -36,6 +37,7 @@ campaigns_dir = os.environ.get("GM_WORKBENCH_CAMPAIGNS_DIR", "./campaigns")
 # Initialize state manager
 state_manager = StateManager(campaigns_dir=campaigns_dir)
 reference_library = ReferenceLibrary()
+bestiary_library = BestiaryLibrary()
 
 # Create the per-ruleset PDF drop directories so users can find them without
 # reading documentation; reference PDFs themselves are user-supplied.
@@ -378,6 +380,64 @@ def search_current_references(query: str, limit: int = 20):
     ruleset, _ = get_current_ruleset_definition()
     return {"results": reference_library.search(ruleset, query, limit)}
 
+
+# ==================== Bestiary Routes ====================
+
+@app.get("/api/bestiary/current/status")
+def get_bestiary_status():
+    """Report whether the ruleset bestiary CSV is present and/or indexed."""
+    ruleset, config = get_current_ruleset_definition()
+    return bestiary_library.status(ruleset, config["reference_directory"])
+
+
+@app.post("/api/bestiary/current/import")
+def import_current_bestiary():
+    """Parse and index the bestiary CSV dropped into the ruleset sources directory."""
+    ruleset, config = get_current_ruleset_definition()
+    try:
+        return bestiary_library.import_source(ruleset, config["reference_directory"])
+    except FileNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error))
+    except Exception as error:
+        raise HTTPException(status_code=400, detail=f"Could not import bestiary: {error}")
+
+
+@app.get("/api/bestiary/current/search")
+def search_current_bestiary(
+    query: str = "",
+    cr_min: Optional[float] = None,
+    cr_max: Optional[float] = None,
+    monster_type: Optional[str] = None,
+    limit: int = 50,
+):
+    """Search the indexed bestiary for the active campaign's ruleset."""
+    ruleset, _ = get_current_ruleset_definition()
+    return {"results": bestiary_library.search(ruleset, query, cr_min, cr_max, monster_type, limit)}
+
+
+@app.get("/api/bestiary/current/entry/{entry_id}")
+def get_bestiary_entry(entry_id: int):
+    """Return one full normalized bestiary record."""
+    ruleset, _ = get_current_ruleset_definition()
+    entry = bestiary_library.get_entry(ruleset, entry_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Bestiary entry not found")
+    return entry
+
+
+@app.get("/api/bestiary/current/entry/{entry_id}/actor")
+def get_bestiary_entry_as_actor(entry_id: int):
+    """Map one bestiary record onto a new NPC actor payload using the ruleset mapper."""
+    ruleset, config = get_current_ruleset_definition()
+    mapper = config.get("bestiary_mapper")
+    if not mapper:
+        raise HTTPException(status_code=404, detail="The active ruleset has no bestiary mapping")
+    entry = bestiary_library.get_entry(ruleset, entry_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Bestiary entry not found")
+    return mapper(entry)
+
+
 @app.get("/api/rulesets")
 def get_available_rulesets():
     """List rulesets available for new campaigns."""
@@ -401,6 +461,7 @@ def get_current_ruleset_config():
         "max_level": config["max_level"],
         "reference_directory": config["reference_directory"],
         "actor_sheet": config["actor_sheet"],
+        "monster_sheet": config.get("monster_sheet"),
     }
 
 
