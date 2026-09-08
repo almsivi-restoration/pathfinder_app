@@ -3,6 +3,17 @@
 Rules for AI agents working in this repository. Read this before making changes
 or cutting a release.
 
+## Lexicon and blueprints
+
+- **`.github/instructions/lexicon.instructions.md`** — canonical domain
+  vocabulary, naming, casing, and pinned conventions. The singular voice of
+  the codebase; always loaded.
+- **`.github/instructions/blueprints.instructions.md`** — the blueprint
+  catalog and the add/revise mechanism. Blueprints live in
+  `.github/blueprints/` and auto-load by file scope. They are defaults, not
+  gates: a blueprint that must be mangled to fit was wrong for that space —
+  deviate locally and revise the blueprint in the same commit.
+
 ## Project shape
 
 - `backend/` — FastAPI (Python 3.12). Run/tests via the project venv:
@@ -76,6 +87,10 @@ every time, not just when a feature "feels big":
   never staged): latest tag/version line, new features with their version
   numbers, current test counts, and any new do-not-repeat lessons from this
   release's development.
+- **Lexicon and blueprints** — do `.github/instructions/lexicon.instructions.md`
+  and the files in `.github/blueprints/` still match the code being released?
+  New domain terms, new architectural shapes, or justified deviations from this
+  release's work are recorded in the same commit, never deferred.
 - **Skills/instruction files** (`.github/skills/`, user prompts) — only when
   the release taught a durable lesson in their domain; otherwise leave them.
 - Rule of thumb: if a doc mentions a version, a test count, a feature list,
