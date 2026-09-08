@@ -54,16 +54,22 @@ function SectionView({ section, fields, sheet }) {
 
 function ActorViewModal() {
   const actors = useStore((state) => state.actors);
+  const actorTemplates = useStore((state) => state.actorTemplates);
   const viewingActorId = useStore((state) => state.viewingActorId);
+  const viewingTemplateId = useStore((state) => state.viewingTemplateId);
   const setViewingActorId = useStore((state) => state.setViewingActorId);
+  const setViewingTemplateId = useStore((state) => state.setViewingTemplateId);
   const rulesetConfig = useStore((state) => state.rulesetConfig);
   const fetchRulesetConfig = useStore((state) => state.fetchRulesetConfig);
 
-  const actor = actors.find((a) => a.id === viewingActorId);
+  const isTemplate = Boolean(viewingTemplateId);
+  const actor = isTemplate
+    ? actorTemplates.find((t) => t.id === viewingTemplateId)
+    : actors.find((a) => a.id === viewingActorId);
 
   useEffect(() => {
-    if (viewingActorId) fetchRulesetConfig();
-  }, [viewingActorId, fetchRulesetConfig]);
+    if (viewingActorId || viewingTemplateId) fetchRulesetConfig();
+  }, [viewingActorId, viewingTemplateId, fetchRulesetConfig]);
 
   if (!actor) return null;
 
@@ -80,7 +86,10 @@ function ActorViewModal() {
     return groups;
   }, {});
 
-  const handleClose = () => setViewingActorId(null);
+  const handleClose = () => {
+    setViewingActorId(null);
+    setViewingTemplateId(null);
+  };
 
   return (
     <div className="actor-view-overlay" onClick={handleClose}>
@@ -89,7 +98,7 @@ function ActorViewModal() {
           <h2>
             {actor.color && <span className="actor-color-dot" style={{ backgroundColor: actor.color }} />}
             {actor.name}
-            <span className="actor-view-type">{actor.is_pc ? 'PC' : 'NPC'}</span>
+            <span className="actor-view-type">{actor.is_pc ? 'PC' : 'NPC'}{isTemplate ? ' · Template' : ''}</span>
           </h2>
           <button className="btn-close" onClick={handleClose} aria-label="Close">
             ✕

@@ -84,6 +84,25 @@ test('close button clears the viewing actor', async () => {
   expect(useStore.getState().viewingActorId).toBeNull();
 });
 
+test('renders campaign templates via viewingTemplateId with a Template badge', () => {
+  useStore.setState({
+    actors: [],
+    actorTemplates: [goblin],
+    viewingActorId: null,
+    viewingTemplateId: 'a1',
+    rulesetConfig,
+    fetchRulesetConfig: jest.fn(async () => rulesetConfig),
+  });
+  render(<ActorViewModal />);
+
+  expect(screen.getByText('Goblin')).toBeInTheDocument();
+  expect(screen.getByText(/Template/)).toBeInTheDocument();
+  expect(screen.getByText('Combat')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByLabelText('Close'));
+  expect(useStore.getState().viewingTemplateId).toBeNull();
+});
+
 test('renders nothing when no actor is selected', () => {
   useStore.setState({ actors: [], viewingActorId: null, rulesetConfig });
   const { container } = render(<ActorViewModal />);

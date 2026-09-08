@@ -10,6 +10,7 @@ function ActorTemplateLibrary() {
   const updateActorTemplate = useStore((state) => state.updateActorTemplate);
   const removeActorTemplate = useStore((state) => state.removeActorTemplate);
   const setSelectedTemplateId = useStore((state) => state.setSelectedTemplateId);
+  const setViewingTemplateId = useStore((state) => state.setViewingTemplateId);
   const currentScene = useStore((state) => state.currentScene);
   const rulesetConfig = useStore((state) => state.rulesetConfig);
 
@@ -58,19 +59,22 @@ function ActorTemplateLibrary() {
           <span className="template-stats">
             {formatSummary(template)}
           </span>
-          <input
-            type="color"
-            className={`actor-color-swatch ${template.color ? 'assigned' : ''}`}
-            value={template.color || '#6b5f4a'}
-            onChange={(event) => handleColorChange(template, event.target.value)}
-            title={template.color ? `Marker color ${template.color}` : 'Assign a marker color (inherited by scene actors)'}
-          />
-          {template.color && (
-            <button className="btn-small" onClick={() => handleColorChange(template, null)} title="Clear marker color">
-              ×
-            </button>
-          )}
           <div className="template-actions">
+            <input
+              type="color"
+              className={`actor-color-swatch ${template.color ? 'assigned' : ''}`}
+              value={template.color || '#6b5f4a'}
+              onChange={(event) => handleColorChange(template, event.target.value)}
+              title={template.color ? `Marker color ${template.color}` : 'Assign a marker color (inherited by scene actors)'}
+            />
+            {template.color && (
+              <button className="btn-small" onClick={() => handleColorChange(template, null)} title="Clear marker color">
+                ×
+              </button>
+            )}
+            <button className="btn-small" onClick={() => setViewingTemplateId(template.id)} title="View template details">
+              View
+            </button>
             <button
               className="btn-small btn-add"
               onClick={() => handleAddToScene(template.id)}

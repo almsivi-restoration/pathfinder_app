@@ -47,6 +47,7 @@
 .template-actions {
   display: flex;
   gap: 4px;
+  align-items: center;
 }
 
 .btn-add {

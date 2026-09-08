@@ -35,6 +35,7 @@ export const useStore = create((set, get) => ({
   selectedActorId: null,
   selectedTemplateId: null,
   viewingActorId: null,
+  viewingTemplateId: null,
   isSceneActive: false,
   isCampaignDirty: false,
   isSceneDirty: false,
@@ -575,7 +576,8 @@ export const useStore = create((set, get) => ({
   // Utility
   setSelectedActorId: (actorId) => set({ selectedActorId: actorId }),
   setSelectedTemplateId: (templateId) => set({ selectedTemplateId: templateId }),
-  setViewingActorId: (actorId) => set({ viewingActorId: actorId }),
+  setViewingActorId: (actorId) => set({ viewingActorId: actorId, viewingTemplateId: null }),
+  setViewingTemplateId: (templateId) => set({ viewingTemplateId: templateId, viewingActorId: null }),
 
   // Clears all campaign/scene session state so the app falls back to the campaign selector.
   returnToCampaignSelector: () => set({
