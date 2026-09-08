@@ -67,6 +67,39 @@ function stopBackend() {
   }
 }
 
+// One-shot version probe of the backend already holding :8000. Used when the
+// single-instance lock is denied: the running copy may be an older version,
+// and silently handing it focus is how a stale backend kept serving after an
+// upgrade (the v0.4.2/0.5.0 incident). Resolves with the version string, or
+// null if nothing recognizable answered.
+function probeRunningInstanceVersion(timeoutMs = 1500) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (value) => {
+      if (!settled) {
+        settled = true;
+        resolve(value);
+      }
+    };
+    const request = http.get('http://127.0.0.1:8000/health', (response) => {
+      let body = '';
+      response.on('data', (chunk) => (body += chunk));
+      response.on('end', () => {
+        try {
+          finish(JSON.parse(body).version || 'unknown');
+        } catch {
+          finish(null);
+        }
+      });
+    });
+    request.on('error', () => finish(null));
+    request.setTimeout(timeoutMs, () => {
+      request.destroy();
+      finish(null);
+    });
+  });
+}
+
 function waitForBackend(maxAttempts = 50) {
   return new Promise((resolve, reject) => {
     const attempt = (remaining) => {
@@ -106,7 +139,28 @@ function waitForBackend(maxAttempts = 50) {
 // running instance instead.
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 if (!gotSingleInstanceLock) {
-  app.quit();
+  // Another instance is running. Before yielding, check whether it is an
+  // older version still holding the port — if so, focus-handing would leave
+  // the user on the stale copy after an upgrade. Version-blind by design in
+  // dev (isDev), where a hand-started backend is expected and its version may
+  // legitimately differ.
+  app.whenReady().then(async () => {
+    if (!isDev) {
+      const runningVersion = await probeRunningInstanceVersion();
+      if (runningVersion && runningVersion !== app.getVersion()) {
+        await dialog.showMessageBox({
+          type: 'warning',
+          title: 'Older Copy Still Running',
+          message: 'Another version of Game Masters Workbench is already running.',
+          detail:
+            `Running version: ${runningVersion}\nThis launch: ${app.getVersion()}\n\n` +
+            'An older copy is still holding the app. Quit it fully — including its player-view window and any orphaned backend — then relaunch to use the new version.',
+          buttons: ['OK'],
+        });
+      }
+    }
+    app.quit();
+  });
 } else {
   app.on('second-instance', () => {
     if (mainWindow) {
