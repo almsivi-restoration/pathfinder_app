@@ -468,7 +468,9 @@ export const useStore = create((set, get) => ({
       return res.data;
     } catch (error) {
       if (error.response?.status === 503) {
-        return { ocrUnavailable: true };
+        // detail is structured install guidance ({message, venv_dir, commands});
+        // older backends send a plain string.
+        return { ocrUnavailable: true, ocrDetail: error.response?.data?.detail };
       }
       console.error('Failed to import character sheet:', error);
       set({ operationError: getErrorMessage(error) });

@@ -1,0 +1,23 @@
+# Dedicated OCR environment for character-sheet import (handwriting).
+#
+# This environment is NOT the backend venv. The backend (dev or packaged)
+# never imports paddle itself; it runs backend/ocr_runner.py as a subprocess
+# with THIS environment's interpreter (see sheet_importer.ocr_python). That
+# keeps paddle's dependency tree from fighting FastAPI's anyio<4 / pydantic
+# pins, and keeps ~730MB of paddle/opencv out of the packaged app.
+#
+# Create it where the backend looks (the import dialog shows these commands
+# with this machine's actual paths):
+#
+#   python3 -m venv "$HOME/.config/Game Masters Workbench/ocr-venv"
+#   "$HOME/.config/Game Masters Workbench/ocr-venv/bin/pip" install -r backend/requirements-ocr.txt
+#
+# Matched trio ONLY: other paddlepaddle/paddleocr/paddlex combinations hit a
+# oneDNN "ConvertPirAttribute2RuntimeAttribute" executor bug or a paddlex API
+# mismatch. Recognition models download to ~/.paddlex/official_models on first
+# use (~230 MB).
+paddlepaddle==3.2.2
+paddleocr==3.3.0
+paddlex==3.3.0
+pymupdf==1.28.2
+Pillow>=10.0.0

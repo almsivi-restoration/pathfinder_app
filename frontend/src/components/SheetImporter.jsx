@@ -18,6 +18,13 @@ const REVIEW_FIELDS = [
   { key: 'initiative.bonus', label: 'Initiative', type: 'number' },
 ];
 
+// Shown only when the backend reports 503 without structured guidance (an
+// older backend); current backends send the exact commands for this machine.
+const FALLBACK_OCR_COMMANDS = [
+  'python3 -m venv "$HOME/.config/Game Masters Workbench/ocr-venv"',
+  '"$HOME/.config/Game Masters Workbench/ocr-venv/bin/pip" install "paddlepaddle==3.2.2" "paddleocr==3.3.0" "paddlex==3.3.0" "pymupdf==1.28.2" "Pillow>=10.0.0"',
+];
+
 function SheetImporter({ onClose }) {
   const importSheet = useStore((state) => state.importSheet);
   const addActor = useStore((state) => state.addActor);
@@ -30,6 +37,7 @@ function SheetImporter({ onClose }) {
   const [draft, setDraft] = useState(null);      // raw backend response
   const [values, setValues] = useState(null);    // editable field map
   const [ocrMissing, setOcrMissing] = useState(false); // backend lacks the OCR engine
+  const [ocrDetail, setOcrDetail] = useState(null);    // structured install guidance from the 503
   const [destination, setDestination] = useState('scene'); // 'scene' | 'template'
 
   const handleFile = async (event) => {
@@ -37,11 +45,13 @@ function SheetImporter({ onClose }) {
     if (!file) return;
     clearOperationError();
     setOcrMissing(false);
+    setOcrDetail(null);
     setBusy(true);
     const result = await importSheet(file);
     setBusy(false);
     if (!result) return;
     if (result.ocrUnavailable) {
+      setOcrDetail(result.ocrDetail && typeof result.ocrDetail === 'object' ? result.ocrDetail : null);
       setOcrMissing(true);
       return;
     }
@@ -119,11 +129,12 @@ function SheetImporter({ onClose }) {
                 <strong>The OCR engine isn't installed on this computer.</strong>
                 <p>
                   Sheet import uses PaddleOCR to read handwriting. It isn't bundled with the app
-                  (it's large). To enable it, install it into the backend's Python environment:
+                  (it's large) and runs in its own Python environment, kept separate from the app
+                  itself. To enable it, create that environment and install the engine:
                 </p>
-                <code className="sheet-importer-code">
-                  backend/venv/bin/python -m pip install "paddlepaddle==3.2.2" "paddleocr==3.3.0" "paddlex==3.3.0"
-                </code>
+                {(ocrDetail?.commands || FALLBACK_OCR_COMMANDS).map((command) => (
+                  <code key={command} className="sheet-importer-code">{command}</code>
+                ))}
                 <p>
                   The first import downloads the recognition models (~230&nbsp;MB). Restart the app
                   afterward, then try the import again.

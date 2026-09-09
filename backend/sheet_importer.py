@@ -7,12 +7,26 @@ located and the recognized numeric value on the same row at the value column
 is taken. This is robust to scan margins and skew because the detector finds
 actual text positions rather than trusting fixed pixel boxes.
 
+The OCR stack is NOT imported by the backend process. The PaddleOCR dependency
+tree is heavy, fights FastAPI's anyio/pydantic pins, and the packaged backend
+is a frozen binary that excludes it entirely. Instead the extraction itself
+(extract_draft) runs in a dedicated user-created Python environment via
+ocr_runner.py as a subprocess; import_pathfinder_1e is that subprocess
+wrapper. Pins live in requirements-ocr.txt.
+
 Ruleset-neutral core lives here; the PZO2101 (Pathfinder 1e) layout is the
 registered form geometry. Values are returned as a reviewable draft — nothing
 is persisted here.
 """
 
+import importlib.util
+import json
+import os
+import subprocess
+import sys
+import tempfile
 from io import BytesIO
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 _PDF_TO_PX = 300 / 72.0  # render at 300 DPI
@@ -39,14 +53,60 @@ _INIT_VALUE_X = (235, 258)
 _AC_VALUE_X = (70, 100)        # AC total is leftmost number on the AC row
 _SAVE_VALUE_X = (104, 126)     # TOTAL column = leftmost numeric on the save row
 
+# The first OCR run downloads the recognition models (~230 MB), so the
+# subprocess timeout must cover a model download, not just inference.
+_OCR_TIMEOUT_SECONDS = 900
 
-def _ocr_available() -> bool:
+# Pinned matched trio + render deps (see requirements-ocr.txt): other
+# paddlepaddle/paddleocr/paddlex combinations hit a oneDNN executor bug or a
+# paddlex API mismatch.
+_OCR_PACKAGES = '"paddlepaddle==3.2.2" "paddleocr==3.3.0" "paddlex==3.3.0" "pymupdf==1.28.2" "Pillow>=10.0.0"'
+
+
+def _paddle_importable() -> bool:
+    """True when the PaddleOCR engine is importable by THIS interpreter."""
     try:
-        import paddleocr  # noqa: F401
-        import paddle  # noqa: F401
-        return True
+        return importlib.util.find_spec("paddleocr") is not None and importlib.util.find_spec("paddle") is not None
     except Exception:
         return False
+
+
+def ocr_venv_dir() -> Path:
+    """Directory of the dedicated OCR environment the user may create."""
+    override = os.environ.get("GM_WORKBENCH_OCR_DIR")
+    if override:
+        return Path(override)
+    if sys.platform == "win32":
+        base = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
+    else:
+        base = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+    return base / "Game Masters Workbench" / "ocr-venv"
+
+
+def ocr_python() -> Optional[str]:
+    """Interpreter that can run ocr_runner.py, or None when OCR is unavailable.
+
+    Order: explicit env override, then the current interpreter in development
+    (the backend venv may legitimately carry the OCR stack), then the
+    dedicated venv. The frozen packaged binary never has paddle importable,
+    so installed builds always land on the dedicated venv.
+    """
+    override = os.environ.get("GM_WORKBENCH_OCR_PYTHON")
+    if override and Path(override).is_file():
+        return override
+    if not getattr(sys, "frozen", False) and _paddle_importable():
+        return sys.executable
+    candidate = ocr_venv_dir() / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
+    return str(candidate) if candidate.is_file() else None
+
+
+def ocr_runner_path() -> Optional[Path]:
+    """The ocr_runner.py script on disk (ships as a data file in the package)."""
+    if getattr(sys, "frozen", False):
+        candidate = Path(sys._MEIPASS) / "ocr" / "ocr_runner.py"  # PyInstaller runtime dir
+    else:
+        candidate = Path(__file__).resolve().with_name("ocr_runner.py")
+    return candidate if candidate.is_file() else None
 
 
 class SheetImporter:
@@ -57,8 +117,22 @@ class SheetImporter:
 
     @staticmethod
     def ocr_available() -> bool:
-        """True when the PaddleOCR engine is importable."""
-        return _ocr_available()
+        """True when an OCR interpreter and the runner script both exist."""
+        return ocr_python() is not None and ocr_runner_path() is not None
+
+    @staticmethod
+    def ocr_install_guidance() -> Dict[str, Any]:
+        """Exact commands to create the dedicated OCR environment (503 detail)."""
+        venv = ocr_venv_dir()
+        if sys.platform == "win32":
+            commands = [f'py -m venv "{venv}"', f'"{venv}\\Scripts\\pip.exe" install {_OCR_PACKAGES}']
+        else:
+            commands = [f'python3 -m venv "{venv}"', f'"{venv}/bin/pip" install {_OCR_PACKAGES}']
+        return {
+            "message": "The OCR engine (PaddleOCR) is not installed on this computer",
+            "venv_dir": str(venv),
+            "commands": commands,
+        }
 
     def _engine(self):
         if self._ocr is None:
@@ -72,8 +146,41 @@ class SheetImporter:
         return self._ocr
 
     def import_pathfinder_1e(self, pdf_bytes: bytes) -> Dict[str, Any]:
-        """OCR page one of a PZO2101 sheet and return a reviewable draft."""
-        if not self.ocr_available():
+        """OCR page one of a PZO2101 sheet via the OCR subprocess; draft only.
+
+        The extraction itself runs in a dedicated Python environment (see
+        ocr_python) executing ocr_runner.py, so neither the backend venv nor
+        the frozen packaged binary needs the PaddleOCR stack.
+        """
+        python = ocr_python()
+        runner = ocr_runner_path()
+        if python is None or runner is None:
+            raise RuntimeError("PaddleOCR is not available on this computer")
+        with tempfile.TemporaryDirectory(prefix="gmw_ocr_") as tmp:
+            input_pdf = Path(tmp) / "sheet.pdf"
+            output_json = Path(tmp) / "result.json"
+            input_pdf.write_bytes(pdf_bytes)
+            try:
+                process = subprocess.run(
+                    [python, str(runner), str(input_pdf), str(output_json)],
+                    capture_output=True,
+                    text=True,
+                    timeout=_OCR_TIMEOUT_SECONDS,
+                )
+            except subprocess.TimeoutExpired:
+                raise RuntimeError(f"OCR did not finish within {_OCR_TIMEOUT_SECONDS} seconds")
+            if not output_json.is_file():
+                noise = (process.stderr or process.stdout or "").strip().splitlines()
+                tail = " | ".join(noise[-3:]) or f"exit code {process.returncode}"
+                raise RuntimeError(f"OCR runner produced no result: {tail}")
+            payload = json.loads(output_json.read_text())
+        if not payload.get("ok"):
+            raise RuntimeError(payload.get("error", "OCR failed"))
+        return payload["draft"]
+
+    def extract_draft(self, pdf_bytes: bytes) -> Dict[str, Any]:
+        """The actual OCR work; runs inside the OCR environment via ocr_runner.py."""
+        if not _paddle_importable():
             raise RuntimeError("PaddleOCR is not available on this computer")
 
         import pymupdf

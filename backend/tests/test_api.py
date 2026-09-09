@@ -197,11 +197,15 @@ def test_sheet_import_requires_campaign_and_1e(client):
     res = client.post("/api/import/sheet", files={"file": ("sheet.pdf", b"%PDF-1.4", "application/pdf")})
     assert res.status_code == 400
 
-    # 1e campaign but OCR engine unavailable -> 503.
+    # 1e campaign but OCR engine unavailable -> 503 with structured guidance.
     client.post("/api/campaign/new", params={"name": "OneE", "ruleset": "1e"})
-    main.sheet_importer = type("Stub", (), {"ocr_available": staticmethod(lambda: False)})()
+    main.sheet_importer = type("Stub", (), {
+        "ocr_available": staticmethod(lambda: False),
+        "ocr_install_guidance": staticmethod(lambda: {"message": "no OCR", "venv_dir": "/x", "commands": ["c1", "c2"]}),
+    })()
     res = client.post("/api/import/sheet", files={"file": ("sheet.pdf", b"%PDF-1.4", "application/pdf")})
     assert res.status_code == 503
+    assert res.json()["detail"]["commands"] == ["c1", "c2"]
 
 
 def test_roll_dice_respects_die_type_and_modifier(client):

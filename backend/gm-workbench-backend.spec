@@ -7,13 +7,14 @@
 # No data files are bundled: reference PDFs are user-supplied at runtime, and
 # campaigns live under the per-user data directory (env vars set by Electron).
 
-# PaddleOCR ships UNBUNDLED (the importer degrades to "OCR not available" with
-# install guidance when the engine is absent). Its imports in sheet_importer.py
-# are lazy, but PyInstaller's analysis still follows them from main.py's
-# top-level `from sheet_importer import SheetImporter` and would drag ~730MB of
-# paddle + opencv + scipy into the binary. Exclude the whole OCR stack so the
-# packaged backend stays lean; sheet_importer.ocr_available() then returns
-# False at runtime and the importer UI shows install instructions.
+# PaddleOCR ships UNBUNDLED: the frozen interpreter excludes the whole OCR
+# stack and the extraction runs as a SUBPROCESS under a dedicated user-created
+# venv (backend/requirements-ocr.txt, sheet_importer.ocr_python). The imports
+# in sheet_importer.py are lazy, but PyInstaller's analysis still follows them
+# from main.py's top-level `from sheet_importer import SheetImporter` and would
+# drag ~730MB of paddle + opencv + scipy into the binary. Exclude the whole OCR
+# stack so the packaged backend stays lean; when the OCR venv is absent the
+# import route answers 503 with the exact install commands.
 _OCR_EXCLUDES = [
     'paddle', 'paddleocr', 'paddlex', 'paddlepaddle',
     'cv2', 'opencv', 'opencv_contrib_python', 'opencv-contrib-python',
@@ -29,7 +30,10 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    # ocr_runner.py + sheet_importer.py ship as plain scripts (NOT frozen into
+    # the binary) so the dedicated OCR venv's interpreter can run the actual
+    # extraction as a subprocess from sys._MEIPASS/ocr/.
+    datas=[('ocr_runner.py', 'ocr'), ('sheet_importer.py', 'ocr')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

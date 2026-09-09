@@ -2,10 +2,12 @@
 acceptance scan; spatial-mapping logic is unit-tested with synthetic detections."""
 
 import shutil
+import sys
 from pathlib import Path
 
 import pytest
 
+import sheet_importer
 from sheet_importer import SheetImporter, _parse_number
 
 SCAN = Path(__file__).resolve().parent.parent.parent / "artifacts" / "local" / "character_sheet_importer" / "the_pitiless_jape_character_sheet.pdf"
@@ -77,3 +79,71 @@ def test_real_scan_extracts_core_fields():
 
     # Known-faint fields surface as warnings or reviewable low values, never silently dropped.
     assert isinstance(draft["warnings"], list)
+
+
+# ---- OCR subprocess wrapper ----
+
+
+def test_ocr_python_env_override(monkeypatch, tmp_path):
+    fake = tmp_path / "bin" / "python"
+    fake.parent.mkdir()
+    fake.touch()
+    monkeypatch.setenv("GM_WORKBENCH_OCR_PYTHON", str(fake))
+    assert sheet_importer.ocr_python() == str(fake)
+
+
+def test_ocr_python_none_when_nothing_available(monkeypatch, tmp_path):
+    monkeypatch.delenv("GM_WORKBENCH_OCR_PYTHON", raising=False)
+    monkeypatch.setenv("GM_WORKBENCH_OCR_DIR", str(tmp_path / "missing-venv"))
+    monkeypatch.setattr(sheet_importer, "_paddle_importable", lambda: False)
+    assert sheet_importer.ocr_python() is None
+    assert not SheetImporter.ocr_available()
+
+
+def test_ocr_install_guidance_carries_commands(monkeypatch, tmp_path):
+    monkeypatch.setenv("GM_WORKBENCH_OCR_DIR", str(tmp_path / "ocr-venv"))
+    guidance = SheetImporter.ocr_install_guidance()
+    assert str(tmp_path) in guidance["venv_dir"]
+    assert len(guidance["commands"]) == 2
+    assert "paddlepaddle==3.2.2" in guidance["commands"][1]
+
+
+def test_import_without_engine_raises(monkeypatch):
+    monkeypatch.setattr(sheet_importer, "ocr_python", lambda: None)
+    with pytest.raises(RuntimeError, match="not available"):
+        SheetImporter().import_pathfinder_1e(b"%PDF-1.4 fake")
+
+
+def test_import_returns_runner_draft(monkeypatch, tmp_path):
+    runner = tmp_path / "fake_runner.py"
+    runner.write_text(
+        "import json, sys\n"
+        "from pathlib import Path\n"
+        "Path(sys.argv[2]).write_text(json.dumps({'ok': True, 'draft': {'fields': [], 'warnings': ['w'], 'ocr': {}}}))\n"
+    )
+    monkeypatch.setattr(sheet_importer, "ocr_python", lambda: sys.executable)
+    monkeypatch.setattr(sheet_importer, "ocr_runner_path", lambda: runner)
+    draft = SheetImporter().import_pathfinder_1e(b"%PDF-1.4 fake")
+    assert draft["warnings"] == ["w"]
+
+
+def test_import_surfaces_runner_error(monkeypatch, tmp_path):
+    runner = tmp_path / "fake_runner.py"
+    runner.write_text(
+        "import json, sys\n"
+        "from pathlib import Path\n"
+        "Path(sys.argv[2]).write_text(json.dumps({'ok': False, 'error': 'boom: engine exploded'}))\n"
+    )
+    monkeypatch.setattr(sheet_importer, "ocr_python", lambda: sys.executable)
+    monkeypatch.setattr(sheet_importer, "ocr_runner_path", lambda: runner)
+    with pytest.raises(RuntimeError, match="engine exploded"):
+        SheetImporter().import_pathfinder_1e(b"%PDF-1.4 fake")
+
+
+def test_import_runner_crash_without_result(monkeypatch, tmp_path):
+    runner = tmp_path / "fake_runner.py"
+    runner.write_text("import sys\nsys.stderr.write('Traceback: no module named paddleocr\\n')\nsys.exit(1)\n")
+    monkeypatch.setattr(sheet_importer, "ocr_python", lambda: sys.executable)
+    monkeypatch.setattr(sheet_importer, "ocr_runner_path", lambda: runner)
+    with pytest.raises(RuntimeError, match="produced no result"):
+        SheetImporter().import_pathfinder_1e(b"%PDF-1.4 fake")

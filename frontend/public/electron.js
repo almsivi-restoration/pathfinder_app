@@ -51,6 +51,10 @@ function startBackend() {
       ...process.env,
       GM_WORKBENCH_CAMPAIGNS_DIR: campaignsDir,
       GM_WORKBENCH_REFERENCE_DIR: referenceDir,
+      // Sheet-import OCR runs as a subprocess from this dedicated venv
+      // (created by the user via the commands shown in the import dialog),
+      // never by the frozen backend itself.
+      GM_WORKBENCH_OCR_DIR: path.join(app.getPath('userData'), 'ocr-venv'),
       GM_WORKBENCH_HOST: '127.0.0.1',
       GM_WORKBENCH_PORT: '8000',
       GM_WORKBENCH_VERSION: app.getVersion(),
@@ -315,7 +319,7 @@ function showHelp() {
       'Name Generator: GM Tools > Name Generator (Ctrl+N) generates fantasy names for characters, places, items, factions, and events.\n\n' +
       'Chronicle: GM Tools > Chronicle (Ctrl+J) is the campaign journal — markdown-formatted entries for session recaps and anything else worth recording, with a formatting guide on the right page.\n\n' +
       'Quick Roll: GM Tools > Quick Roll (Ctrl+D) rolls checks for any actor in the open scene using the skill, save, or ability modifier from their sheet, or any custom die and modifier, with a running history of results.\n\n' +
-      'Import Character Sheet: GM Tools > Import Character Sheet (Ctrl+I) reads a scanned Pathfinder 1e sheet (PDF) with OCR and shows the extracted values for your review before adding the actor to the scene or saving them as a template. OCR uses PaddleOCR, which is not bundled — if the dialog reports the engine missing, install it into the backend Python environment as shown there.\n\n' +
+      'Import Character Sheet: GM Tools > Import Character Sheet (Ctrl+I) reads a scanned Pathfinder 1e sheet (PDF) with OCR and shows the extracted values for your review before adding the actor to the scene or saving them as a template. OCR uses PaddleOCR, which is not bundled — if the dialog reports the engine missing, it shows the exact commands to create the dedicated OCR environment.\n\n' +
       'Data lives under:\n' +
       path.join(app.getPath('userData'), 'data') +
       '\n\nKeyboard: Ctrl+B bestiary · Ctrl+D quick roll · Ctrl+E encyclopedia · Ctrl+I import sheet · Ctrl+J chronicle · Ctrl+N name generator · Ctrl+R restart · Ctrl+Q quit · Ctrl+Shift+I developer tools.',

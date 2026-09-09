@@ -12,11 +12,7 @@ pypdf==5.9.0
 pymupdf==1.28.2
 pytesseract==0.3.13
 Pillow>=10.0.0
-# Character-sheet OCR (handwriting) for the Pathfinder 1e sheet importer.
-# Matched trio ONLY: other paddlepaddle/paddleocr/paddlex combinations hit a
-# oneDNN "ConvertPirAttribute2RuntimeAttribute" executor bug or paddlex API
-# mismatch. Models download to ~/.paddlex/official_models on first use; the
-# packaged backend must ship them or fetch on first run (see importer notes).
-paddlepaddle==3.2.2
-paddleocr==3.3.0
-paddlex==3.3.0
+# Character-sheet OCR (handwriting) is NOT installed into this environment:
+# it runs in a dedicated user-created venv (requirements-ocr.txt), executed as
+# a subprocess (sheet_importer.ocr_python), so paddle's dependency tree cannot
+# fight FastAPI's anyio/pydantic pins and stays out of the packaged app.

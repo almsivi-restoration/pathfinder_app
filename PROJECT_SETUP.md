@@ -17,7 +17,7 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 - **Name Generator:** Per-race syllable-grammar generator for actors, plus multi-template engines for places, items, factions, and events; batches are deduplicated
 - **Chronicle:** Campaign journal (GM Tools > Chronicle, Ctrl+J) styled as an open book — markdown-formatted entries with a formatting guide and live preview, persisted with the campaign
 - **Bestiary:** Import a user-supplied `bestiary.csv` from the ruleset sources directory into a per-ruleset SQLite FTS5 index; search with CR/type filters, view full monster entries, and create NPC actors or campaign templates from them (1e)
-- **Character Sheet Import:** OCR a scanned Pathfinder 1e sheet PDF (GM Tools > Import Character Sheet, Ctrl+I) into a reviewable actor draft — abilities, HP, AC, initiative, saves, name — for GM confirmation before adding to the scene or saving as a template. Handwriting OCR uses PaddleOCR (not bundled; install into the backend venv when the dialog reports it missing)
+- **Character Sheet Import:** OCR a scanned Pathfinder 1e sheet PDF (GM Tools > Import Character Sheet, Ctrl+I) into a reviewable actor draft — abilities, HP, AC, initiative, saves, name — for GM confirmation before adding to the scene or saving as a template. Handwriting OCR uses PaddleOCR, kept out of the backend environment entirely: extraction runs as a subprocess from a dedicated user-created venv (`backend/requirements-ocr.txt`), and the import dialog shows the exact install commands when it is missing
 - **Player View:** Pop-out window showing only player-visible information
   - Initiative order with current actor highlight
   - Health bars (PC: X/Y format, NPC: green→red gradient)
@@ -37,7 +37,8 @@ pathfinder_app/
 │   ├── reference_library.py    # PDF indexing & page-aware search (SQLite FTS5, OCR fallback)
 │   ├── bestiary.py             # Bestiary CSV parsing, indexing & search (SQLite FTS5)
 │   ├── name_generator.py       # Per-race syllable grammars + multi-template name engines
-│   ├── sheet_importer.py       # Scanned 1e character-sheet OCR (PaddleOCR, section det+rec)
+│   ├── sheet_importer.py       # Scanned 1e character-sheet OCR (PaddleOCR, section det+rec) + OCR subprocess wrapper
+│   ├── ocr_runner.py           # Standalone OCR entry point run as a subprocess by the dedicated OCR venv
 │   ├── gm-workbench-backend.spec  # PyInstaller spec for the packaged backend
 │   ├── rules/
 │   │   ├── __init__.py         # Ruleset registry
@@ -45,7 +46,8 @@ pathfinder_app/
 │   │   ├── ruleset_1e.py       # Pathfinder 1e config
 │   │   └── ruleset_2e.py       # Pathfinder 2e config
 │   ├── tests/                  # pytest suite (StateManager + API)
-│   └── requirements.txt
+│   ├── requirements.txt
+│   └── requirements-ocr.txt    # Dedicated OCR venv pins (matched paddle trio; NOT for the backend venv)
 │
 ├── frontend/
 │   ├── public/

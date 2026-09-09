@@ -22,7 +22,7 @@ test('importSheet maps a 503 to an ocrUnavailable result', async () => {
 
   const result = await useStore.getState().importSheet(new File(['x'], 'sheet.pdf', { type: 'application/pdf' }));
 
-  expect(result).toEqual({ ocrUnavailable: true });
+  expect(result).toEqual({ ocrUnavailable: true, ocrDetail: 'OCR engine not available' });
 });
 
 test('importSheet returns the draft on success', async () => {

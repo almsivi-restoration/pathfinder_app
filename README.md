@@ -41,9 +41,10 @@ initiative, or persistence ownership.
 	(Ctrl+I): OCR reads the core fields (abilities, HP, AC, initiative, saves, name) and shows them
 	in a review dialog for you to confirm or correct before adding the actor to the scene or saving
 	them as a campaign template. Handwriting OCR uses PaddleOCR, which is not bundled with the app;
-	if the dialog reports the engine missing, install it into the backend Python environment with
-	`backend/venv/bin/python -m pip install "paddlepaddle==3.2.2" "paddleocr==3.3.0" "paddlex==3.3.0"`
-	and restart.
+	it runs in a dedicated Python environment, executed as a subprocess so the app itself stays
+	free of the OCR dependency stack. If the dialog reports the engine missing, it shows the exact
+	commands to create that environment and install the engine (pinned in
+	`backend/requirements-ocr.txt`); restart the app afterward.
 
 ## Architecture
 

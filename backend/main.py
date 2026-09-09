@@ -6,6 +6,7 @@ Provides REST API for campaign, scene, actor, and initiative management.
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
+from starlette.concurrency import run_in_threadpool
 import os
 import uvicorn
 import random
@@ -382,7 +383,9 @@ async def import_character_sheet(file: UploadFile = File(...)):
     if state_manager.current_campaign.ruleset != "1e":
         raise HTTPException(status_code=400, detail="Sheet import currently supports Pathfinder 1e only")
     if not sheet_importer.ocr_available():
-        raise HTTPException(status_code=503, detail="OCR engine (PaddleOCR) is not available on this computer")
+        # detail carries {message, venv_dir, commands} so the dialog can show
+        # install instructions that are actually correct for this machine.
+        raise HTTPException(status_code=503, detail=sheet_importer.ocr_install_guidance())
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Upload a PDF of the character sheet")
 
@@ -390,7 +393,9 @@ async def import_character_sheet(file: UploadFile = File(...)):
     if not pdf_bytes:
         raise HTTPException(status_code=400, detail="The uploaded file is empty")
     try:
-        return sheet_importer.import_pathfinder_1e(pdf_bytes)
+        # OCR is a subprocess plus model inference (and a first-run ~230MB
+        # model download): far too slow to block the event loop.
+        return await run_in_threadpool(sheet_importer.import_pathfinder_1e, pdf_bytes)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
