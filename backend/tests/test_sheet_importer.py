@@ -76,6 +76,19 @@ def test_real_scan_extracts_core_fields():
 
     saves = {s["name"]: s["total"] for s in next(f for f in draft["fields"] if f["key"] == "saves")["value"]}
     assert saves.get("Reflex") == 8
+    assert saves.get("Will") == 5
+
+    # Extended mappings read reliably on this scan.
+    assert got["initiative.bonus"] == 3
+    assert got["defenses.touch_ac"] == 13
+    assert got["defenses.flat_footed_ac"] == 16
+    assert got["combat.base_attack_bonus"] == 2
+    assert got["combat.cmb"] == 2
+    assert got["combat.cmd"] == 15
+
+    skills = {s["key"]: s["total"] for s in next(f for f in draft["fields"] if f["key"] == "skills")["value"]}
+    assert skills.get("stealth") == 13
+    assert skills.get("perception") == 9
 
     # Known-faint fields surface as warnings or reviewable low values, never silently dropped.
     assert isinstance(draft["warnings"], list)

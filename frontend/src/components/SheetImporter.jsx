@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
+import { defaultSheetForActor, setSheetValue } from '../sheet';
 import '../styles/SheetImporter.css';
 
-// Editable review rows for the narrow v1 field set. The backend returns
-// {fields, warnings}; we present each extracted value for GM confirmation.
+// Editable review rows. The backend returns {fields, warnings}; we present
+// each extracted value for GM confirmation.
 const REVIEW_FIELDS = [
   { key: 'name', label: 'Character Name', type: 'text' },
   { key: 'abilities.str', label: 'STR', type: 'number' },
@@ -15,7 +16,13 @@ const REVIEW_FIELDS = [
   { key: 'hp.current', label: 'Current HP', type: 'number' },
   { key: 'hp.max', label: 'Max HP', type: 'number' },
   { key: 'defenses.ac', label: 'Armor Class', type: 'number' },
+  { key: 'defenses.touch_ac', label: 'Touch AC', type: 'number' },
+  { key: 'defenses.flat_footed_ac', label: 'Flat-Footed AC', type: 'number' },
   { key: 'initiative.bonus', label: 'Initiative', type: 'number' },
+  { key: 'movement.base_speed', label: 'Speed', type: 'number' },
+  { key: 'combat.base_attack_bonus', label: 'Base Attack Bonus', type: 'number' },
+  { key: 'combat.cmb', label: 'CMB', type: 'number' },
+  { key: 'combat.cmd', label: 'CMD', type: 'number' },
 ];
 
 // Shown only when the backend reports 503 without structured guidance (an
@@ -59,13 +66,18 @@ function SheetImporter({ onClose }) {
     // seed editable values from extracted fields
     const seed = {};
     result.fields.forEach((field) => {
-      if (field.key !== 'saves') seed[field.key] = field.value ?? '';
+      if (field.key !== 'saves' && field.key !== 'skills') seed[field.key] = field.value ?? '';
     });
     // saves is a collection; pull totals into editable rows
     const saves = result.fields.find((f) => f.key === 'saves');
     (saves?.value || []).forEach((s) => {
       const k = { Fortitude: 'fort', Reflex: 'ref', Will: 'will' }[s.name];
       if (k) seed[`saves.${k}`] = s.total;
+    });
+    // skills likewise, keyed by skill id
+    const skills = result.fields.find((f) => f.key === 'skills');
+    (skills?.value || []).forEach((s) => {
+      seed[`skills.${s.key}`] = s.total;
     });
     setValues(seed);
   };
@@ -74,20 +86,30 @@ function SheetImporter({ onClose }) {
 
   const buildActor = () => {
     const num = (k) => (values[k] === '' || values[k] == null ? 0 : parseInt(values[k], 10) || 0);
-    const sheet = {
-      abilities: {
-        str: num('abilities.str'), dex: num('abilities.dex'), con: num('abilities.con'),
-        int: num('abilities.int'), wis: num('abilities.wis'), cha: num('abilities.cha'),
-      },
-      hp: { current: num('hp.current'), max: num('hp.max') },
-      defenses: { ac: num('defenses.ac') },
-      initiative: { bonus: num('initiative.bonus') },
-      saves: [
-        { name: 'Fortitude', ability: 'CON', total: num('saves.fort'), base: 0, ability_modifier: 0, magic: 0, misc: 0, temporary: 0 },
-        { name: 'Reflex', ability: 'DEX', total: num('saves.ref'), base: 0, ability_modifier: 0, magic: 0, misc: 0, temporary: 0 },
-        { name: 'Will', ability: 'WIS', total: num('saves.will'), base: 0, ability_modifier: 0, magic: 0, misc: 0, temporary: 0 },
-      ],
-    };
+    // Start from the ruleset's default sheet so every defined field exists,
+    // then overlay the reviewed values onto it.
+    const config = useStore.getState().rulesetConfig;
+    let sheet = config?.actor_sheet ? defaultSheetForActor(config.actor_sheet) : {};
+    REVIEW_FIELDS.filter((f) => f.key !== 'name' && values[f.key] !== undefined && values[f.key] !== '')
+      .forEach((f) => { sheet = setSheetValue(sheet, f.key, num(f.key)); });
+    // saves: overlay totals onto the default collection by name
+    const saveTotals = { Fortitude: num('saves.fort'), Reflex: num('saves.ref'), Will: num('saves.will') };
+    const baseSaves = Array.isArray(sheet.saves) ? sheet.saves : [];
+    sheet = setSheetValue(sheet, 'saves', baseSaves.map((s) => (
+      s.name in saveTotals ? { ...s, total: saveTotals[s.name] } : s
+    )));
+    // skills: overlay extracted totals onto the default collection by name
+    const draftSkills = (draft.fields.find((f) => f.key === 'skills')?.value || []);
+    if (draftSkills.length && Array.isArray(sheet.skills)) {
+      const totals = {};
+      draftSkills.forEach((s) => {
+        const v = values[`skills.${s.key}`];
+        totals[s.name] = v === '' || v == null ? s.total : (parseInt(v, 10) || 0);
+      });
+      sheet = setSheetValue(sheet, 'skills', sheet.skills.map((s) => (
+        s.name in totals ? { ...s, total: totals[s.name] } : s
+      )));
+    }
     return {
       id: '',
       name: (values.name || '').trim() || 'Imported Character',
@@ -103,7 +125,9 @@ function SheetImporter({ onClose }) {
   const handleConfirm = async () => {
     clearOperationError();
     const actor = buildActor();
-    const result = destination === 'scene' ? await addActor(actor) : await saveActorTemplate(actor);
+    // A scene may legitimately be absent — templates only need a campaign.
+    const effectiveDestination = destination === 'scene' && canAddToScene ? 'scene' : 'template';
+    const result = effectiveDestination === 'scene' ? await addActor(actor) : await saveActorTemplate(actor);
     if (!result) return;
     onClose();
   };
@@ -178,6 +202,24 @@ function SheetImporter({ onClose }) {
                 </label>
               ))}
             </div>
+
+            {(draft.fields.find((f) => f.key === 'skills')?.value || []).length > 0 && (
+              <>
+                <div className="sheet-importer-subhead">Skills (extracted)</div>
+                <div className="sheet-importer-grid">
+                  {(draft.fields.find((f) => f.key === 'skills')?.value || []).map((s) => (
+                    <label key={s.key} className="sheet-importer-field">
+                      {s.name} ({s.ability})
+                      <input
+                        type="number"
+                        value={values[`skills.${s.key}`] ?? ''}
+                        onChange={(event) => setValue(`skills.${s.key}`, event.target.value)}
+                      />
+                    </label>
+                  ))}
+                </div>
+              </>
+            )}
 
             <div className="sheet-importer-destination">
               <label>

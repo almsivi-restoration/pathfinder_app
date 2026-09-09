@@ -38,13 +38,15 @@ initiative, or persistence ownership.
 - Keep a campaign journal through **GM Tools > Chronicle** (Ctrl+J): markdown-formatted entries
 	with a built-in formatting guide, styled as an open book.
 - Import a scanned Pathfinder 1e character sheet through **GM Tools > Import Character Sheet**
-	(Ctrl+I): OCR reads the core fields (abilities, HP, AC, initiative, saves, name) and shows them
-	in a review dialog for you to confirm or correct before adding the actor to the scene or saving
-	them as a campaign template. Handwriting OCR uses PaddleOCR, which is not bundled with the app;
-	it runs in a dedicated Python environment, executed as a subprocess so the app itself stays
-	free of the OCR dependency stack. If the dialog reports the engine missing, it shows the exact
-	commands to create that environment and install the engine (pinned in
-	`backend/requirements-ocr.txt`); restart the app afterward.
+	(Ctrl+I): OCR reads abilities, HP, initiative, AC (with touch and flat-footed), speed,
+	BAB/CMB/CMD, saves, the printed skill rows, and the character name, and shows them in a review
+	dialog for you to confirm or correct before saving. No scene needs to be open — with only a
+	campaign loaded, the actor is saved as a campaign template you can drop into any scene.
+	Handwriting OCR uses PaddleOCR, which is not bundled with the app; it runs in a dedicated
+	Python environment, executed as a subprocess so the app itself stays free of the OCR
+	dependency stack. If the dialog reports the engine missing, it shows the exact commands to
+	create that environment and install the engine (pinned in `backend/requirements-ocr.txt`);
+	restart the app afterward.
 
 ## Architecture
 

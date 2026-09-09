@@ -42,6 +42,14 @@
   gap: 12px;
 }
 
+.sheet-importer-subhead {
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--mw-text-bright);
+  border-bottom: 1px solid var(--mw-frame-lo);
+  padding-bottom: 4px;
+}
+
 .sheet-importer-warnings {
   background: var(--mw-well);
   border: 1px solid var(--mw-frame-lo);

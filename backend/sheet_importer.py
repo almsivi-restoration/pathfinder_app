@@ -22,6 +22,7 @@ is persisted here.
 import importlib.util
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -31,27 +32,62 @@ from typing import Any, Dict, List, Optional, Tuple
 
 _PDF_TO_PX = 300 / 72.0  # render at 300 DPI
 
-# PZO2101 form geometry in PDF points. Each section is (x0, y0, x1, y1) of the
-# region to OCR, plus the anchor-label spec used to find each value's row.
+# PZO2101 form geometry in PDF points. NOTE: PZO2101 is the 2e-layout form
+# (Ancestry/Heritage, Hero Points, Class DC). It is the sheet the party's scans
+# are physically written on, so the OCR reads this layout, but the draft maps
+# onto the shared ruleset contract keys (hp/ac/initiative/abilities/saves).
+# The scan's handwritten values land on a fixed 1e-style grid inside this form:
+# ability labels and values sit in a left column, HP/AC/init on the mid rows.
 _ABILITY_ROWS = ["str", "dex", "con", "int", "wis", "cha"]
 _ABILITY_ANCHORS = {"str": "STR", "dex": "DEX", "con": "CON", "int": "INT", "wis": "WIS", "cha": "CHA"}
 
 # Section regions (PDF points) on PZO2101 page 1.
 _SECTIONS = {
-    "name": (15, 78, 360, 105),
-    "abilities": (15, 108, 210, 235),
-    "vitals": (170, 100, 320, 260),
-    "defenses": (15, 218, 320, 246),   # AC / touch / flat-footed band
-    "saves": (15, 285, 320, 345),
+    "name": (20, 30, 560, 70),
+    "abilities": (20, 100, 200, 230),   # ability scores; WIS/CHA sit low in the block
+    "vitals": (150, 95, 330, 135),      # HP row (and initiative header band)
+    "initiative": (150, 190, 330, 220), # initiative total row
+    "defenses": (15, 218, 330, 260),    # AC / touch / flat-footed band
+    "saves": (15, 270, 330, 330),
+    "bab": (20, 325, 330, 400),         # base attack bonus / CMB / CMD
+    "speed": (300, 100, 560, 135),
+    "skills": (300, 150, 590, 610),
 }
 
 # Value-column windows (PDF points) within a section row: a value counts if its
-# box center-x falls in this range. Tuned from the acceptance scan.
-_ABILITY_VALUE_X = (66, 100)   # score cell right of the label block
-_HP_VALUE_X = (225, 265)
-_INIT_VALUE_X = (235, 258)
-_AC_VALUE_X = (70, 100)        # AC total is leftmost number on the AC row
-_SAVE_VALUE_X = (104, 126)     # TOTAL column = leftmost numeric on the save row
+# box center-x falls in this range. Tuned from the acceptance scan (PZO2101).
+_ABILITY_VALUE_X = (70, 95)    # score cell right of the ability label
+_ABILITY_MOD_X = (98, 118)     # ability modifier cell
+_HP_VALUE_X = (235, 265)       # HP total / wounds value
+_INIT_VALUE_X = (238, 258)     # initiative total
+_AC_VALUE_X = (72, 92)         # AC total (leftmost number on the AC row)
+_TOUCH_VALUE_X = (72, 92)      # touch AC total (same column as AC, lower row)
+_FLAT_VALUE_X = (152, 175)     # flat-footed AC total (right of its label)
+_SAVE_VALUE_X = (108, 126)     # save TOTAL column (leftmost numeric on the row)
+_BAB_VALUE_X = (135, 150)      # base attack bonus
+_CMB_VALUE_X = (135, 150)      # CMB total
+_SPEED_VALUE_X = (350, 385)    # base speed value
+
+# Skill rows are located by their printed name anchors; the total is the
+# leftmost numeric in the total column on that row. Each entry maps the sheet
+# key to (printed anchor label, ability) — self-contained because the OCR
+# subprocess ships this module without the rules package.
+_SKILLS = {
+    "acrobatics": ("ACROBATICS", "DEX"), "appraise": ("APPRAISE", "INT"),
+    "bluff": ("BLUFF", "CHA"), "climb": ("CLIMB", "STR"),
+    "craft": ("CRAFT", "INT"), "diplomacy": ("DIPLOMACY", "CHA"),
+    "disable_device": ("DISABLE DEVICE", "DEX"), "disguise": ("DISGUISE", "CHA"),
+    "escape_artist": ("ESCAPE ARTIST", "DEX"), "fly": ("FLY", "DEX"),
+    "heal": ("HEAL", "WIS"), "intimidate": ("INTIMIDATE", "CHA"),
+    "knowledge_arcana": ("KNOWLEDGE (ARCANA)", "INT"),
+    "linguistics": ("LINGUISTICS", "INT"), "perception": ("PERCEPTION", "WIS"),
+    "perform": ("PERFORM", "CHA"), "profession": ("PROFESSION", "WIS"),
+    "ride": ("RIDE", "DEX"), "sense_motive": ("SENSE MOTIVE", "WIS"),
+    "sleight_of_hand": ("SLEIGHT OF HAND", "DEX"), "spellcraft": ("SPELLCRAFT", "INT"),
+    "stealth": ("STEALTH", "DEX"), "survival": ("SURVIVAL", "WIS"),
+    "swim": ("SWIM", "STR"), "use_magic_device": ("USE MAGIC DEVICE", "CHA"),
+}
+_SKILL_TOTAL_X = (428, 450)   # skill total column
 
 # The first OCR run downloads the recognition models (~230 MB), so the
 # subprocess timeout must cover a model download, not just inference.
@@ -190,24 +226,38 @@ class SheetImporter:
         try:
             if not document.page_count:
                 raise ValueError("The uploaded PDF has no pages")
-            pixmap = document[0].get_pixmap(dpi=300)
+            page = document[0]
+            pixmap = page.get_pixmap(dpi=300)
             image = Image.open(BytesIO(pixmap.tobytes("png"))).convert("RGB")
+            # Scans are captured at the paper's physical size, not the form's
+            # native 603x783 pt grid (e.g. the acceptance scan is ~830 pt tall).
+            # Normalize detections onto the template frame so the section
+            # geometry derived from the vector template applies to any scan.
+            x_scale = 603.0 / page.rect.width
+            y_scale = 783.0 / page.rect.height
         finally:
             document.close()
 
-        detections = {}
-        for name, region in _SECTIONS.items():
-            detections[name] = self._detect(image, region)
+        # One full-page detection+recognition pass, then slice the detections
+        # into named sections by coordinate. A single pass is both richer (the
+        # detector localizes far more text on a full page than on tight crops)
+        # and faster than one engine call per section.
+        page_dets = self._detect_full(image)
+        for d in page_dets:
+            d["cx"] *= x_scale
+            d["cy"] *= y_scale
+        detections = {
+            name: [d for d in page_dets if _in_region(d, region)]
+            for name, region in _SECTIONS.items()
+        }
 
         return self._build_draft(detections)
 
     # ---- section OCR ----
 
-    def _detect(self, image: Any, region: Tuple[float, float, float, float]) -> List[Dict[str, Any]]:
-        """Run det+rec on a section region; return detections in PDF points."""
-        box = [round(v * _PDF_TO_PX) for v in region]
-        crop = image.crop(box)
-        results = self._engine().predict(_to_png_path(crop))
+    def _detect_full(self, image: Any) -> List[Dict[str, Any]]:
+        """Run det+rec on the whole page; return detections in PDF points."""
+        results = self._engine().predict(_to_png_path(image))
         found = []
         for r in results:
             for rbox, text, score in zip(r.get("rec_boxes", []), r.get("rec_texts", []), r.get("rec_scores", [])):
@@ -215,8 +265,8 @@ class SheetImporter:
                     "text": str(text),
                     "score": float(score),
                     # center in PDF points, relative to the page
-                    "cx": (float(rbox[0]) + float(rbox[2])) / 2 / _PDF_TO_PX + region[0],
-                    "cy": (float(rbox[1]) + float(rbox[3])) / 2 / _PDF_TO_PX + region[1],
+                    "cx": (float(rbox[0]) + float(rbox[2])) / 2 / _PDF_TO_PX,
+                    "cy": (float(rbox[1]) + float(rbox[3])) / 2 / _PDF_TO_PX,
                 })
         return found
 
@@ -231,6 +281,20 @@ class SheetImporter:
                 if best is None or d["score"] > best["score"]:
                     best = d
         return best
+
+    @staticmethod
+    def _find_anchor_fuzzy(detections: List[Dict[str, Any]], label: str, max_dist: int = 2) -> Optional[Dict[str, Any]]:
+        """Exact anchor match, else nearest edit-distance match (OCR label noise)."""
+        hit = SheetImporter._find_anchor(detections, label)
+        if hit is not None:
+            return hit
+        label = label.upper()
+        best, best_dist = None, max_dist + 1
+        for d in detections:
+            dist = _edit_distance(d["text"].strip().upper().strip(".,:;*"), label)
+            if dist < best_dist:
+                best, best_dist = d, dist
+        return best if best_dist <= max_dist else None
 
     @staticmethod
     def _value_on_row(detections, anchor, x_window, y_tol=6.0) -> Optional[Dict[str, Any]]:
@@ -256,16 +320,24 @@ class SheetImporter:
         row.sort(key=lambda d: d["cx"])
         clusters: List[List[Dict[str, Any]]] = [[row[0]]]
         for d in row[1:]:
-            if d["cx"] - clusters[-1][-1]["cx"] <= 14:  # pts; within one value cell
+            # within one value cell; a wider gap means a separate cell (e.g.
+            # the save BASE column next to TOTAL — merging those stitched 8+7
+            # into 87 on the acceptance scan)
+            if d["cx"] - clusters[-1][-1]["cx"] <= 10:
                 clusters[-1].append(d)
             else:
                 clusters.append([d])
         best = None
         for cluster in clusters:
-            digits = "".join("".join(c for c in d["text"] if c.isdigit()) for d in cluster)
-            if not digits:
-                continue
-            value = int(digits)
+            # Join the cluster's text and parse the leading signed integer.
+            joined = "".join(d["text"] for d in cluster)
+            value = _parse_number(joined)
+            if value is None:
+                # fallback: keep only digits across the cluster
+                digits = "".join("".join(c for c in d["text"] if c.isdigit()) for d in cluster)
+                if not digits:
+                    continue
+                value = int(digits)
             score = sum(d["score"] for d in cluster) / len(cluster)
             if best is None or score > best["score"]:
                 best = {"value": value, "raw": "".join(d["text"] for d in cluster), "score": score}
@@ -276,10 +348,20 @@ class SheetImporter:
         warnings: List[str] = []
         values: Dict[str, Any] = {}
 
-        # character name: longest text detection in the name section
-        name_dets = [d for d in det["name"] if len(d["text"].strip()) >= 2 and d["text"].strip().upper() not in ("CHARACTER", "NAME")]
+        # character name: the topmost confident handwritten line in the name
+        # band (the class line sits below it; printed labels are excluded by
+        # the fuzzy label filter below).
+        name_dets = [
+            d for d in det["name"]
+            if len(d["text"].strip()) >= 3 and d["score"] >= 0.6
+        ]
+        name_dets = [
+            d for d in name_dets
+            if _edit_distance(d["text"].strip().upper(), "CHARACTER NAME") > 2
+            and _edit_distance(d["text"].strip().upper(), "PATHFINDER") > 2
+        ]
         if name_dets:
-            name_dets.sort(key=lambda d: -len(d["text"]))
+            name_dets.sort(key=lambda d: d["cy"])
             values["name"] = name_dets[0]["text"].strip()
             fields.append({"key": "name", "label": "Character Name", "value": values["name"], "raw": values["name"], "confidence": round(name_dets[0]["score"] * 100)})
         else:
@@ -291,52 +373,120 @@ class SheetImporter:
             if not anchor:
                 warnings.append(f"Could not locate {ability.upper()} label")
                 continue
-            hit = self._value_on_row(det["abilities"], anchor, _ABILITY_VALUE_X)
+            hit = self._value_on_row(det["abilities"], anchor, _ABILITY_VALUE_X, y_tol=8.0)
             if hit is None:
                 warnings.append(f"Could not read {ability.upper()}")
                 continue
             values[f"abilities.{ability}"] = hit["value"]
             fields.append({"key": f"abilities.{ability}", "label": ability.upper(), "value": hit["value"], "raw": hit["raw"], "confidence": round(hit["score"] * 100)})
 
-        # vitals
-        for key, label, anchor_label, window in (
-            ("hp.total", "HP Total", "HP", _HP_VALUE_X),
-            ("initiative.bonus", "Initiative", "INITIATIVE", _INIT_VALUE_X),
-        ):
-            anchor = self._find_anchor(det["vitals"], anchor_label)
-            hit = self._value_on_row(det["vitals"], anchor, window) if anchor else None
-            if hit is None:
-                warnings.append(f"Could not read {label}")
-                continue
-            values[key] = hit["value"]
-            fields.append({"key": key, "label": label, "value": hit["value"], "raw": hit["raw"], "confidence": round(hit["score"] * 100)})
-
-        # AC (leftmost numeric on the AC row in the defenses band)
-        ac_anchor = self._find_anchor(det["defenses"], "AC")
-        ac_hit = self._value_on_row(det["defenses"], ac_anchor, _AC_VALUE_X, y_tol=8.0) if ac_anchor else None
-        if ac_hit is not None:
-            values["defenses.ac"] = ac_hit["value"]
-            fields.append({"key": "defenses.ac", "label": "Armor Class", "value": ac_hit["value"], "raw": ac_hit["raw"], "confidence": round(ac_hit["score"] * 100)})
+        # HP total
+        hp_anchor = self._find_anchor(det["vitals"], "HP")
+        hp_hit = self._value_on_row(det["vitals"], hp_anchor, _HP_VALUE_X, y_tol=10.0) if hp_anchor else None
+        if hp_hit is not None:
+            values["hp.total"] = hp_hit["value"]
+            fields.append({"key": "hp.total", "label": "HP Total", "value": hp_hit["value"], "raw": hp_hit["raw"], "confidence": round(hp_hit["score"] * 100)})
         else:
-            warnings.append("Could not read Armor Class")
+            warnings.append("Could not read HP Total")
 
-        # saves (TOTAL column = leftmost numeric on each save row)
+        # initiative (own band; the label OCRs garbled so use fuzzy anchor)
+        init_anchor = self._find_anchor_fuzzy(det["initiative"], "INITIATIVE")
+        init_hit = self._value_on_row(det["initiative"], init_anchor, _INIT_VALUE_X, y_tol=8.0) if init_anchor else None
+        if init_hit is not None:
+            values["initiative.bonus"] = init_hit["value"]
+            fields.append({"key": "initiative.bonus", "label": "Initiative", "value": init_hit["value"], "raw": init_hit["raw"], "confidence": round(init_hit["score"] * 100)})
+        else:
+            warnings.append("Could not read Initiative")
+
+        # AC / touch / flat-footed. The AC label OCRs to a garbled token (e.g.
+        # "VAC"), so anchor on the value-row y-position of the defenses band
+        # instead of the label: AC is the first value row, TOUCH below it.
+        for key, label, anchor_label, window, tol in (
+            ("defenses.ac", "Armor Class", "AC", _AC_VALUE_X, 5.0),
+            ("defenses.touch_ac", "Touch AC", "TOUCH", _TOUCH_VALUE_X, 5.0),
+            ("defenses.flat_footed_ac", "Flat-Footed AC", "FLAT-FOOTED", _FLAT_VALUE_X, 6.0),
+        ):
+            anchor = self._find_anchor_fuzzy(det["defenses"], anchor_label)
+            hit = self._value_on_row(det["defenses"], anchor, window, y_tol=tol) if anchor else None
+            if hit is not None:
+                values[key] = hit["value"]
+                fields.append({"key": key, "label": label, "value": hit["value"], "raw": hit["raw"], "confidence": round(hit["score"] * 100)})
+            else:
+                warnings.append(f"Could not read {label}")
+
+        # base speed (the form's speed block; "SPEED"/"BASE SPEED" header)
+        speed_anchor = self._find_anchor_fuzzy(det["speed"], "SPEED")
+        speed_hit = self._value_on_row(det["speed"], speed_anchor, _SPEED_VALUE_X, y_tol=10.0) if speed_anchor else None
+        if speed_hit is not None:
+            values["movement.base_speed"] = speed_hit["value"]
+            fields.append({"key": "movement.base_speed", "label": "Speed", "value": speed_hit["value"], "raw": speed_hit["raw"], "confidence": round(speed_hit["score"] * 100)})
+        else:
+            warnings.append("Could not read Speed")
+
+        # saves (TOTAL column on each save row; labels OCR garbled)
         for key, label, anchor_label in (
             ("saves.fort", "Fortitude", "FORTITUDE"),
             ("saves.ref", "Reflex", "REFLEX"),
             ("saves.will", "Will", "WILL"),
         ):
-            anchor = self._find_anchor(det["saves"], anchor_label)
+            anchor = self._find_anchor_fuzzy(det["saves"], anchor_label)
             hit = self._value_on_row(det["saves"], anchor, _SAVE_VALUE_X, y_tol=8.0) if anchor else None
             if hit is None:
                 warnings.append(f"Could not read {label}")
                 continue
             values[key] = hit["value"]
 
+        # base attack bonus and CMB
+        bab_anchor = self._find_anchor_fuzzy(det["bab"], "BASE ATTACK BONUS")
+        bab_hit = self._value_on_row(det["bab"], bab_anchor, _BAB_VALUE_X, y_tol=20.0) if bab_anchor else None
+        if bab_hit is not None:
+            values["combat.base_attack_bonus"] = bab_hit["value"]
+            fields.append({"key": "combat.base_attack_bonus", "label": "Base Attack Bonus", "value": bab_hit["value"], "raw": bab_hit["raw"], "confidence": round(bab_hit["score"] * 100)})
+        else:
+            warnings.append("Could not read Base Attack Bonus")
+        cmb_anchor = self._find_anchor(det["bab"], "CMB")
+        # CMB/CMD totals share a column; CMB's value sits just right of its label row
+        cmb_hit = self._value_on_row(det["bab"], cmb_anchor, _CMB_VALUE_X, y_tol=4.0) if cmb_anchor else None
+        if cmb_hit is not None:
+            values["combat.cmb"] = cmb_hit["value"]
+            fields.append({"key": "combat.cmb", "label": "CMB", "value": cmb_hit["value"], "raw": cmb_hit["raw"], "confidence": round(cmb_hit["score"] * 100)})
+        else:
+            warnings.append("Could not read CMB")
+        cmd_anchor = self._find_anchor(det["bab"], "CMD")
+        cmd_hit = self._value_on_row(det["bab"], cmd_anchor, _CMB_VALUE_X, y_tol=4.0) if cmd_anchor else None
+        if cmd_hit is not None:
+            values["combat.cmd"] = cmd_hit["value"]
+            fields.append({"key": "combat.cmd", "label": "CMD", "value": cmd_hit["value"], "raw": cmd_hit["raw"], "confidence": round(cmd_hit["score"] * 100)})
+        else:
+            warnings.append("Could not read CMD")
+
         # derive current HP from HP total (single source value)
         if "hp.total" in values:
             for key, label in (("hp.current", "Current HP"), ("hp.max", "Max HP")):
                 fields.append({"key": key, "label": label, "value": values["hp.total"], "raw": str(values["hp.total"]), "derived": True})
+
+        # skills (TOTAL column on each skill row; names OCR garbled, fuzzy match)
+        skills = []
+        for key, (anchor_label, ability) in _SKILLS.items():
+            anchor = self._find_anchor_fuzzy(det["skills"], anchor_label, max_dist=3)
+            if anchor is None:
+                continue
+            # the value sits on the printed label's line but its baseline runs
+            # a couple points high; bias the row center up so the NEXT skill's
+            # value (8+ pt below) is never in range
+            row_anchor = {**anchor, "cy": anchor["cy"] - 2.5}
+            hit = self._value_on_row(det["skills"], row_anchor, _SKILL_TOTAL_X, y_tol=4.5)
+            if hit is not None:
+                skills.append({
+                    "key": key,
+                    "name": key.replace("_", " ").title(),
+                    "ability": ability,
+                    "total": hit["value"],
+                    "score": hit["score"],
+                    "raw": hit["raw"],
+                })
+        if skills:
+            fields.append({"key": "skills", "label": "Skills", "value": skills, "raw": "", "confidence": 0})
 
         # assemble saves collection (1e sheet stores saves as a collection)
         saves = []
@@ -349,12 +499,39 @@ class SheetImporter:
         return {"fields": fields, "warnings": warnings, "ocr": {"available": True, "engine": "paddleocr"}}
 
 
+def _in_region(detection: Dict[str, Any], region: Tuple[float, float, float, float]) -> bool:
+    x0, y0, x1, y1 = region
+    return x0 <= detection["cx"] <= x1 and y0 <= detection["cy"] <= y1
+
+
+def _edit_distance(a: str, b: str) -> int:
+    """Levenshtein distance between two strings (small inputs only)."""
+    if a == b:
+        return 0
+    if not a:
+        return len(b)
+    if not b:
+        return len(a)
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        cur = [i]
+        for j, cb in enumerate(b, 1):
+            cur.append(min(cur[-1] + 1, prev[j] + 1, prev[j - 1] + (ca != cb)))
+        prev = cur
+    return prev[-1]
+
+
 def _parse_number(text: str) -> Optional[int]:
-    digits = "".join(c for c in text if c.isdigit() or c in "+-")
-    if digits in {"", "+", "-"}:
+    """Parse a handwritten integer from OCR text, tolerating stray symbols.
+
+    Only the leading sign (if any) and the following digits are used; other
+    characters OCR bleeds in from the form's texture (①, §, etc.) are dropped.
+    """
+    m = re.match(r"^\s*([+-]?)(\d+)", text.strip())
+    if not m:
         return None
     try:
-        return int(digits)
+        return int(m.group(1) + m.group(2))
     except ValueError:
         return None
 
