@@ -28,4 +28,9 @@ contextBridge.exposeInMainWorld('electron', {
     ipcRenderer.on('open-quick-roll', listener);
     return () => ipcRenderer.removeListener('open-quick-roll', listener);
   },
+  onOpenSheetImporter: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on('open-sheet-importer', listener);
+    return () => ipcRenderer.removeListener('open-sheet-importer', listener);
+  },
 });

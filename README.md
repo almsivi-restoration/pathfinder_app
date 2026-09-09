@@ -37,6 +37,13 @@ initiative, or persistence ownership.
 	events through **GM Tools > Name Generator** (Ctrl+N).
 - Keep a campaign journal through **GM Tools > Chronicle** (Ctrl+J): markdown-formatted entries
 	with a built-in formatting guide, styled as an open book.
+- Import a scanned Pathfinder 1e character sheet through **GM Tools > Import Character Sheet**
+	(Ctrl+I): OCR reads the core fields (abilities, HP, AC, initiative, saves, name) and shows them
+	in a review dialog for you to confirm or correct before adding the actor to the scene or saving
+	them as a campaign template. Handwriting OCR uses PaddleOCR, which is not bundled with the app;
+	if the dialog reports the engine missing, install it into the backend Python environment with
+	`backend/venv/bin/python -m pip install "paddlepaddle==3.2.2" "paddleocr==3.3.0" "paddlex==3.3.0"`
+	and restart.
 
 ## Architecture
 

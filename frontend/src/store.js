@@ -453,6 +453,29 @@ export const useStore = create((set, get) => ({
     }
   },
 
+  // Sheet import: OCR a scanned character sheet into a reviewable draft.
+  // Draft-only — the review dialog confirms values, then addActor /
+  // saveActorTemplate persist via the normal write path. Returns
+  // { ocrUnavailable: true } when the backend reports the engine is missing
+  // (HTTP 503) so the dialog can show install guidance instead of a dead end.
+  importSheet: async (file) => {
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await axios.post(`${API_URL}/import/sheet`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return res.data;
+    } catch (error) {
+      if (error.response?.status === 503) {
+        return { ocrUnavailable: true };
+      }
+      console.error('Failed to import character sheet:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
+    }
+  },
+
   // Actor actions
   addActor: async (actor) => {
     try {

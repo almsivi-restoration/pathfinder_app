@@ -17,6 +17,7 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 - **Name Generator:** Per-race syllable-grammar generator for actors, plus multi-template engines for places, items, factions, and events; batches are deduplicated
 - **Chronicle:** Campaign journal (GM Tools > Chronicle, Ctrl+J) styled as an open book — markdown-formatted entries with a formatting guide and live preview, persisted with the campaign
 - **Bestiary:** Import a user-supplied `bestiary.csv` from the ruleset sources directory into a per-ruleset SQLite FTS5 index; search with CR/type filters, view full monster entries, and create NPC actors or campaign templates from them (1e)
+- **Character Sheet Import:** OCR a scanned Pathfinder 1e sheet PDF (GM Tools > Import Character Sheet, Ctrl+I) into a reviewable actor draft — abilities, HP, AC, initiative, saves, name — for GM confirmation before adding to the scene or saving as a template. Handwriting OCR uses PaddleOCR (not bundled; install into the backend venv when the dialog reports it missing)
 - **Player View:** Pop-out window showing only player-visible information
   - Initiative order with current actor highlight
   - Health bars (PC: X/Y format, NPC: green→red gradient)
@@ -36,6 +37,7 @@ pathfinder_app/
 │   ├── reference_library.py    # PDF indexing & page-aware search (SQLite FTS5, OCR fallback)
 │   ├── bestiary.py             # Bestiary CSV parsing, indexing & search (SQLite FTS5)
 │   ├── name_generator.py       # Per-race syllable grammars + multi-template name engines
+│   ├── sheet_importer.py       # Scanned 1e character-sheet OCR (PaddleOCR, section det+rec)
 │   ├── gm-workbench-backend.spec  # PyInstaller spec for the packaged backend
 │   ├── rules/
 │   │   ├── __init__.py         # Ruleset registry
@@ -67,6 +69,8 @@ pathfinder_app/
 │   │   │   ├── InitiativeTracker.jsx
 │   │   │   ├── NameGenerator.jsx
 │   │   │   ├── Chronicle.jsx
+│   │   │   ├── QuickRoll.jsx
+│   │   │   ├── SheetImporter.jsx
 │   │   │   ├── ReferenceReader.jsx
 │   │   │   ├── SceneLibrary.jsx
 │   │   │   ├── PlayerView.jsx / PlayerActorRow.jsx
@@ -217,6 +221,9 @@ pathfinder_app/
 
 ### Rolls
 - `POST /api/roll` — Roll dice (d20 + modifiers)
+
+### Sheet Import
+- `POST /api/import/sheet` — OCR a scanned Pathfinder 1e sheet PDF (multipart `file`) into a reviewable draft of fields + warnings; draft-only, 1e campaigns, 503 when the OCR engine is not installed
 
 ### Rules
 - `GET /api/rulesets` — List registered rulesets (drives campaign creation)

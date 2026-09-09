@@ -5,6 +5,7 @@ import PlayerView from './components/PlayerView';
 import NameGenerator from './components/NameGenerator';
 import Chronicle from './components/Chronicle';
 import QuickRoll from './components/QuickRoll';
+import SheetImporter from './components/SheetImporter';
 import CampaignSelector from './pages/CampaignSelector';
 import Encyclopedia from './pages/Encyclopedia';
 import Bestiary from './pages/Bestiary';
@@ -17,6 +18,7 @@ function App() {
   const [showNameGenerator, setShowNameGenerator] = useState(false);
   const [showChronicle, setShowChronicle] = useState(false);
   const [showQuickRoll, setShowQuickRoll] = useState(false);
+  const [showSheetImporter, setShowSheetImporter] = useState(false);
 
   useEffect(() => {
     listCampaigns();
@@ -47,6 +49,11 @@ function App() {
     return window.electron.onOpenQuickRoll(() => setShowQuickRoll(true));
   }, []);
 
+  useEffect(() => {
+    if (!window.electron?.onOpenSheetImporter) return undefined;
+    return window.electron.onOpenSheetImporter(() => setShowSheetImporter(true));
+  }, []);
+
   // Determine view based on URL or state
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -71,6 +78,7 @@ function App() {
       {showNameGenerator && <NameGenerator onClose={() => setShowNameGenerator(false)} />}
       {showChronicle && <Chronicle onClose={() => setShowChronicle(false)} />}
       {showQuickRoll && <QuickRoll onClose={() => setShowQuickRoll(false)} />}
+      {showSheetImporter && <SheetImporter onClose={() => setShowSheetImporter(false)} />}
     </div>
   );
 }

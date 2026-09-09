@@ -17,6 +17,23 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
+test('importSheet maps a 503 to an ocrUnavailable result', async () => {
+  axios.post.mockRejectedValueOnce({ response: { status: 503, data: { detail: 'OCR engine not available' } } });
+
+  const result = await useStore.getState().importSheet(new File(['x'], 'sheet.pdf', { type: 'application/pdf' }));
+
+  expect(result).toEqual({ ocrUnavailable: true });
+});
+
+test('importSheet returns the draft on success', async () => {
+  const draft = { fields: [], warnings: [] };
+  axios.post.mockResolvedValueOnce({ data: draft });
+
+  const result = await useStore.getState().importSheet(new File(['x'], 'sheet.pdf', { type: 'application/pdf' }));
+
+  expect(result).toEqual(draft);
+});
+
 test('addActor appends the server-assigned actor to state', async () => {
   const serverActor = { id: 'actor-1', name: 'Goblin', hp_current: 10, hp_max: 10 };
   axios.post.mockResolvedValueOnce({ data: serverActor });

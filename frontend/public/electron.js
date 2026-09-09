@@ -315,9 +315,10 @@ function showHelp() {
       'Name Generator: GM Tools > Name Generator (Ctrl+N) generates fantasy names for characters, places, items, factions, and events.\n\n' +
       'Chronicle: GM Tools > Chronicle (Ctrl+J) is the campaign journal — markdown-formatted entries for session recaps and anything else worth recording, with a formatting guide on the right page.\n\n' +
       'Quick Roll: GM Tools > Quick Roll (Ctrl+D) rolls checks for any actor in the open scene using the skill, save, or ability modifier from their sheet, or any custom die and modifier, with a running history of results.\n\n' +
+      'Import Character Sheet: GM Tools > Import Character Sheet (Ctrl+I) reads a scanned Pathfinder 1e sheet (PDF) with OCR and shows the extracted values for your review before adding the actor to the scene or saving them as a template. OCR uses PaddleOCR, which is not bundled — if the dialog reports the engine missing, install it into the backend Python environment as shown there.\n\n' +
       'Data lives under:\n' +
       path.join(app.getPath('userData'), 'data') +
-      '\n\nKeyboard: Ctrl+B bestiary · Ctrl+D quick roll · Ctrl+E encyclopedia · Ctrl+J chronicle · Ctrl+N name generator · Ctrl+R restart · Ctrl+Q quit · Ctrl+Shift+I developer tools.',
+      '\n\nKeyboard: Ctrl+B bestiary · Ctrl+D quick roll · Ctrl+E encyclopedia · Ctrl+I import sheet · Ctrl+J chronicle · Ctrl+N name generator · Ctrl+R restart · Ctrl+Q quit · Ctrl+Shift+I developer tools.',
     buttons: ['Close'],
   });
 }
@@ -406,6 +407,14 @@ const template = [
           if (window) window.webContents.send('open-quick-roll');
         },
       },
+      {
+        label: 'Import Character Sheet',
+        accelerator: 'CmdOrCtrl+I',
+        click: () => {
+          const window = BrowserWindow.getFocusedWindow() || mainWindow;
+          if (window) window.webContents.send('open-sheet-importer');
+        },
+      },
     ],
   },
   {
@@ -429,7 +438,7 @@ const template = [
               message: "Game Master's Workbench",
               detail:
                 `Version ${app.getVersion()}\n\n` +
-                'A tabletop GM companion for Pathfinder 1e and 2e: scene and initiative tracking, reusable actor templates, a searchable rules encyclopedia, a bestiary, a name generator, quick rolls, and a player-safe second-screen view.\n\n' +
+                'A tabletop GM companion for Pathfinder 1e and 2e: scene and initiative tracking, reusable actor templates, a searchable rules encyclopedia, a bestiary, a name generator, quick rolls, scanned character-sheet import, and a player-safe second-screen view.\n\n' +
                 'Reference PDFs and bestiary CSVs are user-supplied and are never included with the app.\n\n' +
                 'Data directory:\n' +
                 path.join(app.getPath('userData'), 'data'),

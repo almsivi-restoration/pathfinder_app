@@ -1,0 +1,126 @@
+.sheet-importer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.sheet-importer {
+  width: 560px;
+  max-width: 92vw;
+  max-height: 85vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet-importer-upload {
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sheet-importer-upload input[type="file"] {
+  color: var(--mw-text);
+  font-family: var(--mw-font-body);
+}
+
+.sheet-importer-hint {
+  margin: 0;
+  color: var(--mw-text-dim);
+  font-style: italic;
+}
+
+.sheet-importer-review {
+  padding: 0 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sheet-importer-warnings {
+  background: var(--mw-well);
+  border: 1px solid var(--mw-frame-lo);
+  border-left: 3px solid var(--mw-gold);
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--mw-text);
+}
+
+.sheet-importer-warnings ul {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+
+.sheet-importer-warnings p {
+  margin: 6px 0;
+  font-size: 13px;
+}
+
+.sheet-importer-code {
+  display: block;
+  background: var(--mw-frame-dark);
+  color: var(--mw-text-bright);
+  padding: 8px 10px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 12px;
+  word-break: break-all;
+  user-select: all;
+  margin: 6px 0;
+}
+
+.sheet-importer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.sheet-importer-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--mw-text-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 0;
+}
+
+.sheet-importer-field input {
+  background: var(--mw-well);
+  color: var(--mw-text);
+  border: 1px solid var(--mw-frame-lo);
+  padding: 5px 8px;
+  font-family: var(--mw-font-body);
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.sheet-importer-field:first-child {
+  grid-column: 1 / -1;
+}
+
+.sheet-importer-destination {
+  display: flex;
+  gap: 18px;
+  color: var(--mw-text);
+  font-size: 13px;
+}
+
+.sheet-importer-destination label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sheet-importer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

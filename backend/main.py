@@ -3,7 +3,7 @@ FastAPI backend for Game Master's Workbench.
 Provides REST API for campaign, scene, actor, and initiative management.
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 import os
@@ -16,6 +16,7 @@ from bestiary import BestiaryLibrary
 from models import Actor, Campaign, Scene, RollRequest, RollResult, Effect, InitiativeOrderRequest, ReferenceImportRequest, ChronicleEntryRequest
 from name_generator import generate_names, list_categories
 from reference_library import ReferenceLibrary
+from sheet_importer import SheetImporter
 from state import StateManager
 from rules import RULESETS, get_ruleset, list_rulesets
 
@@ -38,6 +39,7 @@ campaigns_dir = os.environ.get("GM_WORKBENCH_CAMPAIGNS_DIR", "./campaigns")
 state_manager = StateManager(campaigns_dir=campaigns_dir)
 reference_library = ReferenceLibrary()
 bestiary_library = BestiaryLibrary()
+sheet_importer = SheetImporter()
 
 # Create the per-ruleset PDF drop directories so users can find them without
 # reading documentation; reference PDFs themselves are user-supplied.
@@ -363,6 +365,36 @@ def roll_dice(request: RollRequest):
         bonus_dice_roll=bonus_dice_roll,
         total=total,
     ).model_dump()
+
+
+# ==================== Sheet Import Routes ====================
+
+@app.post("/api/import/sheet")
+async def import_character_sheet(file: UploadFile = File(...)):
+    """OCR a scanned Pathfinder 1e character sheet into a reviewable actor draft.
+
+    Draft-only: returns extracted fields and warnings for GM review; nothing is
+    persisted here. The review UI confirms values and then uses the existing
+    addActor / saveActorTemplate actions.
+    """
+    if not state_manager.current_campaign:
+        raise HTTPException(status_code=404, detail="No campaign loaded")
+    if state_manager.current_campaign.ruleset != "1e":
+        raise HTTPException(status_code=400, detail="Sheet import currently supports Pathfinder 1e only")
+    if not sheet_importer.ocr_available():
+        raise HTTPException(status_code=503, detail="OCR engine (PaddleOCR) is not available on this computer")
+    if not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Upload a PDF of the character sheet")
+
+    pdf_bytes = await file.read()
+    if not pdf_bytes:
+        raise HTTPException(status_code=400, detail="The uploaded file is empty")
+    try:
+        return sheet_importer.import_pathfinder_1e(pdf_bytes)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Could not read character sheet: {e}")
 
 
 # ==================== Rules Routes ====================

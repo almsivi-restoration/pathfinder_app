@@ -1,6 +1,6 @@
 {
   "name": "gm-workbench",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Ruleset-neutral tabletop campaign and scene manager",
   "private": true,
   "homepage": "./",
