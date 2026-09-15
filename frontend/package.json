@@ -76,7 +76,7 @@
     },
     "extraResources": [
       {
-        "from": "../backend/dist/gm-workbench-backend",
+        "from": "../backend/dist/gm-workbench-backend.exe",
         "to": "backend/gm-workbench-backend"
       }
     ],

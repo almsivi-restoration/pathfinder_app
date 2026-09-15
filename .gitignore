@@ -228,6 +228,7 @@ artifacts/local/
 # Node / frontend build
 node_modules/
 frontend/build/
+frontend/dist-windows*/
 
 # Runtime campaign save data (user-generated, not source)
 backend/campaigns/
