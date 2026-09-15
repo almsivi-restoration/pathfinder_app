@@ -39,6 +39,7 @@ controlling behavior boundary.
 | **Bestiary Entry** | A monster record in the per-ruleset bestiary sqlite index, imported from the user-supplied `bestiary.csv`. | Mapped to Actors via the ruleset's `bestiary_mapper`. |
 | **Reference Library** | Per-ruleset collection of user-supplied reference PDFs, indexed for search. | Routes under `/api/references/current/*`. |
 | **Source Manifest** | JSON manifest describing a ruleset's reference sources. | `manifests/<ruleset>.json`. |
+| **Local Theme** | A user-installed UI skin: a folder under the themes directory with a `theme.json` manifest and a `theme.css` stylesheet overriding `--mw-*` tokens. | Built-in `morrowind` theme always available; selection persists via `theme-settings.json`. |
 
 ## Shared sheet contract keys
 

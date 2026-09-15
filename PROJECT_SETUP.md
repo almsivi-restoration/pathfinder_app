@@ -62,6 +62,7 @@ pathfinder_app/
 │   │   ├── index.jsx
 │   │   ├── store.js            # Zustand state store
 │   │   ├── sheet.js            # Generic sheet helpers (ruleset-neutral)
+│   │   ├── theme.js            # Local theme bridge (applies theme.json + theme.css skins)
 │   │   ├── assets/fonts/       # Bundled Libertine fonts (OFL)
 │   │   ├── components/
 │   │   │   ├── GMDashboard.jsx
@@ -82,7 +83,8 @@ pathfinder_app/
 │   │   │   ├── Encyclopedia.jsx
 │   │   │   └── Bestiary.jsx
 │   │   └── styles/
-│   │       ├── theme.css       # Morrowind-inspired theme tokens
+│   │       ├── theme.css       # Morrowind theme tokens (built-in default; local themes
+│   │       │                   # override these --mw-* variables)
 │   │       └── *.css           # Per-component styles
 │   └── package.json
 │

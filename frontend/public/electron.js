@@ -1,8 +1,9 @@
-const { app, BrowserWindow, Menu, dialog, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, dialog, ipcMain, shell } = require('electron');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
+const { pathToFileURL } = require('url');
 // electron-is-dev is a devDependency and is NOT shipped in the packaged app,
 // so require it lazily: the require throws under production resources, which
 // is itself the reliable signal that we are packaged.
@@ -24,10 +25,154 @@ try {
 let mainWindow;
 let playerWindow;
 let backendProcess;
+let availableThemes = [];
+let activeThemeId = 'morrowind';
+
+const BUILT_IN_THEME = {
+  id: 'morrowind',
+  name: 'Morrowind',
+  builtIn: true,
+  cssUrl: null,
+};
 
 // No apostrophe: electron-builder embeds productName in single-quoted shell in
 // the deb maintainer scripts, and an apostrophe breaks the generated postinst.
 app.setName('Game Masters Workbench');
+
+function getThemesDir() {
+  return path.join(app.getPath('userData'), 'themes');
+}
+
+function getThemeSettingsPath() {
+  return path.join(app.getPath('userData'), 'theme-settings.json');
+}
+
+function isSafeThemeId(value) {
+  return typeof value === 'string' && /^[a-z0-9][a-z0-9_-]{0,63}$/.test(value);
+}
+
+function isSafeRelativeCssPath(value) {
+  if (typeof value !== 'string' || !value.endsWith('.css') || path.isAbsolute(value)) {
+    return false;
+  }
+  return !value.split(/[\\/]+/).includes('..');
+}
+
+function getSafeThemeCssPath(themeDir, cssRelativePath) {
+  if (!isSafeRelativeCssPath(cssRelativePath)) return null;
+
+  const cssPath = path.resolve(themeDir, cssRelativePath);
+  try {
+    const realThemeDir = fs.realpathSync(themeDir);
+    const realCssPath = fs.realpathSync(cssPath);
+    const relativePath = path.relative(realThemeDir, realCssPath);
+    if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) return null;
+    return realCssPath;
+  } catch (error) {
+    console.warn('Skipping theme css:', error.message);
+    return null;
+  }
+}
+
+function readThemeManifest(themeDir) {
+  const manifestPath = path.join(themeDir, 'theme.json');
+  let manifest;
+  try {
+    manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  } catch (error) {
+    console.warn(`Skipping theme at ${themeDir}:`, error.message);
+    return null;
+  }
+
+  const folderId = path.basename(themeDir);
+  if (!isSafeThemeId(manifest.id) || manifest.id !== folderId) return null;
+  if (typeof manifest.name !== 'string' || !manifest.name.trim() || manifest.name.length > 80) return null;
+
+  const cssPath = getSafeThemeCssPath(themeDir, manifest.css || 'theme.css');
+  if (!cssPath) return null;
+
+  return {
+    id: manifest.id,
+    name: manifest.name.trim(),
+    builtIn: false,
+    cssUrl: pathToFileURL(cssPath).toString(),
+  };
+}
+
+function loadInstalledThemes() {
+  const themesDir = getThemesDir();
+  fs.mkdirSync(themesDir, { recursive: true });
+
+  const themes = [BUILT_IN_THEME];
+  for (const entry of fs.readdirSync(themesDir, { withFileTypes: true })) {
+    if (!entry.isDirectory() || !isSafeThemeId(entry.name)) continue;
+    const theme = readThemeManifest(path.join(themesDir, entry.name));
+    if (theme) themes.push(theme);
+  }
+
+  return themes.sort((left, right) => {
+    if (left.builtIn) return -1;
+    if (right.builtIn) return 1;
+    return left.name.localeCompare(right.name);
+  });
+}
+
+function loadThemeSettings() {
+  try {
+    const settings = JSON.parse(fs.readFileSync(getThemeSettingsPath(), 'utf8'));
+    if (isSafeThemeId(settings.activeThemeId)) return settings.activeThemeId;
+  } catch {
+    // Missing settings are expected on first launch.
+  }
+  return BUILT_IN_THEME.id;
+}
+
+function saveThemeSettings() {
+  fs.writeFileSync(
+    getThemeSettingsPath(),
+    JSON.stringify({ activeThemeId }, null, 2),
+    'utf8'
+  );
+}
+
+function getThemeState() {
+  return {
+    activeThemeId,
+    themes: availableThemes,
+  };
+}
+
+function broadcastThemeState() {
+  const state = getThemeState();
+  for (const window of BrowserWindow.getAllWindows()) {
+    window.webContents.send('theme-state-changed', state);
+  }
+}
+
+function ensureActiveThemeExists() {
+  if (!availableThemes.some((theme) => theme.id === activeThemeId)) {
+    activeThemeId = BUILT_IN_THEME.id;
+    saveThemeSettings();
+  }
+}
+
+function setActiveTheme(themeId) {
+  activeThemeId = availableThemes.some((theme) => theme.id === themeId)
+    ? themeId
+    : BUILT_IN_THEME.id;
+  saveThemeSettings();
+  rebuildMenu();
+  broadcastThemeState();
+  return getThemeState();
+}
+
+function reloadThemes() {
+  availableThemes = loadInstalledThemes();
+  ensureActiveThemeExists();
+  rebuildMenu();
+  broadcastThemeState();
+  return getThemeState();
+}
 
 // In production the backend is a PyInstaller-frozen binary shipped under
 // resources/backend/. It stores campaigns and the user-supplied reference
@@ -257,6 +402,10 @@ function setupAutoUpdater() {
 
 app.on('ready', async () => {
   if (!gotSingleInstanceLock) return;
+  availableThemes = loadInstalledThemes();
+  activeThemeId = loadThemeSettings();
+  ensureActiveThemeExists();
+  rebuildMenu();
   if (!isDev) {
     startBackend();
     try {
@@ -303,6 +452,17 @@ ipcMain.handle('open-player-window', () => {
   createPlayerWindow();
 });
 
+ipcMain.handle('get-theme-state', () => getThemeState());
+
+ipcMain.handle('set-theme', (_event, themeId) => setActiveTheme(themeId));
+
+ipcMain.handle('reload-themes', () => reloadThemes());
+
+ipcMain.handle('open-themes-folder', () => {
+  fs.mkdirSync(getThemesDir(), { recursive: true });
+  return shell.openPath(getThemesDir());
+});
+
 function showHelp() {
   const window = BrowserWindow.getFocusedWindow() || mainWindow;
   if (!window) return;
@@ -320,6 +480,7 @@ function showHelp() {
       'Chronicle: GM Tools > Chronicle (Ctrl+J) is the campaign journal — markdown-formatted entries for session recaps and anything else worth recording, with a formatting guide on the right page.\n\n' +
       'Quick Roll: GM Tools > Quick Roll (Ctrl+D) rolls checks for any actor in the open scene using the skill, save, or ability modifier from their sheet, or any custom die and modifier, with a running history of results.\n\n' +
       'Import Character Sheet: GM Tools > Import Character Sheet (Ctrl+I) reads a scanned Pathfinder 1e sheet (PDF) with OCR — abilities, HP, initiative, AC (touch and flat-footed), speed, BAB/CMB/CMD, saves, and the printed skill rows — and shows the extracted values for your review before saving. No scene needs to be open: with only a campaign loaded, the actor is saved as a campaign template you can drop into any scene. OCR uses PaddleOCR, which is not bundled — if the dialog reports the engine missing, it shows the exact commands to create the dedicated OCR environment.\n\n' +
+      'Themes: View > Theme switches between the built-in Morrowind theme and local themes installed in the app themes directory. Use Open Themes Folder to add a folder containing theme.json and theme.css, then Reload Themes.\n\n' +
       'Data lives under:\n' +
       path.join(app.getPath('userData'), 'data') +
       '\n\nKeyboard: Ctrl+B bestiary · Ctrl+D quick roll · Ctrl+E encyclopedia · Ctrl+I import sheet · Ctrl+J chronicle · Ctrl+N name generator · Ctrl+R restart · Ctrl+Q quit · Ctrl+Shift+I developer tools.',
@@ -327,9 +488,9 @@ function showHelp() {
   });
 }
 
-// Menu
-const template = [
-  {
+function buildMenuTemplate() {
+  return [
+    {
     label: 'File',
     submenu: [
       {
@@ -357,6 +518,29 @@ const template = [
         click: () => {
           createPlayerWindow();
         },
+      },
+      {
+        label: 'Theme',
+        submenu: [
+          ...availableThemes.map((theme) => ({
+            label: theme.name,
+            type: 'radio',
+            checked: theme.id === activeThemeId,
+            click: () => setActiveTheme(theme.id),
+          })),
+          { type: 'separator' },
+          {
+            label: 'Reload Themes',
+            click: () => reloadThemes(),
+          },
+          {
+            label: 'Open Themes Folder',
+            click: () => {
+              fs.mkdirSync(getThemesDir(), { recursive: true });
+              shell.openPath(getThemesDir());
+            },
+          },
+        ],
       },
       {
         label: 'Toggle Developer Tools',
@@ -442,7 +626,7 @@ const template = [
               message: "Game Master's Workbench",
               detail:
                 `Version ${app.getVersion()}\n\n` +
-                'A tabletop GM companion for Pathfinder 1e and 2e: scene and initiative tracking, reusable actor templates, a searchable rules encyclopedia, a bestiary, a name generator, quick rolls, scanned character-sheet import, and a player-safe second-screen view.\n\n' +
+                'A tabletop GM companion for Pathfinder 1e and 2e: scene and initiative tracking, reusable actor templates, a searchable rules encyclopedia, a bestiary, a name generator, quick rolls, scanned character-sheet import, a player-safe second-screen view, and switchable local UI themes (View > Theme).\n\n' +
                 'Reference PDFs and bestiary CSVs are user-supplied and are never included with the app.\n\n' +
                 'Data directory:\n' +
                 path.join(app.getPath('userData'), 'data'),
@@ -453,7 +637,10 @@ const template = [
       },
     ],
   },
-];
+  ];
+}
 
-const menu = Menu.buildFromTemplate(template);
-Menu.setApplicationMenu(menu);
+function rebuildMenu() {
+  const menu = Menu.buildFromTemplate(buildMenuTemplate());
+  Menu.setApplicationMenu(menu);
+}
