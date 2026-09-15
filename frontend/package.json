@@ -74,12 +74,6 @@
       "buildResources": "public",
       "output": "dist"
     },
-    "extraResources": [
-      {
-        "from": "../backend/dist/gm-workbench-backend.exe",
-        "to": "backend/gm-workbench-backend"
-      }
-    ],
     "linux": {
       "target": [
         "AppImage",
@@ -87,13 +81,25 @@
       ],
       "category": "Utility",
       "icon": "public/icons",
-      "maintainer": "almsivi-restoration <almsivi-restoration@proton.me>"
+      "maintainer": "almsivi-restoration <almsivi-restoration@proton.me>",
+      "extraResources": [
+        {
+          "from": "../backend/dist/gm-workbench-backend",
+          "to": "backend/gm-workbench-backend"
+        }
+      ]
     },
     "win": {
       "target": [
         "nsis"
       ],
-      "icon": "public/icon.png"
+      "icon": "public/icon.png",
+      "extraResources": [
+        {
+          "from": "../backend/dist/gm-workbench-backend.exe",
+          "to": "backend/gm-workbench-backend.exe"
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
