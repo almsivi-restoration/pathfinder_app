@@ -2,7 +2,8 @@
   min-height: 100vh;
   padding: 20px;
   overflow-y: auto;
-  background: radial-gradient(ellipse at center, var(--mw-wood-light) 0%, var(--mw-wood-dark) 100%);
+  /* Transparent: backdrop comes from body (App.css). */
+  background: transparent;
 }
 
 .encyclopedia-header,

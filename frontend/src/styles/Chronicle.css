@@ -20,14 +20,20 @@
   grid-template-rows: 1fr auto;
   width: min(1080px, 94vw);
   height: min(720px, 88vh);
-  background: linear-gradient(
-    105deg,
-    var(--mw-parchment-dark),
-    var(--mw-parchment) 12%,
-    var(--mw-parchment-light) 50%,
-    var(--mw-parchment) 88%,
-    var(--mw-parchment-dark)
-  );
+  /* Real parchment texture under a warm edge-darkening gradient — the
+     gradient approximates the book's page curvature and deepened margins
+     while the generated texture carries the fiber and foxing. */
+  background:
+    linear-gradient(
+      105deg,
+      rgba(107, 85, 53, 0.42),
+      rgba(156, 130, 84, 0.18) 12%,
+      rgba(255, 250, 235, 0.10) 50%,
+      rgba(156, 130, 84, 0.18) 88%,
+      rgba(107, 85, 53, 0.42)
+    ),
+    url('../assets/textures/parchment.jpg') center / cover no-repeat,
+    var(--mw-parchment);
   border: 3px solid var(--mw-parchment-shadow);
   border-radius: 4px;
   box-shadow:

@@ -4,7 +4,8 @@
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background: radial-gradient(ellipse at center, var(--mw-wood-light) 0%, var(--mw-wood-dark) 100%);
+  /* Transparent: backdrop comes from body (App.css). */
+  background: transparent;
   padding: 20px;
 }
 

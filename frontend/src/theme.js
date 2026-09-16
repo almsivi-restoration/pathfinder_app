@@ -11,7 +11,11 @@ function applyThemeState(state) {
   const link = existingLink || document.createElement('link');
   link.id = 'gmw-theme-overrides';
   link.rel = 'stylesheet';
-  link.href = theme.cssUrl;
+  // Cache-bust so Reload Themes actually re-fetches an edited theme: Chromium
+  // caches file:// stylesheets by URL, and the cssUrl string is otherwise
+  // identical across reloads, so edits to an already-loaded theme never apply.
+  const separator = theme.cssUrl.includes('?') ? '&' : '?';
+  link.href = `${theme.cssUrl}${separator}v=${Date.now()}`;
   if (!existingLink) document.head.appendChild(link);
 }
 

@@ -109,9 +109,13 @@
   color: var(--mw-text);
 }
 
-/* Reusable header/nameplate banner: dark strip with centered gold small-caps title */
+/* Reusable header/nameplate banner: dark dwemer-metal band (generated
+   texture) with a centered gold small-caps title. The gradient sits under
+   the texture as a fallback and to fill any uncovered edge. */
 .mw-banner {
-  background: linear-gradient(180deg, var(--mw-wood-light), var(--mw-wood-dark));
+  background:
+    url('../assets/textures/banner-metal.jpg') center / cover no-repeat,
+    linear-gradient(180deg, var(--mw-wood-light), var(--mw-wood-dark));
   border-bottom: 2px solid var(--mw-frame);
   box-shadow: inset 0 -1px 0 var(--mw-frame-dark);
   color: var(--mw-gold-bright);

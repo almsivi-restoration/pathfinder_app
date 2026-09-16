@@ -2,7 +2,9 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: radial-gradient(ellipse at center, var(--mw-wood-light) 0%, var(--mw-wood-dark) 100%);
+  /* Transparent: the ash-wastes backdrop lives on body (App.css) so it is
+     shared by every page and skinnable by local themes. */
+  background: transparent;
 }
 
 .gm-header {

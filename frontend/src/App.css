@@ -6,7 +6,14 @@
 
 body {
   font-family: var(--mw-font-body);
-  background: radial-gradient(ellipse at center, var(--mw-wood-light) 0%, var(--mw-wood-dark) 100%);
+  /* Ashen wastes backdrop: generated texture (assets/textures/bg-ashes.jpg),
+     embers at the bottom edge. A lighter warm overlay at the very top keeps
+     the upper frame from reading flat without smothering the ash and ember
+     detail across the rest of the frame. */
+  background:
+    linear-gradient(180deg, rgba(19, 17, 16, 0.72) 0%, rgba(19, 17, 16, 0.18) 45%, rgba(19, 17, 16, 0.30) 100%),
+    url('./assets/textures/bg-ashes.jpg') center bottom / cover no-repeat fixed,
+    var(--mw-wood-dark);
   color: var(--mw-text);
 }
 
