@@ -175,6 +175,28 @@ finishes, it creates a draft so the assets have a target; the step-7 release
 creation then reuses it (`gh release create` on an existing tag's release
 fails — use `gh release edit` for the notes if CI drafted it first).
 
+The workflow burned three iterations on its first real tag (v0.15.0); all are
+fixed in the pipeline itself, but the lessons are permanent:
+
+- **`pwsh` steps use `$env:GITHUB_REF_NAME`, not `${GITHUB_REF_NAME}`.** The
+  bash-style form reads as empty in PowerShell — the version guard compared
+  `package.json` against `""` and failed the build. Any GitHub env var in a
+  pwsh step needs the `$env:` prefix; `${{ steps.x.outputs.y }}` template
+  substitution is fine (it resolves before the shell runs).
+- **`npm ci` in CI must be `npm ci --omit=optional`.** `pdfjs-dist` declares
+  `canvas` as an *optional* dep; a bare `npm ci` installs it, and
+  electron-builder's native rebuild then node-gyp compiles it for Electron,
+  which fails on `windows-latest` (no VS C++ workload). The app never uses
+  canvas (rendering is Chromium's).
+- **A genuinely-imported "optional" transitive dep must be pinned.** The same
+  `--omit=optional` then dropped `path2d-polyfill` (which `pdfjs-dist`'s
+  legacy build actually requires), and CRA's `CI=true` treated the missing
+  module as a compile error. It is now a declared runtime dependency in
+  `frontend/package.json`. Rule: if the bundle imports it, it is not optional.
+- **electron-builder stages to `dist/win-unpacked/`, not `win-unpacked/`.**
+  The verify check's `Test-Path` omitted the `dist/` prefix and failed even
+  when the backend exe staged correctly. Verify against the real output path.
+
 ### 7. Create the GitHub release with the Linux assets
 
 `latest-linux.yml` is REQUIRED as an asset or Linux auto-update silently
