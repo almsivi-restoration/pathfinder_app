@@ -140,18 +140,12 @@ jobs:
           if ($meta -notmatch "version: $([regex]::Escape($ver))") {
             throw "latest.yml version mismatch.`n$meta"
           }
-          # Backend exe must be inside the packaged app (win-unpacked is the
-          # pre-NSIS staging dir electron-builder just produced).
-          if (-not (Test-Path 'win-unpacked/resources/backend/gm-workbench-backend.exe')) {
-            Write-Output "=== DIAGNOSTIC: backend exe staging failed ==="
-            Write-Output "--- cwd: $(Get-Location)"
-            Write-Output "--- ../backend/dist contents:"
-            Get-ChildItem -Recurse ../backend/dist -ErrorAction SilentlyContinue | Select-Object FullName, Length | Format-Table -AutoSize | Out-String | Write-Output
-            Write-Output "--- win-unpacked/resources contents:"
-            Get-ChildItem -Recurse dist/win-unpacked/resources -ErrorAction SilentlyContinue | Select-Object FullName | Format-Table -AutoSize | Out-String | Write-Output
-            Write-Output "--- any gm-workbench-backend.exe anywhere:"
-            Get-ChildItem -Recurse -Filter 'gm-workbench-backend*' ../backend, dist -ErrorAction SilentlyContinue | Select-Object FullName | Format-Table -AutoSize | Out-String | Write-Output
-            throw "Backend exe not staged into win-unpacked/resources/backend/ — extraResources mapping broken."
+          # Backend exe must be inside the packaged app. electron-builder stages
+          # to dist/win-unpacked (the pre-NSIS dir), relative to the frontend
+          # working-directory — the dist/ prefix is load-bearing; omitting it
+          # makes this check fail even when staging succeeded.
+          if (-not (Test-Path 'dist/win-unpacked/resources/backend/gm-workbench-backend.exe')) {
+            throw "Backend exe not staged into dist/win-unpacked/resources/backend/ — extraResources mapping broken."
           }
 
       - name: Upload release assets
