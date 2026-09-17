@@ -1,0 +1,161 @@
+name: windows-release
+
+# Windows release pipeline for Game Master's Workbench.
+#
+# Triggered by pushing a vX.Y.Z tag (the same tags the Linux release process
+# creates). A windows-latest runner freezes the backend with PyInstaller —
+# PyInstaller cannot cross-compile, so the freeze must happen on Windows —
+# packages the NSIS installer with electron-builder, boot-verifies the frozen
+# backend, and uploads the assets to the GitHub release for the tag.
+#
+# The Linux release flow is unchanged: tag, push, `gh release create` with the
+# Linux assets. This workflow fills in the Windows assets afterward on the same
+# release. If no release exists for the tag yet, it creates a draft so assets
+# still have a target.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write  # upload release assets
+
+jobs:
+  windows-installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Derive version from tag
+        id: meta
+        shell: pwsh
+        run: |
+          $ver = "${GITHUB_REF_NAME}".TrimStart('v')
+          "version=$ver" >> $env:GITHUB_OUTPUT
+          Write-Output "Tag ${GITHUB_REF_NAME} -> version $ver"
+
+      - name: Guard package.json version matches tag
+        shell: pwsh
+        run: |
+          $pkg = Get-Content frontend/package.json | ConvertFrom-Json
+          if ($pkg.version -ne "${{ steps.meta.outputs.version }}") {
+            throw "package.json version $($pkg.version) does not match tag ${GITHUB_REF_NAME}. The release process bumps package.json before tagging; refusing to ship a mismatched installer."
+          }
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Freeze backend with PyInstaller
+        shell: pwsh
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+          # Delete prior outputs so the freeze is provably fresh — the local
+          # release runbook's stale-artifact trap applies here too.
+          Remove-Item -Recurse -Force -ErrorAction SilentlyContinue build/gm-workbench-backend, dist/gm-workbench-backend.exe
+          $out = pyinstaller --noconfirm gm-workbench-backend.spec 2>&1 | Out-String
+          $exeLines = ([regex]::Matches($out, 'Building EXE')).Count
+          if ($exeLines -lt 1) {
+            throw "PyInstaller produced no 'Building EXE' line — the analysis cache skipped the build. Refusing to trust a possibly-stale binary."
+          }
+          if (-not (Test-Path dist/gm-workbench-backend.exe)) { throw "dist/gm-workbench-backend.exe missing after freeze." }
+
+      - name: Boot-verify frozen backend
+        shell: pwsh
+        working-directory: backend
+        run: |
+          $env:GM_WORKBENCH_VERSION = "${{ steps.meta.outputs.version }}"
+          $env:GM_WORKBENCH_PORT = "8123"
+          $proc = Start-Process -FilePath ./dist/gm-workbench-backend.exe -PassThru -WindowStyle Hidden
+          try {
+            $deadline = (Get-Date).AddSeconds(60)
+            $health = $null
+            while ((Get-Date) -lt $deadline) {
+              Start-Sleep -Milliseconds 750
+              try {
+                $health = Invoke-RestMethod -Uri 'http://127.0.0.1:8123/health' -TimeoutSec 2
+                break
+              } catch { }
+            }
+            if ($null -eq $health) { throw "Frozen backend did not answer /health within 60s." }
+            Write-Output "health: $($health | ConvertTo-Json -Compress)"
+            if ($health.version -ne "${{ steps.meta.outputs.version }}") {
+              throw "Backend reports version $($health.version), expected ${{ steps.meta.outputs.version }}."
+            }
+          } finally {
+            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install frontend dependencies
+        shell: pwsh
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend bundle
+        shell: pwsh
+        working-directory: frontend
+        run: |
+          npm run react-build
+          # The react-cra preset points the packaged main entry at
+          # build/electron.js and the build does NOT copy it (repo hard rule).
+          Copy-Item public/electron.js, public/preload.js build/
+
+      - name: Package NSIS installer
+        shell: pwsh
+        working-directory: frontend
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --win nsis --publish never
+
+      - name: Verify installer interior
+        shell: pwsh
+        working-directory: frontend
+        run: |
+          $ver = "${{ steps.meta.outputs.version }}"
+          $exe = "dist/Game-Masters-Workbench-$ver-win-x64.exe"
+          $yml = "dist/latest.yml"
+          if (-not (Test-Path $exe)) { throw "Installer missing: $exe" }
+          if (-not (Test-Path $yml)) { throw "latest.yml missing — Windows auto-update would silently break." }
+          # latest.yml url must equal the installer filename (the Linux
+          # latest-linux.yml check's Windows twin).
+          $meta = Get-Content $yml -Raw
+          if ($meta -notmatch [regex]::Escape("url: Game-Masters-Workbench-$ver-win-x64.exe")) {
+            throw "latest.yml url does not match the installer filename.`n$meta"
+          }
+          if ($meta -notmatch "version: $([regex]::Escape($ver))") {
+            throw "latest.yml version mismatch.`n$meta"
+          }
+          # Backend exe must be inside the packaged app (win-unpacked is the
+          # pre-NSIS staging dir electron-builder just produced).
+          if (-not (Test-Path 'win-unpacked/resources/backend/gm-workbench-backend.exe')) {
+            throw "Backend exe not staged into win-unpacked/resources/backend/ — extraResources mapping broken."
+          }
+
+      - name: Upload release assets
+        shell: pwsh
+        working-directory: frontend/dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ver = "${{ steps.meta.outputs.version }}"
+          $tag = "${GITHUB_REF_NAME}"
+          $repo = "${{ github.repository }}"
+          # Create the release if the Linux flow hasn't yet (draft — the human
+          # release notes pass publishes it); otherwise upload onto it.
+          gh release view $tag --repo $repo 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --repo $repo --draft --title "$tag" --notes "Windows assets attached by CI; release notes pending."
+          }
+          gh release upload $tag --repo $repo --clobber `
+            "Game-Masters-Workbench-$ver-win-x64.exe" `
+            "Game-Masters-Workbench-$ver-win-x64.exe.blockmap" `
+            latest.yml

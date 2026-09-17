@@ -163,9 +163,25 @@ git push origin main && git push origin vX.Y.Z
 git ls-remote --tags origin vX.Y.Z # confirm the ref moved
 ```
 
-### 7. Create the GitHub release with all three assets
+Pushing the tag triggers `.github/workflows/windows-release.yml` on a
+`windows-latest` runner: it freezes the backend with PyInstaller (PyInstaller
+cannot cross-compile — the Windows freeze must run on Windows), packages the
+NSIS installer with electron-builder, boot-verifies the frozen backend's
+`/health` reports the tag's version, and uploads `*-win-x64.exe`, its
+`.blockmap`, and `latest.yml` to the release. **Do not hand-carry a Windows
+exe from a dev machine** — that was the v0.14.0 stopgap, replaced by this
+workflow. If the release for the tag does not exist yet when the workflow
+finishes, it creates a draft so the assets have a target; the step-7 release
+creation then reuses it (`gh release create` on an existing tag's release
+fails — use `gh release edit` for the notes if CI drafted it first).
 
-`latest-linux.yml` is REQUIRED as an asset or auto-update silently breaks.
+### 7. Create the GitHub release with the Linux assets
+
+`latest-linux.yml` is REQUIRED as an asset or Linux auto-update silently
+breaks. The Windows assets (`latest.yml` for Windows auto-update, the NSIS
+exe, its blockmap) arrive via the tag-triggered workflow above — verify they
+landed with `gh release view vX.Y.Z --json assets` after the run completes,
+and only then announce.
 
 ```bash
 gh release create vX.Y.Z \
@@ -191,6 +207,9 @@ and mark it incompatible), and a verification summary.
     preserved/compatible, or plainly mark the release incompatible if not.
   - `## Verification` — always present. Test counts, artifact checks
     (deb scripts, package identity, updater metadata), and what was exercised.
+  - When Windows assets ship, note that they were built by the tag-triggered
+    `windows-latest` workflow (backend frozen by CI, `/health` boot-verified),
+    and whether a manual Windows install smoke test was run.
 - **Pass real newlines, not literal `\n`.** Write `--notes` with actual line
   breaks (the shell heredoc/`$'...'` form), never an escaped `\n` sequence —
   that is what made v0.6.0 render as one run-on line. Preview with
