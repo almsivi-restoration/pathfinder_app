@@ -98,7 +98,13 @@ jobs:
       - name: Install frontend dependencies
         shell: pwsh
         working-directory: frontend
-        run: npm ci
+        # --omit=optional: pdfjs-dist declares an OPTIONAL `canvas` dep. Locally
+        # it is never installed, but a bare `npm ci` pulls it, and
+        # electron-builder's native rebuild then tries to node-gyp compile it
+        # for Electron — which fails on windows-latest (no VS C++ workload).
+        # The app never uses canvas (rendering is Chromium's), so omitting
+        # optionals is lossless and keeps the runner free of a C++ toolchain.
+        run: npm ci --omit=optional
 
       - name: Build frontend bundle
         shell: pwsh
