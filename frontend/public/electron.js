@@ -123,7 +123,11 @@ function loadInstalledThemes() {
   // themes. A userData theme may legitimately shadow a built-in id.
   const themes = [BUILT_IN_THEME, ...BUILT_IN_EXTRA_THEMES];
   for (const entry of fs.readdirSync(themesDir, { withFileTypes: true })) {
-    if (!entry.isDirectory() || !isSafeThemeId(entry.name)) continue;
+    // Dirent.isDirectory() is false for a symlink to a directory, and the
+    // natural dev install is a symlink from a working folder — accept links.
+    // Containment is still enforced downstream: getSafeThemeCssPath()
+    // realpath-resolves the theme dir and its CSS before accepting either.
+    if ((!entry.isDirectory() && !entry.isSymbolicLink()) || !isSafeThemeId(entry.name)) continue;
     const theme = readThemeManifest(path.join(themesDir, entry.name));
     if (theme) themes.push(theme);
   }
