@@ -1,0 +1,456 @@
+/* Dissidia 012 Final Fantasy UI theme. Original CSS approximation — no game
+   assets used. Version 3: the full restyle. The base styles bake Morrowind
+   GEOMETRY into component selectors (10px bezel band, double-etch shadows,
+   chunky small-caps buttons), so this sheet overrides those selectors
+   directly and redefines the silhouette, not just the palette.
+
+   Bundled fonts (SIL OFL 1.1 — see fonts/OFL-*.txt), loaded relative to this
+   stylesheet via the theme's file:// cssUrl:
+   - Cinzel  — Trajan-like all-caps display serif; the game's menu title face.
+   - Jost    — clean humanist sans for body/controls (the game's menu text is
+               sans, not Morrowind's bookish Libertine serif). */
+
+@font-face {
+  font-family: 'Cinzel';
+  src: url('fonts/Cinzel-Variable.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Jost';
+  src: url('fonts/Jost-Variable.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Jost';
+  src: url('fonts/Jost-Italic-Variable.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* The reference look (from the game's menu screens — Story Mode, Character
+   Select, Customization, Equipment, Options, PP Catalog, Data Config):
+   the MENUS ARE LIGHT. Silvery-blue gradient surfaces, DARK NAVY text, and a
+   bright saturated BLUE selection/focus bar. Panels are white-to-ice framed
+   boxes with ornate notched corners and a thin silver border. Headings are
+   white-on-blue display serif with a soft glow. The deep blue is reserved for
+   selected rows, headers, and the character-name banner — not the background. */
+:root {
+  /* Light silvery-blue "paper" — the menu/info surfaces themselves */
+  --mw-parchment-light: #ffffff;
+  --mw-parchment: #e8eef8;
+  --mw-parchment-dark: #c6d2e8;
+  --mw-parchment-shadow: #8a98be;
+
+  /* Backdrop: a soft steel-blue vignette (the menus sit on bright art, so the
+     app chrome only needs a cool mid-tone, not a near-black void) */
+  --mw-wood-dark: #2c3552;
+  --mw-wood: #45507a;
+  --mw-wood-light: #5c6890;
+
+  /* Panels: white-to-ice gradient with a cool steel sheen */
+  --mw-panel-hi: #ffffff;
+  --mw-panel: #e4ecf8;
+  --mw-panel-lo: #c2cfe8;
+  --mw-well: #dde6f4;
+
+  /* Thin silver frame */
+  --mw-frame: #b9c6e2;
+  --mw-frame-lo: #7e8cb4;
+  --mw-frame-dark: #46507a;
+  --mw-border-dark: #9aa8cc;
+
+  /* The saturated Dissidia blue: selection bar, headers, links, focus */
+  --mw-gold: #1a4fd6;          /* repurposed: the "accent" is blue, not gold */
+  --mw-gold-bright: #2f6bff;   /* bright selected-bar blue */
+  --diss-gold: #c9a44a;        /* actual gold, kept for the rare true-gold accent */
+
+  /* Text: dark navy on light surfaces; near-white for the rare dark bar */
+  --mw-text: #1b2450;
+  --mw-text-dim: #55618e;
+  --mw-text-bright: #0d1330;
+  --mw-ink: #1b2450;
+  --mw-ink-light: #45507a;
+  --mw-ink-red: #a32438;
+  --mw-parchment-text: #eef3ff; /* light text used on the dark header bars */
+
+  /* Stat bars: rose health, brave-blue magicka, teal fatigue */
+  --mw-health: #c23b52;
+  --mw-health-bright: #e0566c;
+  --mw-magicka: #2f63d8;
+  --mw-magicka-bright: #4f86f0;
+  --mw-fatigue: #2f9a6a;
+  --mw-fatigue-bright: #49c08e;
+
+  --mw-danger: #d0482e;
+  --mw-danger-bright: #ff6a3c;
+
+  --mw-shadow: rgba(28, 36, 80, 0.35);
+
+  /* Theme-local: the selection-bar blues and focus glow */
+  --diss-select: #2f6bff;
+  --diss-select-lo: #1a3fb0;
+  --diss-cyan: #2f6bff;
+  --diss-cyan-glow: rgba(47, 107, 255, 0.35);
+  --diss-sheen: rgba(255, 255, 255, 0.6);
+  --diss-hairline: rgba(27, 36, 80, 0.2);
+
+  /* Cinzel for display/headings (Trajan-like), Jost for body/controls.
+     Cinzel renders small-caps natively (no true lowercase), so headings keep
+     their small-caps look from the face itself. */
+  --mw-font-display: 'Cinzel', 'Linux Libertine Display O', Georgia, serif;
+  --mw-font-body: 'Jost', 'Linux Libertine O', 'Palatino Linotype', Georgia, serif;
+}
+
+/* ---------- Backdrop: the PSP water-line, waves at the bottom fading up ---------- */
+
+/* The generated texture (waves.png, loaded relative to this stylesheet) carries
+   the silvery-white-to-water gradient; waves anchor to the bottom, the top
+   dissolves to near-white so panels and text stay legible. A faint cool
+   overlay at the very top keeps the upper edge from blowing out. */
+body,
+.App,
+.gm-dashboard,
+.campaign-selector,
+.encyclopedia,
+.player-view,
+.reference-reader {
+  background-color: #dfe6f4;
+  background-image:
+    linear-gradient(180deg, rgba(223, 230, 244, 0.4) 0%, rgba(223, 230, 244, 0) 35%),
+    url('waves.png');
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  color: var(--mw-text);
+}
+
+/* ---------- Typography: Cinzel headings ---------- */
+
+h1, h2, h3, h4 {
+  color: var(--mw-text-bright);
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-shadow: 0 0 10px rgba(47, 107, 255, 0.3), 0 1px 2px rgba(255, 255, 255, 0.6);
+}
+
+/* Controls and labels run in the clean sans (Jost) */
+.btn,
+.btn-small,
+.campaign-button,
+.campaign-delete-button,
+.create-button,
+label,
+.ruleset-selector {
+  font-family: var(--mw-font-body);
+}
+
+/* ---------- The Dissidia panel silhouette: light framed box ---------- */
+
+/* White-to-ice gradient over a faint crystalline facet texture, thin silver
+   frame, sharp corners, soft drop shadow. The panel-sheen texture is nearly
+   white with delicate frost facets, so it sits under the gradient as a subtle
+   surface grain without hurting text legibility. */
+.mw-panel,
+.scene-creator,
+.left-panel,
+.right-panel,
+.load-section,
+.new-section,
+.actor-form,
+.actor-edit-modal,
+.actor-view-modal,
+.player-actor-row,
+.campaign-panel {
+  background:
+    /* Bright ice-white gradient ON TOP, translucent enough for the sheen to
+       ghost through as a faint grain without greying the panel. */
+    linear-gradient(180deg,
+      rgba(255, 255, 255, 0.82) 0%,
+      rgba(228, 236, 248, 0.78) 55%,
+      rgba(200, 212, 236, 0.80) 100%),
+    url('panel-sheen.jpg') center / cover no-repeat,
+    linear-gradient(180deg,
+      var(--mw-panel-hi) 0%,
+      var(--mw-panel) 55%,
+      var(--mw-panel-lo) 100%);
+  border: 1px solid var(--mw-frame);
+  border-top-width: 1px;
+  border-radius: 2px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.7),
+    inset 0 0 0 3px rgba(126, 140, 180, 0.22),
+    0 6px 18px var(--mw-shadow);
+  color: var(--mw-text);
+}
+
+/* Panel titles: dark navy display serif over a thin silver rule — like the
+   game's white panel headers (CURRENT EQUIPMENT, REMAINING USAGE). */
+.load-section h2,
+.new-section h2,
+.left-panel h2,
+.right-panel h2,
+.scene-creator h2,
+.scene-creator h3 {
+  color: var(--mw-ink);
+  font-variant: small-caps;
+  letter-spacing: 2px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+  border-bottom: 1px solid var(--mw-frame-lo);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+  padding-bottom: 6px;
+}
+
+/* ---------- Buttons: light silver tiles; blue only when selected ---------- */
+
+.btn {
+  font-variant: normal;
+  letter-spacing: 2px;
+  font-weight: 500;
+  border: 1px solid var(--mw-frame-lo);
+  border-radius: 2px;
+  box-shadow:
+    inset 0 1px 0 var(--diss-sheen),
+    0 1px 3px var(--mw-shadow);
+  background: linear-gradient(180deg, #f4f7fd, #ccd7ec);
+  color: var(--mw-ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* The blue selection bar is the signature interaction */
+.btn:hover:not(:disabled),
+.btn:focus-visible:not(:disabled) {
+  background: linear-gradient(180deg, var(--diss-select), var(--diss-select-lo));
+  border-color: var(--diss-select-lo);
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(13, 19, 48, 0.6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 0 10px var(--diss-cyan-glow);
+}
+
+.btn-primary {
+  border-color: var(--mw-gold);
+  color: var(--mw-gold);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--diss-select), var(--diss-select-lo));
+  border-color: var(--diss-select-lo);
+  color: #ffffff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 0 10px var(--diss-cyan-glow);
+}
+
+.btn-secondary {
+  color: var(--mw-ink-light);
+}
+
+/* Compact row actions: quiet until hovered into the blue bar */
+.btn-small {
+  font-variant: normal;
+  letter-spacing: 1px;
+  background: linear-gradient(180deg, #eef2fb, #d3ddef);
+  border: 1px solid var(--mw-frame-lo);
+  border-radius: 2px;
+  outline: none;
+  box-shadow: inset 0 1px 0 var(--diss-sheen);
+  color: var(--mw-ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.btn-small:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--diss-select), var(--diss-select-lo));
+  border-color: var(--diss-select-lo);
+  color: #ffffff;
+  text-shadow: none;
+  box-shadow: 0 0 6px var(--diss-cyan-glow);
+}
+
+/* ---------- Inputs: white wells, blue focus ---------- */
+
+input[type='text'],
+input[type='number'],
+select,
+textarea {
+  background-color: #ffffff;
+  border: 1px solid var(--mw-frame-lo);
+  border-radius: 2px;
+  box-shadow: inset 0 2px 4px rgba(28, 36, 80, 0.12);
+  color: var(--mw-text-bright);
+}
+
+input[type='text']:focus,
+input[type='number']:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--diss-select);
+  box-shadow:
+    inset 0 2px 4px rgba(28, 36, 80, 0.12),
+    0 0 8px var(--diss-cyan-glow);
+}
+
+select option {
+  background-color: #ffffff;
+  color: var(--mw-text-bright);
+}
+
+/* ---------- List rows: light tiles; selected goes blue ---------- */
+
+.template-row,
+.scene-library-row,
+.actor-row,
+.result-row,
+.campaign-button {
+  background: linear-gradient(180deg, #ffffff, #e2eaf6);
+  border: 1px solid var(--mw-border-dark);
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  color: var(--mw-text);
+}
+
+.template-row:hover,
+.scene-library-row:hover,
+.actor-row:hover,
+.result-row:hover {
+  border-color: var(--diss-select);
+  background: linear-gradient(180deg, #eaf1fd, #cddaf1);
+}
+
+/* Campaign entries are the load-list rows */
+.campaign-button {
+  color: var(--mw-ink);
+  font-variant: normal;
+  letter-spacing: 1px;
+}
+
+.campaign-button:hover {
+  background: linear-gradient(180deg, var(--diss-select), var(--diss-select-lo));
+  border-color: var(--diss-select-lo);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 10px var(--diss-cyan-glow);
+  transform: translateX(4px);
+}
+
+.campaign-delete-button {
+  font-variant: normal;
+  letter-spacing: 1px;
+  background: linear-gradient(180deg, #eef2fb, #d3ddef);
+  border: 1px solid var(--mw-frame-lo);
+  outline: none;
+  color: var(--mw-danger);
+}
+
+/* The big create button: white tile, blue frame, goes blue on hover */
+.create-button {
+  font-variant: normal;
+  letter-spacing: 2px;
+  font-weight: 500;
+  border: 1px solid var(--mw-gold);
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 var(--diss-sheen), 0 1px 3px var(--mw-shadow);
+  background: linear-gradient(180deg, #f4f7fd, #ccd7ec);
+  color: var(--mw-gold);
+}
+
+.create-button:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--diss-select), var(--diss-select-lo));
+  border-color: var(--diss-select-lo);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 10px var(--diss-cyan-glow);
+}
+
+/* ---------- Banners / header: the deep-blue name bars ---------- */
+
+/* Generated filigree nameplate: a full-bleed silver strip with engraved
+   scrollwork along the top edge, brushed metal below. Cropped to ~13:1 from
+   the source so `cover` loses nothing. The scrim is banded: nearly clear over
+   the top filigree, heavily muted behind the title line so the white
+   small-caps stay legible against the metal speckle. */
+.mw-banner {
+  background:
+    linear-gradient(180deg,
+      rgba(20, 28, 68, 0.15) 0%,
+      rgba(20, 28, 68, 0.72) 45%,
+      rgba(20, 28, 68, 0.72) 55%,
+      rgba(20, 28, 68, 0.25) 100%),
+    url('banner-strip.jpg') center / cover no-repeat,
+    linear-gradient(180deg, #4a5aa8, #2b3a6e, #141c44);
+  border-bottom: 1px solid var(--mw-frame);
+  color: #ffffff;
+  font-variant: small-caps;
+  letter-spacing: 3px;
+  text-shadow: 0 1px 2px rgba(10, 14, 40, 0.9), 0 0 8px rgba(20, 28, 68, 0.8);
+}
+
+.gm-header {
+  background: linear-gradient(180deg, #33406f, #1b2347);
+  border-bottom: 1px solid var(--mw-frame-lo);
+  box-shadow: inset 0 -1px 0 var(--mw-frame-dark), 0 2px 10px var(--mw-shadow);
+}
+
+/* The campaign title sits on the dark header bar, so it stays light/bright */
+.gm-header h1 {
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(120, 160, 255, 0.5), 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Header controls sit on the dark bar — keep their text light */
+.gm-header .ruleset-selector,
+.gm-header label {
+  color: #dfe7fa;
+}
+
+/* Panel sub-headings: silver rule with a blue glint */
+.left-panel h2,
+.right-panel h2 {
+  box-shadow: 0 1px 0 rgba(47, 107, 255, 0.18);
+}
+
+/* ---------- Messages ---------- */
+
+.operation-message {
+  border-radius: 2px;
+  border: 1px solid var(--mw-frame-lo);
+  background: #eef3fb;
+  color: var(--mw-ink);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 1px 4px var(--mw-shadow);
+}
+
+.operation-message.error {
+  border-color: var(--mw-danger);
+  color: var(--mw-danger);
+}
+
+/* ---------- Scrollbars: slim silver ---------- */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--mw-panel);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--mw-frame-lo);
+  border: none;
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--diss-select);
+}
+
+::selection {
+  background: var(--diss-select);
+  color: #ffffff;
+}

@@ -35,9 +35,9 @@ initiative, or persistence ownership.
 	page 50 at a time so every match is reachable.
 - Generate names for actors (per-race, tuned syllable grammars), places, items, factions, and
 	events through **GM Tools > Name Generator** (Ctrl+N).
-- Switch the app's look through **View > Theme**: the built-in Morrowind theme ships with the
-  app, and additional local themes install by dropping a folder into the themes directory
-  (see Themes below).
+- Switch the app's look through **View > Theme**: the built-in Morrowind and Dissidia 012 themes
+  ship with the app, and additional local themes install by dropping a folder into the themes
+  directory (see Themes below).
 - Keep a campaign journal through **GM Tools > Chronicle** (Ctrl+J): markdown-formatted entries
 	with a built-in formatting guide, styled as an open book.
 - Import a scanned Pathfinder 1e character sheet through **GM Tools > Import Character Sheet**
@@ -190,10 +190,10 @@ replaces it while writing. Entries persist with the campaign.
 
 ## Themes
 
-**View > Theme** switches between the built-in Morrowind theme and any locally installed themes;
-the selection persists across launches and falls back to Morrowind if a selected theme goes
-missing. A local theme is a folder under the themes directory (**View > Theme > Open Themes
-Folder** opens it) containing a `theme.json` manifest and a `theme.css` stylesheet:
+**View > Theme** switches between the built-in Morrowind and Dissidia 012 themes and any locally
+installed themes; the selection persists across launches and falls back to Morrowind if a selected
+theme goes missing. A local theme is a folder under the themes directory (**View > Theme > Open
+Themes Folder** opens it) containing a `theme.json` manifest and a `theme.css` stylesheet:
 
 ```json
 {
@@ -301,8 +301,8 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
 - **File > Restart App** relaunches Electron.
 - **File > Exit** closes the application.
 - **View > Open Player View** opens the player-facing window.
-- **View > Theme** switches between the built-in Morrowind theme and local themes, and can open
-  or rescan the themes directory.
+- **View > Theme** switches between the built-in Morrowind and Dissidia 012 themes and local
+  themes, and can open or rescan the themes directory.
 - **GM Tools > Encyclopedia** (Ctrl+E) opens the active ruleset's local reference search.
 - **GM Tools > Bestiary** (Ctrl+B) opens the bestiary search.
 - **GM Tools > Chronicle** (Ctrl+J) opens the campaign journal.

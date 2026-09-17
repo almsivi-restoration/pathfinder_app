@@ -54,7 +54,8 @@ pathfinder_app/
 │   │   ├── index.html
 │   │   ├── electron.js         # Electron main process
 │   │   ├── preload.js          # Electron preload
-│   │   └── icons/              # Generated icon set
+│   │   ├── icons/              # Generated icon set
+│   │   └── themes/             # Vendored built-in themes (dissidia: css, fonts OFL, textures)
 │   ├── build-resources/        # Icon generation script
 │   ├── src/
 │   │   ├── App.jsx
@@ -62,7 +63,7 @@ pathfinder_app/
 │   │   ├── index.jsx
 │   │   ├── store.js            # Zustand state store
 │   │   ├── sheet.js            # Generic sheet helpers (ruleset-neutral)
-│   │   ├── theme.js            # Local theme bridge (applies theme.json + theme.css skins)
+│   │   ├── theme.js            # Theme bridge (applies built-in extra and local theme skins)
 │   │   ├── assets/fonts/       # Bundled Libertine fonts (OFL)
 │   │   ├── components/
 │   │   │   ├── GMDashboard.jsx

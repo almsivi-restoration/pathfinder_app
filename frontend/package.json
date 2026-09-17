@@ -1,6 +1,6 @@
 {
   "name": "gm-workbench",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Ruleset-neutral tabletop campaign and scene manager",
   "private": true,
   "homepage": "./",
@@ -86,6 +86,10 @@
         {
           "from": "../backend/dist/gm-workbench-backend",
           "to": "backend/gm-workbench-backend"
+        },
+        {
+          "from": "public/themes",
+          "to": "themes"
         }
       ]
     },
@@ -98,6 +102,10 @@
         {
           "from": "../backend/dist/gm-workbench-backend.exe",
           "to": "backend/gm-workbench-backend.exe"
+        },
+        {
+          "from": "public/themes",
+          "to": "themes"
         }
       ]
     },

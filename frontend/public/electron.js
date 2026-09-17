@@ -35,6 +35,22 @@ const BUILT_IN_THEME = {
   cssUrl: null,
 };
 
+// Built-in themes ship inside the app. Morrowind is the base stylesheet
+// (always loaded, cssUrl null). Additional built-ins are vendored under
+// build/themes/<id>/ and resolved to a file:// URL the renderer can load.
+// Their CSS is written as overrides layered on the base (same contract as a
+// userData theme); relative asset URLs resolve beside the CSS file.
+function builtInThemeUrl(themeId) {
+  const cssPath = isDev
+    ? path.join(__dirname, 'themes', themeId, 'theme.css')
+    : path.join(process.resourcesPath, 'themes', themeId, 'theme.css');
+  return fs.existsSync(cssPath) ? pathToFileURL(cssPath).toString() : null;
+}
+
+const BUILT_IN_EXTRA_THEMES = [
+  { id: 'dissidia', name: 'Dissidia 012', builtIn: true },
+].map((theme) => ({ ...theme, cssUrl: builtInThemeUrl(theme.id) }));
+
 // No apostrophe: electron-builder embeds productName in single-quoted shell in
 // the deb maintainer scripts, and an apostrophe breaks the generated postinst.
 app.setName('Game Masters Workbench');
@@ -103,7 +119,9 @@ function loadInstalledThemes() {
   const themesDir = getThemesDir();
   fs.mkdirSync(themesDir, { recursive: true });
 
-  const themes = [BUILT_IN_THEME];
+  // Built-ins first (base morrowind, then any vendored extras), then userData
+  // themes. A userData theme may legitimately shadow a built-in id.
+  const themes = [BUILT_IN_THEME, ...BUILT_IN_EXTRA_THEMES];
   for (const entry of fs.readdirSync(themesDir, { withFileTypes: true })) {
     if (!entry.isDirectory() || !isSafeThemeId(entry.name)) continue;
     const theme = readThemeManifest(path.join(themesDir, entry.name));
@@ -480,7 +498,7 @@ function showHelp() {
       'Chronicle: GM Tools > Chronicle (Ctrl+J) is the campaign journal — markdown-formatted entries for session recaps and anything else worth recording, with a formatting guide on the right page.\n\n' +
       'Quick Roll: GM Tools > Quick Roll (Ctrl+D) rolls checks for any actor in the open scene using the skill, save, or ability modifier from their sheet, or any custom die and modifier, with a running history of results.\n\n' +
       'Import Character Sheet: GM Tools > Import Character Sheet (Ctrl+I) reads a scanned Pathfinder 1e sheet (PDF) with OCR — abilities, HP, initiative, AC (touch and flat-footed), speed, BAB/CMB/CMD, saves, and the printed skill rows — and shows the extracted values for your review before saving. No scene needs to be open: with only a campaign loaded, the actor is saved as a campaign template you can drop into any scene. OCR uses PaddleOCR, which is not bundled — if the dialog reports the engine missing, it shows the exact commands to create the dedicated OCR environment.\n\n' +
-      'Themes: View > Theme switches between the built-in Morrowind theme and local themes installed in the app themes directory. Use Open Themes Folder to add a folder containing theme.json and theme.css, then Reload Themes.\n\n' +
+      'Themes: View > Theme switches between the built-in Morrowind and Dissidia 012 themes and any local themes installed in the app themes directory. Use Open Themes Folder to add a folder containing theme.json and theme.css, then Reload Themes.\n\n' +
       'Data lives under:\n' +
       path.join(app.getPath('userData'), 'data') +
       '\n\nKeyboard: Ctrl+B bestiary · Ctrl+D quick roll · Ctrl+E encyclopedia · Ctrl+I import sheet · Ctrl+J chronicle · Ctrl+N name generator · Ctrl+R restart · Ctrl+Q quit · Ctrl+Shift+I developer tools.',
@@ -626,7 +644,7 @@ function buildMenuTemplate() {
               message: "Game Master's Workbench",
               detail:
                 `Version ${app.getVersion()}\n\n` +
-                'A tabletop GM companion for Pathfinder 1e and 2e: scene and initiative tracking, reusable actor templates, a searchable rules encyclopedia, a bestiary, a name generator, quick rolls, scanned character-sheet import, a player-safe second-screen view, and switchable local UI themes (View > Theme).\n\n' +
+                'A tabletop GM companion for Pathfinder 1e and 2e: scene and initiative tracking, reusable actor templates, a searchable rules encyclopedia, a bestiary, a name generator, quick rolls, scanned character-sheet import, a player-safe second-screen view, and switchable UI themes (View > Theme) — Morrowind and Dissidia 012 built in, plus your own local themes.\n\n' +
                 'Reference PDFs and bestiary CSVs are user-supplied and are never included with the app.\n\n' +
                 'Data directory:\n' +
                 path.join(app.getPath('userData'), 'data'),
