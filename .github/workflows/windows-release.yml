@@ -31,16 +31,16 @@ jobs:
         id: meta
         shell: pwsh
         run: |
-          $ver = "${GITHUB_REF_NAME}".TrimStart('v')
+          $ver = "$env:GITHUB_REF_NAME".TrimStart('v')
           "version=$ver" >> $env:GITHUB_OUTPUT
-          Write-Output "Tag ${GITHUB_REF_NAME} -> version $ver"
+          Write-Output "Tag $env:GITHUB_REF_NAME -> version $ver"
 
       - name: Guard package.json version matches tag
         shell: pwsh
         run: |
           $pkg = Get-Content frontend/package.json | ConvertFrom-Json
           if ($pkg.version -ne "${{ steps.meta.outputs.version }}") {
-            throw "package.json version $($pkg.version) does not match tag ${GITHUB_REF_NAME}. The release process bumps package.json before tagging; refusing to ship a mismatched installer."
+            throw "package.json version $($pkg.version) does not match tag $env:GITHUB_REF_NAME. The release process bumps package.json before tagging; refusing to ship a mismatched installer."
           }
 
       - name: Set up Python
@@ -147,7 +147,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $ver = "${{ steps.meta.outputs.version }}"
-          $tag = "${GITHUB_REF_NAME}"
+          $tag = "$env:GITHUB_REF_NAME"
           $repo = "${{ github.repository }}"
           # Create the release if the Linux flow hasn't yet (draft — the human
           # release notes pass publishes it); otherwise upload onto it.
