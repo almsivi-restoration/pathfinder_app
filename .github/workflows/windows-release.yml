@@ -143,6 +143,14 @@ jobs:
           # Backend exe must be inside the packaged app (win-unpacked is the
           # pre-NSIS staging dir electron-builder just produced).
           if (-not (Test-Path 'win-unpacked/resources/backend/gm-workbench-backend.exe')) {
+            Write-Output "=== DIAGNOSTIC: backend exe staging failed ==="
+            Write-Output "--- cwd: $(Get-Location)"
+            Write-Output "--- ../backend/dist contents:"
+            Get-ChildItem -Recurse ../backend/dist -ErrorAction SilentlyContinue | Select-Object FullName, Length | Format-Table -AutoSize | Out-String | Write-Output
+            Write-Output "--- win-unpacked/resources contents:"
+            Get-ChildItem -Recurse dist/win-unpacked/resources -ErrorAction SilentlyContinue | Select-Object FullName | Format-Table -AutoSize | Out-String | Write-Output
+            Write-Output "--- any gm-workbench-backend.exe anywhere:"
+            Get-ChildItem -Recurse -Filter 'gm-workbench-backend*' ../backend, dist -ErrorAction SilentlyContinue | Select-Object FullName | Format-Table -AutoSize | Out-String | Write-Output
             throw "Backend exe not staged into win-unpacked/resources/backend/ — extraResources mapping broken."
           }
 
