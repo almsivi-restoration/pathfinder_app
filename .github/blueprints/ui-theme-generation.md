@@ -1,7 +1,7 @@
 ---
 description: "Blueprint: how a UI theme / skin is produced for Game Master's Workbench — deriving a look from reference screenshots, generating textures with an image API, wiring CSS without the cover-crop and origin traps, and verifying against real rendered pixels. Load when building or editing a theme, generating UI textures, or tuning a skin."
 name: "bp-ui-theme-generation"
-version: "1.0.0"
+version: "1.2.0"
 applyTo: "frontend/src/**,frontend/public/themes/**,artifacts/local/**_ui/**"
 ---
 
@@ -50,6 +50,41 @@ scripts live beside the working copies in
   `electron.js`'s `BUILT_IN_EXTRA_THEMES` with `extraResources` copying it
   to `resources/themes/`. Built-in CSS is written as overrides layered on
   the base (morrowind) stylesheet — same contract as a local theme.
+
+### Using ripped/extracted game assets (a font of real failure)
+
+- **Verify the pixels before composing — never trust a filename.** A glob for
+  `win_*` returned a FONT/GLYPH atlas that was composed into a dialog window;
+  every derived element (border, streak, "filigree corner") was pareidolia on
+  letterforms. A name is a hypothesis; the pixels are the fact.
+- **A doc's own "VERIFIED" label is not evidence.** The same theme's asset
+  table called `cmn_win_help_*` "the real dialog window" and, separately,
+  `panel-weave.png`'s source "verified: menu crosshatch" — both wrong, neither
+  ever actually pixel-checked; the labels just repeated an earlier guess with
+  more confidence. Re-derive from raw pixels whenever a prior claim is
+  load-bearing for new work, even (especially) your own project's claim.
+- **A repeating tile with baked-in variable content can still yield a reusable
+  overlay.** If several instances of a tile share an identical frame/border
+  but differ in the middle (per-character portraits, per-class cards), diff
+  3+ instances (`diff_extract.py` in
+  `dwemer_puzzle_box/.github/skills/asset-library-inventory/scripts/` — keep
+  pixels identical across all samples, transparent elsewhere) instead of
+  discarding the whole family as "has content baked in, unusable."
+- **`border-image` is the direct win for a rectangular frame ring — no manual
+  9-slice composition needed.** Crop the extracted ring to its tight alpha
+  bounding box, measure the solid border thickness per side straight from the
+  alpha channel (do not guess), and wire
+  `border-image: url(...) <top> <right> <bottom> <left> / <width> / 0 stretch`
+  with no `fill` keyword — the discarded middle slice is exactly where a
+  per-instance icon/text would have bled through. This shipped clean at both
+  dialog scale and full-panel scale from the same source asset.
+- **Some 9-slice kits genuinely need manual piece composition instead.**
+  PSP-era dialogs sometimes ship as 16x16 pieces (corners, edges, fill) with
+  no single tile containing the whole ring. Compose them into the element's
+  aspect ratio at native piece scale — do NOT stretch a whole atlas with
+  `100% 100%` (a portrait atlas in a landscape element squashes ~5:1 and warps
+  every ornament). Match asset aspect to element aspect, or build the asset AT
+  the element's aspect from the kit.
 
 ### Generating a texture with an image API
 
