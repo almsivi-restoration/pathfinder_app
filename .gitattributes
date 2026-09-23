@@ -1,0 +1,30 @@
+# Line-ending and encoding contract for this repository.
+#
+# Root cause this fixes: with no .gitattributes, Git fell back to the ambient
+# machine default core.autocrlf=true, which silently converts LF->CRLF on checkout
+# and CRLF->LF on commit. Tools that bypass the smudge filter (git apply, raw file
+# writes, piped patches) then see LF while the working tree carries CRLF, producing
+# phantom whole-file diffs and mis-staged hunks. An explicit contract makes EOL
+# deterministic regardless of machine or tool.
+#
+# Policy: text is auto-detected and normalized to LF in the repository. Windows
+# script shells that genuinely require CRLF to run keep CRLF on checkout.
+# Binary assets are declared so they are never subject to text conversion.
+
+* text=auto eol=lf
+
+# Windows-native scripts that must keep CRLF to execute reliably.
+*.ps1  text eol=crlf
+*.cmd  text eol=crlf
+*.bat  text eol=crlf
+
+# Binary formats: never treat as text, never convert line endings.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.docx binary
+*.pdf  binary
+*.pbix binary
+*.zip  binary

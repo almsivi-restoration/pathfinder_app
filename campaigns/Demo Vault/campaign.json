@@ -1,0 +1,54 @@
+{
+  "name": "Demo Vault",
+  "ruleset": "1e",
+  "created_at": "2026-09-21 12:00:00",
+  "scenes": [
+    "demo-scene-001"
+  ],
+  "actor_templates": [
+    {
+      "id": "demo-template-001",
+      "name": "Mira Quill",
+      "player_name": "Rowan",
+      "is_pc": true,
+      "color": "#7ac7c4",
+      "initiative_roll": null,
+      "effects": [],
+      "created_at": "2026-09-21 12:00:00",
+      "notes": "Synthetic demo character template.",
+      "sheet": {
+        "hp": {"current": 24, "max": 31},
+        "defenses": {"ac": 17},
+        "initiative": {"bonus": 3},
+        "character": {"level": 4, "race": "Human"},
+        "abilities": {"str": 12, "dex": 16, "con": 13, "int": 18, "wis": 11, "cha": 14},
+        "saves": [
+          {"name": "Fortitude", "total": 5},
+          {"name": "Reflex", "total": 7},
+          {"name": "Will", "total": 6}
+        ],
+        "skills": [
+          {"name": "Perception", "total": 8},
+          {"name": "Knowledge", "total": 10}
+        ]
+      }
+    }
+  ],
+  "chronicle": [
+    {
+      "id": "demo-chronicle-001",
+      "title": "The Lantern Vault",
+      "body": "The brass door opened on the third chime.\n\n- Mira marked the eastern stair.\n- The party agreed to keep the blue lantern lit.",
+      "created_at": "2026-09-21 12:01:00",
+      "updated_at": "2026-09-21 12:01:00"
+    },
+    {
+      "id": "demo-chronicle-002",
+      "title": "A Quiet Warning",
+      "body": "A folded note waited beneath the map: **Do not wake the bell.**",
+      "created_at": "2026-09-21 12:02:00",
+      "updated_at": "2026-09-21 12:02:00"
+    }
+  ],
+  "notes": "Synthetic capture fixture. No published game content."
+}

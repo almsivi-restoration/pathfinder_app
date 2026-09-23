@@ -1,0 +1,66 @@
+{
+  "id": "demo-scene-001",
+  "name": "Lantern Vault - First Chamber",
+  "actors": [
+    {
+      "id": "demo-actor-001",
+      "name": "Mira Quill",
+      "player_name": "Rowan",
+      "is_pc": true,
+      "color": "#7ac7c4",
+      "initiative_roll": 18,
+      "effects": [],
+      "created_at": "2026-09-21 12:00:00",
+      "notes": "Synthetic demo character.",
+      "sheet": {
+        "hp": {"current": 24, "max": 31},
+        "defenses": {"ac": 17},
+        "initiative": {"bonus": 3},
+        "character": {"level": 4, "race": "Human"},
+        "abilities": {"str": 12, "dex": 16, "con": 13, "int": 18, "wis": 11, "cha": 14},
+        "saves": [{"name": "Fortitude", "total": 5}, {"name": "Reflex", "total": 7}, {"name": "Will", "total": 6}],
+        "skills": [{"name": "Perception", "total": 8}, {"name": "Knowledge", "total": 10}]
+      }
+    },
+    {
+      "id": "demo-actor-002",
+      "name": "Tamsin Vale",
+      "player_name": "Casey",
+      "is_pc": true,
+      "color": "#d88f8f",
+      "initiative_roll": 14,
+      "effects": [{"name": "Rattled", "duration_rounds": 2, "description": "-1 to the next check."}],
+      "created_at": "2026-09-21 12:00:00",
+      "notes": "Synthetic demo character.",
+      "sheet": {"hp": {"current": 19, "max": 27}, "defenses": {"ac": 16}, "initiative": {"bonus": 2}, "character": {"level": 3, "race": "Dwarf"}}
+    },
+    {
+      "id": "demo-actor-003",
+      "name": "The Glass Warden",
+      "player_name": null,
+      "is_pc": false,
+      "color": "#d5b36a",
+      "initiative_roll": 11,
+      "effects": [{"name": "Guarding", "duration_rounds": 4, "description": "The ward holds the doorway."}],
+      "created_at": "2026-09-21 12:00:00",
+      "notes": "Synthetic demo adversary.",
+      "sheet": {"hp": {"current": 36, "max": 36}, "defenses": {"ac": 19}, "initiative": {"bonus": 1}, "character": {"level": 5}}
+    },
+    {
+      "id": "demo-actor-004",
+      "name": "Bell-Spark",
+      "player_name": null,
+      "is_pc": false,
+      "color": "#ad86c9",
+      "initiative_roll": 7,
+      "effects": [],
+      "created_at": "2026-09-21 12:00:00",
+      "notes": "Synthetic demo adversary.",
+      "sheet": {"hp": {"current": 12, "max": 12}, "defenses": {"ac": 14}, "initiative": {"bonus": 4}, "character": {"level": 2}}
+    }
+  ],
+  "initiative_order": ["demo-actor-001", "demo-actor-002", "demo-actor-003", "demo-actor-004"],
+  "current_round": 2,
+  "current_turn_index": 1,
+  "created_at": "2026-09-21 12:00:00"
+}
