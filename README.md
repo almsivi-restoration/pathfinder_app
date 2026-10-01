@@ -190,7 +190,8 @@ summary keys the initiative tracker and player view rely on.
 **GM Tools > Chronicle** (Ctrl+J) is the campaign journal — a log for end-of-session recaps and
 anything else worth recording about the campaign, styled as an open book. Entries support
 markdown formatting; a formatting guide sits on the right page while reading, and a live preview
-replaces it while writing. Entries persist with the campaign.
+replaces it while writing. The Dissidia 012 theme gives its pages a cool silver-blue texture
+instead of the Morrowind parchment. Entries persist with the campaign.
 
 ## Themes
 

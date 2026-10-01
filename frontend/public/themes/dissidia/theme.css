@@ -5,7 +5,7 @@
    directly and redefines the silhouette, not just the palette.
 
    Bundled fonts (SIL OFL 1.1 — see fonts/OFL-*.txt), loaded relative to this
-   stylesheet via the theme's file:// cssUrl:
+    stylesheet via the theme's CSS URL:
    - Cinzel  — Trajan-like all-caps display serif; the game's menu title face.
    - Jost    — clean humanist sans for body/controls (the game's menu text is
                sans, not Morrowind's bookish Libertine serif). */
@@ -453,4 +453,58 @@ select option {
 ::selection {
   background: var(--diss-select);
   color: #ffffff;
+}
+
+.chronicle-book {
+  background:
+    linear-gradient(90deg,
+      rgba(90, 111, 159, 0.22),
+      rgba(255, 255, 255, 0.06) 10%,
+      rgba(255, 255, 255, 0.06) 90%,
+      rgba(90, 111, 159, 0.22)),
+    url('chronicle-page.png') center / cover no-repeat,
+    var(--mw-parchment);
+  border: 2px solid var(--mw-frame-lo);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--mw-frame), 0 10px 32px var(--mw-shadow);
+}
+
+.chronicle-book::before {
+  background: linear-gradient(90deg, transparent, rgba(45, 59, 103, 0.23) 50%, transparent);
+}
+
+.chronicle-page-label,
+.chronicle-entry-title,
+.chronicle-entry-date,
+.chronicle-markdown h1,
+.chronicle-markdown h2,
+.chronicle-markdown h3,
+.chronicle-markdown h4,
+.chronicle-markdown a {
+  color: var(--mw-gold);
+  text-shadow: none;
+}
+
+.chronicle-title-input,
+.chronicle-body-input {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: var(--mw-frame-lo);
+}
+
+.chronicle-footer {
+  border-top: 1px solid var(--mw-frame-lo);
+  background: linear-gradient(180deg, #eef3fb, #c6d3eb);
+}
+
+.chronicle-btn {
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 var(--diss-sheen), 0 1px 3px var(--mw-shadow);
+}
+
+.chronicle-btn:hover:not(:disabled),
+.chronicle-btn:focus-visible:not(:disabled) {
+  background: linear-gradient(180deg, var(--diss-select), var(--diss-select-lo));
+  border-color: var(--diss-select-lo);
+  color: #ffffff;
+  text-shadow: none;
 }

@@ -37,14 +37,17 @@ const BUILT_IN_THEME = {
 
 // Built-in themes ship inside the app. Morrowind is the base stylesheet
 // (always loaded, cssUrl null). Additional built-ins are vendored under
-// build/themes/<id>/ and resolved to a file:// URL the renderer can load.
+// build/themes/<id>/ and resolved to a URL the renderer can load.
 // Their CSS is written as overrides layered on the base (same contract as a
 // userData theme); relative asset URLs resolve beside the CSS file.
 function builtInThemeUrl(themeId) {
   const cssPath = isDev
     ? path.join(__dirname, 'themes', themeId, 'theme.css')
     : path.join(process.resourcesPath, 'themes', themeId, 'theme.css');
-  return fs.existsSync(cssPath) ? pathToFileURL(cssPath).toString() : null;
+  if (!fs.existsSync(cssPath)) return null;
+  return isDev
+    ? `http://localhost:3000/themes/${themeId}/theme.css`
+    : pathToFileURL(cssPath).toString();
 }
 
 const BUILT_IN_EXTRA_THEMES = [
@@ -500,7 +503,7 @@ function showHelp() {
       'Bestiary: GM Tools > Bestiary (Ctrl+B) searches a monster CSV you supply. Drop a file named bestiary.csv into the ruleset sources directory (alongside your reference PDFs), Import it, then view entries, create NPCs directly from them, or save them as campaign templates.\n\n' +
       'Encyclopedia: GM Tools > Encyclopedia (Ctrl+E) searches rulebook PDFs you supply. Drop PDFs for a ruleset into its source directory, then Index them there.\n\n' +
       'Name Generator: GM Tools > Name Generator (Ctrl+N) generates fantasy names for characters, places, items, factions, and events.\n\n' +
-      'Chronicle: GM Tools > Chronicle (Ctrl+J) is the campaign journal — markdown-formatted entries for session recaps and anything else worth recording, with a formatting guide on the right page.\n\n' +
+      'Chronicle: GM Tools > Chronicle (Ctrl+J) is the campaign journal — markdown-formatted entries for session recaps and anything else worth recording, with a formatting guide on the right page. The Dissidia theme uses cool silver-blue pages instead of Morrowind parchment.\n\n' +
       'Quick Roll: GM Tools > Quick Roll (Ctrl+D) rolls checks for any actor in the open scene using the skill, save, or ability modifier from their sheet, or any custom die and modifier, with a running history of results.\n\n' +
       'Import Character Sheet: GM Tools > Import Character Sheet (Ctrl+I) reads a scanned Pathfinder 1e sheet (PDF) with OCR — abilities, HP, initiative, AC (touch and flat-footed), speed, BAB/CMB/CMD, saves, and the printed skill rows — and shows the extracted values for your review before saving. No scene needs to be open: with only a campaign loaded, the actor is saved as a campaign template you can drop into any scene. OCR uses PaddleOCR, which is not bundled — if the dialog reports the engine missing, it shows the exact commands to create the dedicated OCR environment.\n\n' +
       'Themes: View > Theme switches between the built-in Morrowind and Dissidia 012 themes and any local themes installed in the app themes directory. Use Open Themes Folder to add a folder containing theme.json and theme.css, then Reload Themes.\n\n' +
