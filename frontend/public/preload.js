@@ -1,4 +1,23 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webFrame } = require('electron');
+
+// Per-window session zoom: Ctrl+scroll scales this window like a browser.
+// The factor lives only for the life of the window — nothing is persisted.
+const ZOOM_STEP = 0.1;
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 2.0;
+
+window.addEventListener(
+  'wheel',
+  (event) => {
+    if (!event.ctrlKey) return;
+    event.preventDefault();
+    const direction = event.deltaY < 0 ? 1 : -1;
+    const current = webFrame.getZoomFactor();
+    const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, current + direction * ZOOM_STEP));
+    webFrame.setZoomFactor(Number(next.toFixed(2)));
+  },
+  { passive: false }
+);
 
 contextBridge.exposeInMainWorld('electron', {
   appVersion: process.env.npm_package_version || '',

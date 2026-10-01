@@ -564,6 +564,11 @@ function buildMenuTemplate() {
           },
         ],
       },
+      { type: 'separator' },
+      { role: 'zoomIn', accelerator: 'CmdOrCtrl+Plus' },
+      { role: 'zoomOut', accelerator: 'CmdOrCtrl+-' },
+      { role: 'resetZoom', accelerator: 'CmdOrCtrl+0' },
+      { type: 'separator' },
       {
         label: 'Toggle Developer Tools',
         accelerator: 'CmdOrCtrl+Shift+I',
