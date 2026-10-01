@@ -36,6 +36,14 @@ function PlayerView() {
 
   const displayOrder = initiativeOrder.length > 0 ? initiativeOrder : actors.map((a) => a.id);
 
+  // During combat, lead the list with the active actor so players always see
+  // whose turn it is at the top. Position badges keep the true initiative
+  // numbers from the un-rotated order.
+  const rotatedOrder =
+    isSceneActive && initiativeOrder.length > 0 && currentTurnIndex > 0
+      ? displayOrder.slice(currentTurnIndex).concat(displayOrder.slice(0, currentTurnIndex))
+      : displayOrder;
+
   return (
     <div className="player-view">
       <header className="player-header">
@@ -54,7 +62,7 @@ function PlayerView() {
           <div className="initiative-section">
             <h2>{isSceneActive ? 'Initiative Order' : 'Actors in Scene'}</h2>
             <div className="actor-list-player">
-              {displayOrder.map((actorId, index) => {
+              {rotatedOrder.map((actorId) => {
                 const actor = getActorById(actorId);
                 if (!actor) return null;
                 const isCurrent = isSceneActive && actorId === getCurrentActorId();
@@ -62,7 +70,7 @@ function PlayerView() {
                   <PlayerActorRow
                     key={actorId}
                     actor={actor}
-                    position={index + 1}
+                    position={displayOrder.indexOf(actorId) + 1}
                     isCurrent={isCurrent}
                     rulesetConfig={rulesetConfig}
                   />
