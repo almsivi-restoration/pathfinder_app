@@ -19,10 +19,14 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 - **Bestiary:** Import a user-supplied `bestiary.csv` from the ruleset sources directory into a per-ruleset SQLite FTS5 index; search with CR/type filters, view full monster entries, and create NPC actors or campaign templates from them (1e)
 - **Character Sheet Import:** OCR a scanned Pathfinder 1e sheet PDF (GM Tools > Import Character Sheet, Ctrl+I) into a reviewable actor draft — abilities, HP, initiative, AC (touch and flat-footed), speed, BAB/CMB/CMD, saves, printed skill rows, name — for GM confirmation before saving. No scene is required: with only a campaign loaded the actor is saved as a campaign template. Handwriting OCR uses PaddleOCR, kept out of the backend environment entirely: extraction runs as a subprocess from a dedicated user-created venv (`backend/requirements-ocr.txt`), and the import dialog shows the exact install commands when it is missing
 - **Player View:** Pop-out window showing only player-visible information
-  - Initiative order with current actor highlight
-  - Health bars (PC: X/Y format, NPC: green→red gradient)
-  - Status effects with duration
-  - GM-assigned marker color (dot and accent border)
+  - Initiative order rotates as turns advance so the active actor always leads the list
+    (position badges keep their true initiative numbers), with the current actor highlighted
+  - Health bars for everyone: PCs show exact current/max values centered inside the bar,
+    NPCs show a green→red gradient bar without numbers
+  - Larger player-facing type, status effects with duration
+  - GM-assigned marker color as a thick accent bar on each row
+- **Zoom:** Ctrl+scroll wheel or View > Zoom In / Zoom Out / Reset Zoom (Ctrl+Plus / Ctrl+- /
+  Ctrl+0) scale either window independently; zoom is per-window and resets on relaunch
 - **Persistence:** Save/load campaigns and scenes as JSON files
 - **Packaged Desktop App:** Installable AppImage and deb builds with auto-update (AppImage) and an apt-managed deb
 

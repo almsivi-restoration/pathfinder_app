@@ -494,7 +494,8 @@ function showHelp() {
     message: "Game Master's Workbench",
     detail:
       `Version ${app.getVersion()}\n\n` +
-      'Workflow: create or load a campaign, open a scene, add actors, then run initiative from the GM Dashboard. Open a second, player-safe view with View > Open Player View.\n\n' +
+      'Workflow: create or load a campaign, open a scene, add actors, then run initiative from the GM Dashboard. Open a second, player-safe view with View > Open Player View. In the player view the active actor always leads the order, and PCs show their exact HP inside their health bar.\n\n' +
+      'Zoom: Ctrl+scroll wheel scales either window, or use View > Zoom In / Zoom Out / Reset Zoom. Zoom is per-window and resets when the app restarts.\n\n' +
       'Actors: the Clone button duplicates any actor in the scene (handy for groups of identical monsters). The color swatch assigns a marker color, shown as a dot and accent border on the player view to match your physical grid. Save frequently used actors as campaign templates and reuse them in any scene.\n\n' +
       'Bestiary: GM Tools > Bestiary (Ctrl+B) searches a monster CSV you supply. Drop a file named bestiary.csv into the ruleset sources directory (alongside your reference PDFs), Import it, then view entries, create NPCs directly from them, or save them as campaign templates.\n\n' +
       'Encyclopedia: GM Tools > Encyclopedia (Ctrl+E) searches rulebook PDFs you supply. Drop PDFs for a ruleset into its source directory, then Index them there.\n\n' +
@@ -505,7 +506,7 @@ function showHelp() {
       'Themes: View > Theme switches between the built-in Morrowind and Dissidia 012 themes and any local themes installed in the app themes directory. Use Open Themes Folder to add a folder containing theme.json and theme.css, then Reload Themes.\n\n' +
       'Data lives under:\n' +
       path.join(app.getPath('userData'), 'data') +
-      '\n\nKeyboard: Ctrl+B bestiary · Ctrl+D quick roll · Ctrl+E encyclopedia · Ctrl+I import sheet · Ctrl+J chronicle · Ctrl+N name generator · Ctrl+R restart · Ctrl+Q quit · Ctrl+Shift+I developer tools.',
+      '\n\nKeyboard: Ctrl+B bestiary · Ctrl+D quick roll · Ctrl+E encyclopedia · Ctrl+I import sheet · Ctrl+J chronicle · Ctrl+N name generator · Ctrl+Plus/Ctrl+-/Ctrl+0 zoom · Ctrl+R restart · Ctrl+Q quit · Ctrl+Shift+I developer tools.',
     buttons: ['Close'],
   });
 }
@@ -653,7 +654,7 @@ function buildMenuTemplate() {
               message: "Game Master's Workbench",
               detail:
                 `Version ${app.getVersion()}\n\n` +
-                'A tabletop GM companion for Pathfinder 1e and 2e: scene and initiative tracking, reusable actor templates, a searchable rules encyclopedia, a bestiary, a name generator, quick rolls, scanned character-sheet import, a player-safe second-screen view, and switchable UI themes (View > Theme) — Morrowind and Dissidia 012 built in, plus your own local themes.\n\n' +
+                'A tabletop GM companion for Pathfinder 1e and 2e: scene and initiative tracking, reusable actor templates, a searchable rules encyclopedia, a bestiary, a name generator, quick rolls, scanned character-sheet import, a player-safe second-screen view, browser-style per-window zoom (Ctrl+scroll), and switchable UI themes (View > Theme) — Morrowind and Dissidia 012 built in, plus your own local themes.\n\n' +
                 'Reference PDFs and bestiary CSVs are user-supplied and are never included with the app.\n\n' +
                 'Data directory:\n' +
                 path.join(app.getPath('userData'), 'data'),

@@ -24,7 +24,11 @@ initiative, or persistence ownership.
 - Roll checks on the spot through **GM Tools > Quick Roll** (Ctrl+D): pick a scene actor and roll a
 	skill, save, or ability check using the modifier straight off their sheet, or any custom die and
 	modifier, with a running history of results.
-- Display a separate player-facing initiative window.
+- Display a separate player-facing initiative window. The active actor always leads the
+  order as turns advance, PCs show health bars with their exact current/max values inside,
+  and GM-assigned marker colors render as a thick accent bar on each row.
+- Zoom either window like a browser: **Ctrl+scroll wheel**, or View > Zoom In / Zoom Out /
+  Reset Zoom (Ctrl+Plus / Ctrl+- / Ctrl+0). Zoom is per-window and resets on relaunch.
 - Render actor sheets from the active ruleset definition, including scalar fields, notes, and
 	repeatable records such as weapons, skills, armor, gear, and spells. NPCs created from the
 	bestiary use a ruleset-defined monster sheet that shares the tracker's summary contract.
@@ -301,6 +305,8 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
 - **File > Restart App** relaunches Electron.
 - **File > Exit** closes the application.
 - **View > Open Player View** opens the player-facing window.
+- **View > Zoom In / Zoom Out / Reset Zoom** (Ctrl+Plus / Ctrl+- / Ctrl+0) scale the focused
+  window; Ctrl+scroll wheel does the same. Zoom is per-window and session-only.
 - **View > Theme** switches between the built-in Morrowind and Dissidia 012 themes and local
   themes, and can open or rescan the themes directory.
 - **GM Tools > Encyclopedia** (Ctrl+E) opens the active ruleset's local reference search.
