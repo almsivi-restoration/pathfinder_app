@@ -1,7 +1,7 @@
 .player-actor-row {
   display: flex;
-  gap: 16px;
-  padding: 16px;
+  gap: 18px;
+  padding: 18px;
   background: linear-gradient(165deg, var(--mw-panel-hi), var(--mw-panel) 55%, var(--mw-panel-lo));
   border: 2px solid var(--mw-frame);
   box-shadow:
@@ -26,57 +26,57 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 46px;
+  height: 46px;
   background: var(--mw-wood-dark);
   color: var(--mw-gold-bright);
   border-radius: 50%;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 20px;
   flex-shrink: 0;
 }
 
 .player-actor-row.current-turn .position-badge {
   background: var(--mw-gold);
   color: var(--mw-wood-dark);
-  font-size: 18px;
+  font-size: 22px;
 }
 
 .actor-info {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .name-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .actor-color-dot {
   display: inline-block;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   flex-shrink: 0;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 0 6px rgba(255, 255, 255, 0.15);
 }
 
 .actor-name {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--mw-text-bright);
 }
 
 .pc-badge {
   display: inline-block;
-  padding: 4px 8px;
+  padding: 5px 9px;
   background: var(--mw-wood-dark);
   color: var(--mw-gold-bright);
   border-radius: 2px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   font-variant: small-caps;
 }
@@ -84,19 +84,13 @@
 .health-bar-container {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.health-text {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--mw-health-bright);
-  min-width: 80px;
+  gap: 14px;
 }
 
 .health-bar-background {
   flex: 1;
-  height: 22px;
+  position: relative;
+  height: 30px;
   background: var(--mw-well);
   border-radius: 2px;
   overflow: hidden;
@@ -107,25 +101,37 @@
 .health-bar-fill {
   height: 100%;
   transition: width 0.3s ease;
+}
+
+.health-bar-value {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  padding-right: 4px;
+  justify-content: center;
+  color: var(--mw-parchment-text);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.85),
+    0 0 4px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
 }
 
 .effects-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 
 .effect-badge {
   display: inline-block;
-  padding: 4px 8px;
+  padding: 5px 9px;
   background: var(--mw-danger);
   color: var(--mw-parchment-text);
   border-radius: 2px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
 }
 

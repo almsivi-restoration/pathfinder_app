@@ -20,7 +20,7 @@ function PlayerActorRow({ actor, position, isCurrent, rulesetConfig }) {
   return (
     <div
       className={`player-actor-row ${isCurrent ? 'current-turn' : ''}`}
-      style={actor.color ? { borderLeft: `8px solid ${actor.color}` } : undefined}
+      style={actor.color ? { borderLeft: `14px solid ${actor.color}` } : undefined}
     >
       <div className="position-badge">{position}</div>
       <div className="actor-info">
@@ -32,25 +32,22 @@ function PlayerActorRow({ actor, position, isCurrent, rulesetConfig }) {
           {actor.is_pc && <span className="pc-badge">PC</span>}
         </div>
 
-        {resource && <div className="health-bar-container">
-          {actor.is_pc ? (
-            <div className="health-text">
-              {current}/{maximum}
+        {resource && (
+          <div className="health-bar-container">
+            <div className="health-bar-background">
+              <div
+                className="health-bar-fill"
+                style={{
+                  width: `${Math.max(0, Math.min(100, healthPercentage))}%`,
+                  backgroundColor: barColor,
+                }}
+              />
+              {actor.is_pc && (
+                <span className="health-bar-value">{current}/{maximum}</span>
+              )}
             </div>
-          ) : (
-            <>
-              <div className="health-bar-background">
-                <div
-                  className="health-bar-fill"
-                  style={{
-                    width: `${Math.max(0, Math.min(100, healthPercentage))}%`,
-                    backgroundColor: barColor,
-                  }}
-                />
-              </div>
-            </>
-          )}
-        </div>}
+          </div>
+        )}
 
         {actor.effects && actor.effects.length > 0 && (
           <div className="effects-list">

@@ -17,7 +17,7 @@
 }
 
 .player-header h1 {
-  font-size: 28px;
+  font-size: 32px;
   margin: 0;
 }
 
@@ -33,7 +33,7 @@
   color: var(--mw-wood-dark);
   border-radius: 2px;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 16px;
   font-variant: small-caps;
 }
 
@@ -50,7 +50,7 @@
   align-items: center;
   justify-content: center;
   flex: 1;
-  font-size: 20px;
+  font-size: 24px;
   color: var(--mw-parchment-text);
   font-style: italic;
 }
@@ -65,7 +65,7 @@
 
 .initiative-section h2 {
   margin: 0;
-  font-size: 22px;
+  font-size: 26px;
 }
 
 .actor-list-player {

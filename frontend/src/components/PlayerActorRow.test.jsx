@@ -1,7 +1,7 @@
 /**
- * Regression tests for PlayerActorRow's player-visible display logic - the exact behavior
- * the original spec called for: PC actors show "X/Y" HP, NPC actors show a green->red
- * health-percentage bar, and status effects/current-turn highlight render correctly.
+ * Regression tests for PlayerActorRow's player-visible display logic: PC actors show
+ * exact current/max HP inside a health bar, NPC actors show a green->red health bar,
+ * and status effects/current-turn highlight render correctly.
  */
 import { render, screen } from '@testing-library/react';
 import PlayerActorRow from './PlayerActorRow';
@@ -20,11 +20,16 @@ const rulesetConfig = {
   },
 };
 
-test('PC actors display exact "current/max" HP text, not a bar', () => {
+test('PC actors display exact current/max HP inside a health bar', () => {
   const actor = { ...baseActor, is_pc: true, sheet: { hp: { current: 7, max: 12 } } };
   render(<PlayerActorRow actor={actor} position={1} isCurrent={false} rulesetConfig={rulesetConfig} />);
 
-  expect(screen.getByText('7/12')).toBeInTheDocument();
+  const healthValue = screen.getByText('7/12');
+  expect(healthValue).toHaveClass('health-bar-value');
+
+  const healthBar = healthValue.closest('.health-bar-background');
+  expect(healthBar).not.toBeNull();
+  expect(healthBar.querySelector('.health-bar-fill')).toBeInTheDocument();
 });
 
 test('NPC actors above 50% health render a green bar', () => {
@@ -78,7 +83,7 @@ test('an assigned marker color renders a dot and a left accent border', () => {
 
   const dot = container.querySelector('.actor-color-dot');
   expect(dot).toHaveStyle({ backgroundColor: '#8e44ad' });
-  expect(container.querySelector('.player-actor-row')).toHaveStyle({ borderLeft: '8px solid #8e44ad' });
+  expect(container.querySelector('.player-actor-row')).toHaveStyle({ borderLeft: '14px solid #8e44ad' });
 });
 
 test('no color assigned renders no dot and no accent border', () => {
