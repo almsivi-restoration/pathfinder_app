@@ -238,3 +238,4 @@ backend/build/
 
 # Editor-local settings
 .vscode/
+.sotha_sil_install_manifest.json
