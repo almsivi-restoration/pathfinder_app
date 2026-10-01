@@ -5,6 +5,7 @@ import '../styles/CampaignSelector.css';
 function CampaignSelector({ onCampaignLoaded }) {
   const [newCampaignName, setNewCampaignName] = useState('');
   const [newCampaignRuleset, setNewCampaignRuleset] = useState('');
+  const [hoveredCampaign, setHoveredCampaign] = useState(null);
   const campaigns = useStore((state) => state.campaigns);
   const availableRulesets = useStore((state) => state.availableRulesets);
   const createCampaign = useStore((state) => state.createCampaign);
@@ -38,19 +39,26 @@ function CampaignSelector({ onCampaignLoaded }) {
     if (campaign) onCampaignLoaded();
   };
 
-  const handleDeleteCampaign = async (campaignName) => {
+  const handleDeleteCampaign = async (campaignName, event) => {
+    event.stopPropagation();
     if (window.confirm(`Delete ${campaignName} and all of its saved scenes? This cannot be undone.`)) {
       clearOperationError();
       await deleteCampaign(campaignName);
     }
   };
 
+  const footerHint = hoveredCampaign
+    ? `Resume "${hoveredCampaign}" where you left off.`
+    : 'Load a saved campaign, or forge a new one to begin the session.';
+
   return (
     <div className="campaign-selector">
-      <h1>Game Master's Workbench</h1>
-      {window.electron?.appVersion && (
-        <div className="app-version">v{window.electron.appVersion}</div>
-      )}
+      <div className="campaign-selector-titlebar">
+        <div className="mw-banner">Game Master's Workbench</div>
+        {window.electron?.appVersion && (
+          <div className="app-version">v{window.electron.appVersion}</div>
+        )}
+      </div>
 
       <div className="selector-content">
         {operationError && <div className="operation-message error">{operationError}</div>}
@@ -59,11 +67,20 @@ function CampaignSelector({ onCampaignLoaded }) {
           {campaigns.length > 0 ? (
             <div className="campaign-list">
               {campaigns.map((campaignName) => (
-                <div key={campaignName} className="campaign-entry">
+                <div
+                  key={campaignName}
+                  className="campaign-entry"
+                  onMouseEnter={() => setHoveredCampaign(campaignName)}
+                  onMouseLeave={() => setHoveredCampaign((current) => (current === campaignName ? null : current))}
+                >
                   <button className="campaign-button" onClick={() => handleLoadCampaign(campaignName)}>
-                    {campaignName}
+                    <span className="campaign-button-marker" aria-hidden="true">&#9656;</span>
+                    <span className="campaign-button-label">{campaignName}</span>
                   </button>
-                  <button className="campaign-delete-button" onClick={() => handleDeleteCampaign(campaignName)}>
+                  <button
+                    className="campaign-delete-button"
+                    onClick={(event) => handleDeleteCampaign(campaignName, event)}
+                  >
                     Delete
                   </button>
                 </div>
@@ -97,6 +114,13 @@ function CampaignSelector({ onCampaignLoaded }) {
             Create
           </button>
         </div>
+      </div>
+
+      <div className="campaign-selector-footer">
+        <span className="campaign-selector-footer-hint">{footerHint}</span>
+        <span className="campaign-selector-footer-count">
+          {campaigns.length} {campaigns.length === 1 ? 'campaign' : 'campaigns'} saved
+        </span>
       </div>
     </div>
   );
