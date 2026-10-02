@@ -106,6 +106,7 @@
 .health-bar-value {
   position: absolute;
   inset: 0;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -117,6 +118,67 @@
     0 1px 2px rgba(0, 0, 0, 0.85),
     0 0 4px rgba(0, 0, 0, 0.7);
   pointer-events: none;
+}
+
+/* --- Health bar impact effects ---
+   Triggered by PlayerActorRow when a poll sees the HP value move: .hp-fx-hit
+   (small loss), .hp-fx-hit-big (>=20% of max), .hp-fx-heal (any gain). */
+.health-bar-background.hp-fx-hit-big {
+  animation: hp-shake 0.45s ease-in-out;
+}
+
+.health-bar-background.hp-fx-hit .health-bar-fill,
+.health-bar-background.hp-fx-hit-big .health-bar-fill {
+  animation: hp-flash 0.5s ease-out;
+}
+
+.health-bar-background.hp-fx-heal .health-bar-fill {
+  animation: hp-heal-glow 0.7s ease-out;
+}
+
+/* The just-lost chunk of bar: holds a beat at the old width, then melts away
+   to reveal the shorter fill underneath (classic damage-ghost read). */
+.health-bar-ghost {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  background: var(--mw-hp-ghost, rgba(255, 122, 89, 0.9));
+  box-shadow: 0 0 8px var(--mw-hp-ghost, rgba(255, 122, 89, 0.9));
+  animation: hp-ghost-drain 0.9s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes hp-shake {
+  0%, 100% { transform: translateX(0); }
+  12% { transform: translateX(-6px); }
+  26% { transform: translateX(5px); }
+  40% { transform: translateX(-4px); }
+  56% { transform: translateX(3px); }
+  72% { transform: translateX(-2px); }
+  88% { transform: translateX(1px); }
+}
+
+@keyframes hp-flash {
+  0% { filter: brightness(2.6) saturate(0.3); }
+  100% { filter: none; }
+}
+
+@keyframes hp-ghost-drain {
+  0%, 45% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes hp-heal-glow {
+  0% { filter: brightness(1.8) drop-shadow(0 0 6px rgba(150, 255, 170, 0.85)); }
+  100% { filter: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .health-bar-background.hp-fx-hit-big {
+    animation: none;
+  }
 }
 
 .effects-list {

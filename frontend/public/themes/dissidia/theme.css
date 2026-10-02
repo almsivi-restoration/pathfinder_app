@@ -88,6 +88,8 @@
 
   --mw-danger: #d0482e;
   --mw-danger-bright: #ff6a3c;
+  /* Player-screen damage ghost (PlayerActorRow.css): palette-native hot orange. */
+  --mw-hp-ghost: rgba(255, 106, 60, 0.9);
 
   --mw-shadow: rgba(28, 36, 80, 0.35);
 

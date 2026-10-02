@@ -37,6 +37,7 @@ function seedStore(currentScene) {
     removeActorTemplate: jest.fn(async () => true),
     setSelectedTemplateId: jest.fn(),
     setViewingTemplateId: jest.fn(),
+    fetchRulesetConfig: jest.fn(async () => rulesetConfig),
     currentScene,
     rulesetConfig,
   });
@@ -74,4 +75,11 @@ test('Add to Scene renders only when a scene is open', () => {
   seedStore(null);
   rerender(<ActorTemplateLibrary />);
   expect(screen.queryByText('Add to Scene')).not.toBeInTheDocument();
+});
+
+test('fetches the ruleset config so the summary stats column renders', () => {
+  seedStore(null);
+  render(<ActorTemplateLibrary />);
+  expect(useStore.getState().fetchRulesetConfig).toHaveBeenCalled();
+  expect(screen.getByText('HP 6/6 / AC 16 / Init +2')).toBeInTheDocument();
 });

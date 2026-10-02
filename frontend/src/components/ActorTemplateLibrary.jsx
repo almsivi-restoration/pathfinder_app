@@ -46,10 +46,14 @@ function ActorTemplateLibrary() {
   const setViewingTemplateId = useStore((state) => state.setViewingTemplateId);
   const currentScene = useStore((state) => state.currentScene);
   const rulesetConfig = useStore((state) => state.rulesetConfig);
+  const fetchRulesetConfig = useStore((state) => state.fetchRulesetConfig);
 
   useEffect(() => {
     listActorTemplates();
-  }, [listActorTemplates]);
+    // The summary column needs the ruleset's sheet definition; nothing else
+    // on the dashboard fetches it, so the stats rendered blank.
+    fetchRulesetConfig();
+  }, [listActorTemplates, fetchRulesetConfig]);
 
   const handleAddToScene = async (templateId) => {
     await addActorFromTemplate(templateId);

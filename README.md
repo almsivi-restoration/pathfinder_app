@@ -26,7 +26,10 @@ actor, initiative, or persistence ownership.
 	modifier, with a running history of results.
 - Display a separate player-facing initiative window. The active actor always leads the
   order as turns advance, PCs show health bars with their exact current/max values inside,
-  and GM-assigned marker colors render as a thick accent bar on each row.
+  and GM-assigned marker colors render as a thick accent bar on each row. Health bars play
+  game-style impact effects when the value moves — a shake and draining damage ghost on big
+  hits, a flash on smaller ones, and a glow on heals (themes re-tint the ghost via
+  `--mw-hp-ghost`).
 - Zoom either window like a browser: **Ctrl+scroll wheel**, or View > Zoom In / Zoom Out /
   Reset Zoom (Ctrl+Plus / Ctrl+- / Ctrl+0). Zoom is per-window and resets on relaunch.
 - Render actor sheets from the active ruleset definition, including scalar fields, notes, and

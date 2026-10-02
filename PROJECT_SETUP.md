@@ -24,6 +24,9 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
     (position badges keep their true initiative numbers), with the current actor highlighted
   - Health bars for everyone: PCs show exact current/max values centered inside the bar,
     NPCs show a green→red gradient bar without numbers
+  - Health bars play impact effects when a poll sees HP move: big hits (≥20% of max) shake
+    the bar, any loss flashes and drains a damage ghost of the lost chunk, heals glow —
+    ghost tint is the `--mw-hp-ghost` theme token
   - Larger player-facing type, status effects with duration
   - GM-assigned marker color as a thick accent bar on each row
 - **Zoom:** Ctrl+scroll wheel or View > Zoom In / Zoom Out / Reset Zoom (Ctrl+Plus / Ctrl+- /
