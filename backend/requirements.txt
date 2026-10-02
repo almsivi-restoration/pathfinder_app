@@ -7,6 +7,11 @@ python-socketio==5.10.0
 python-engineio==4.8.0
 aiofiles==23.2.1
 pypdf==5.9.0
+# Runtime dependency of harrowing.py (The Harrowing chat proxy). main.py imports
+# it at top level, so the frozen backend crashes without it — it must ship in
+# requirements.txt, not just the dev file (the v0.17.0 Windows freeze failed
+# boot-verify for exactly this).
+httpx==0.25.2
 # OCR fallback for scanned reference PDFs. Requires the tesseract system binary
 # on PATH; the backend degrades to embedded-text-only without it.
 pymupdf==1.28.2

@@ -3,8 +3,9 @@
 No model ships with the app. The GM runs an OpenAI-compatible inference server
 themselves (Ollama, LM Studio, llama.cpp, vLLM — anything speaking
 /v1/chat/completions) and stores only an endpoint URL and model name. The
-backend proxies chat completions to that endpoint over plain HTTP using
-FastAPI's bundled httpx client. Optional reference grounding injects hits from
+backend proxies chat completions to that endpoint over plain HTTP using httpx
+(a declared runtime dependency — see requirements.txt). Optional reference
+grounding injects hits from
 the campaign's indexed rulebook library into the system prompt; user-supplied
 PDFs are never shipped, only read at runtime.
 """

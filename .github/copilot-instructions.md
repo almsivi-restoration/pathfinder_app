@@ -196,6 +196,15 @@ fixed in the pipeline itself, but the lessons are permanent:
 - **electron-builder stages to `dist/win-unpacked/`, not `win-unpacked/`.**
   The verify check's `Test-Path` omitted the `dist/` prefix and failed even
   when the backend exe staged correctly. Verify against the real output path.
+- **A backend module imported by `main.py` must be in `requirements.txt`, not
+  just `requirements-dev.txt`.** The v0.17.0 Windows freeze boot-verify failed
+  because `harrowing.py`'s top-level `import httpx` was only dev-pinned (for
+  TestClient): the local venv had it, so the local freeze and all tests passed,
+  but CI installs only `requirements.txt` and PyInstaller silently freezes with
+  the module missing — the exe then dies on startup and never answers
+  `/health`. PyInstaller does NOT fail the build on a missing import; the
+  boot-verify is the only gate that catches it. Rule: if `main.py` reaches it,
+  it is a runtime dependency.
 
 ### 7. Create the GitHub release with the Linux assets
 
