@@ -4,9 +4,9 @@ A local desktop scene manager for a single GM. Campaigns select a ruleset; the s
 ruleset defines actor sheets, combat summaries, initiative behavior, and the local reference
 sources available through the Encyclopedia.
 
-The initial rulesets are Pathfinder 1e and Pathfinder 2e. The application core is intentionally
-ruleset-neutral so additional systems can be added without changing campaign, scene, actor,
-initiative, or persistence ownership.
+The available rulesets are Pathfinder 1e, Pathfinder 2e, and Numenera. The application core is
+intentionally ruleset-neutral so additional systems can be added without changing campaign, scene,
+actor, initiative, or persistence ownership.
 
 ## Features
 
@@ -39,6 +39,10 @@ initiative, or persistence ownership.
 	page 50 at a time so every match is reachable.
 - Generate names for actors (per-race, tuned syllable grammars), places, items, factions, and
 	events through **GM Tools > Name Generator** (Ctrl+N).
+- Chat with a local language model you run yourself through **GM Tools > The Harrowing** (Ctrl+P):
+	point the app at any OpenAI-compatible endpoint (Ollama, LM Studio, …), optionally ground
+	answers in your indexed rulebook PDFs, and unload the model from RAM when you are done. No
+	model ships with the app.
 - Switch the app's look through **View > Theme**: the built-in Morrowind and Dissidia 012 themes
   ship with the app, and additional local themes install by dropping a folder into the themes
   directory (see Themes below).
@@ -301,6 +305,13 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
 - `PUT /api/campaign/chronicle/{entry_id}` updates an entry.
 - `DELETE /api/campaign/chronicle/{entry_id}` removes an entry.
 
+### The Harrowing
+
+- `GET /api/harrowing/config` and `PUT /api/harrowing/config` read and update the endpoint settings.
+- `GET /api/harrowing/status` probes the endpoint (reachable / model present / currently loaded).
+- `POST /api/harrowing/chat` proxies a chat request, optionally grounded in the indexed rulebooks.
+- `POST /api/harrowing/unload` unloads the model from memory (Ollama `keep_alive=0`).
+
 ## Native Menu
 
 - **File > Restart App** relaunches Electron.
@@ -314,6 +325,7 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
 - **GM Tools > Bestiary** (Ctrl+B) opens the bestiary search.
 - **GM Tools > Chronicle** (Ctrl+J) opens the campaign journal.
 - **GM Tools > Name Generator** (Ctrl+N) opens the name generator.
+- **GM Tools > The Harrowing** (Ctrl+P) opens the local-model chat window.
 
 ## License
 

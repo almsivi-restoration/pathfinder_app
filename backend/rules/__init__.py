@@ -1,9 +1,11 @@
 from .ruleset_1e import RULESET_CONFIG_1E
 from .ruleset_2e import RULESET_CONFIG_2E
+from .ruleset_numenera import RULESET_CONFIG_NUMENERA
 
 RULESETS = {
     "1e": RULESET_CONFIG_1E,
     "2e": RULESET_CONFIG_2E,
+    "numenera": RULESET_CONFIG_NUMENERA,
 }
 
 def get_ruleset(ruleset_name: str):

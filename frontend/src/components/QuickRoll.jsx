@@ -20,8 +20,19 @@ function parseModifier(value) {
   return match ? parseInt(match[0], 10) : 0;
 }
 
-// Both registered rulesets use the same ability-modifier curve: (score - 10) / 2,
-// rounded down.
+// Cypher System sheets carry a training level instead of a numeric total; each
+// level eases (or hinders) the task one step, worth 3 on a d20 roll.
+const TRAINING_LEVEL_MODIFIERS = { inability: -3, trained: 3, specialized: 6 };
+
+function entryModifier(entry) {
+  if (entry.total !== undefined && entry.total !== null && entry.total !== '') {
+    return parseModifier(entry.total);
+  }
+  return TRAINING_LEVEL_MODIFIERS[String(entry.level ?? '').toLowerCase()] ?? 0;
+}
+
+// The Pathfinder ability-modifier curve: (score - 10) / 2, rounded down.
+// Sheets without ability scores (e.g. Numenera) yield NaN and roll flat +0.
 function abilityModifier(score) {
   const parsed = parseInt(score, 10);
   if (Number.isNaN(parsed)) return 0;
@@ -35,6 +46,7 @@ function formatSigned(value) {
 function QuickRoll({ onClose }) {
   const actors = useStore((state) => state.actors);
   const rollDice = useStore((state) => state.rollDice);
+  const rulesetConfig = useStore((state) => state.rulesetConfig);
 
   const [actorId, setActorId] = useState('');
   const [kind, setKind] = useState('skill');
@@ -49,7 +61,8 @@ function QuickRoll({ onClose }) {
   const options = useMemo(() => {
     if (!actor || kind === 'custom') return [];
     if (kind === 'ability') {
-      return ABILITIES.map((key) => ({
+      const abilityKeys = rulesetConfig?.abilities?.length ? rulesetConfig.abilities : ABILITIES;
+      return abilityKeys.map((key) => ({
         name: key.toUpperCase(),
         modifier: abilityModifier(getSheetValue(actor.sheet, `abilities.${key}`)),
       }));
@@ -58,8 +71,8 @@ function QuickRoll({ onClose }) {
     if (!Array.isArray(entries)) return [];
     return entries
       .filter((entry) => entry && entry.name)
-      .map((entry) => ({ name: entry.name, modifier: parseModifier(entry.total) }));
-  }, [actor, kind]);
+      .map((entry) => ({ name: entry.name, modifier: entryModifier(entry) }));
+  }, [actor, kind, rulesetConfig]);
 
   // Fall back to the first option so a freshly chosen actor is roll-ready.
   const selectedOption = options.find((entry) => entry.name === optionName) || options[0] || null;

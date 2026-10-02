@@ -155,6 +155,31 @@ def test_pathfinder_2e_ruleset_exposes_its_own_character_sheet(client):
     assert any(field["key"] == "focus_spells" for field in fields)
 
 
+def test_numenera_ruleset_exposes_its_own_character_sheet(client):
+    client.post("/api/campaign/new", params={"name": "Numenera Rules Camp", "ruleset": "numenera"})
+
+    response = client.get("/api/rules/current")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["name"] == "Numenera"
+    assert body["reference_directory"] == "numenera"
+    assert body["abilities"] == ["might", "speed", "intellect"]
+    assert body["saves"] == []
+    assert body["max_level"] == 6
+
+    sheet = body["actor_sheet"]
+    fields = sheet["fields"]
+    keys = {field["key"] for field in fields}
+    # Shared tracker contract: the Might pool stands in for HP, Armor for AC.
+    assert {"hp.current", "hp.max", "defenses.ac", "initiative.bonus"} <= keys
+    assert {"pools.speed.current", "pools.intellect.current", "character.tier", "cyphers"} <= keys
+    assert sheet["player_resource"] == {"label": "Might Pool", "current_key": "hp.current", "max_key": "hp.max"}
+
+    creature_fields = {field["key"] for field in body["monster_sheet"]["fields"]}
+    assert {"hp.current", "hp.max", "defenses.ac", "initiative.bonus", "creature.level"} <= creature_fields
+
+
 def test_reference_routes_require_and_scope_to_the_current_campaign(client, tmp_path):
     import main
     from reference_library import ReferenceLibrary

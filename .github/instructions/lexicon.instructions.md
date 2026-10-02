@@ -35,7 +35,7 @@ controlling behavior boundary.
 | **Actor Template** | A pre-built Actor stored on the Campaign, instantiated into Scenes. | Carries color and full sheet; instantiate copies wholesale. |
 | **Initiative** | Turn order within a Scene: `initiative_order` (actor IDs), `current_round`, `current_turn_index`. | Rolls are GM-entered physical-die values + bonus. |
 | **Effect** | A timed condition on an Actor (`name`, `duration_rounds`, `description`). | |
-| **Ruleset** | A game edition registered in `backend/rules/__init__.py` (`RULESETS` dict). | Currently `1e`, `2e`. |
+| **Ruleset** | A game edition registered in `backend/rules/__init__.py` (`RULESETS` dict). | Currently `1e`, `2e`, `numenera`. |
 | **Bestiary Entry** | A monster record in the per-ruleset bestiary sqlite index, imported from the user-supplied `bestiary.csv`. | Mapped to Actors via the ruleset's `bestiary_mapper`. |
 | **Reference Library** | Per-ruleset collection of user-supplied reference PDFs, indexed for search. | Routes under `/api/references/current/*`. |
 | **Source Manifest** | JSON manifest describing a ruleset's reference sources. | `manifests/<ruleset>.json`. |

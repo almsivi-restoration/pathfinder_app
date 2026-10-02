@@ -427,6 +427,137 @@ def build_pathfinder_1e_monster_sheet() -> Dict[str, Any]:
     }
 
 
+def build_numenera_actor_sheet() -> Dict[str, Any]:
+    """Return the Numenera (Cypher System) character sheet definition.
+
+    Contract-key mapping: Numenera has no hit points or AC, so hp.current/hp.max
+    hold the Might pool (damage is spent from Might first) and defenses.ac holds
+    Armor (flat damage reduction). initiative.bonus holds the initiative task's
+    training/asset modifier. The tracker, actor rows, and player view read only
+    these paths and the summary below, so they work unchanged.
+    """
+    fields = [
+        {"key": "character.descriptor", "label": "Descriptor", "type": "text", "default": "", "section": "Character"},
+        {"key": "character.type", "label": "Type", "type": "text", "default": "", "section": "Character"},
+        {"key": "character.focus", "label": "Focus", "type": "text", "default": "", "section": "Character"},
+        {"key": "character.tier", "label": "Tier", "type": "number", "default": 1, "section": "Character"},
+        {"key": "character.effort", "label": "Effort", "type": "number", "default": 1, "section": "Character"},
+        {"key": "character.xp", "label": "XP", "type": "number", "default": 0, "section": "Character"},
+        {"key": "character.background", "label": "Background", "type": "textarea", "default": "", "section": "Character"},
+        {"key": "hp.current", "label": "Might Pool", "type": "number", "default": 10, "section": "Stat Pools"},
+        {"key": "hp.max", "label": "Might Pool Max", "type": "number", "default": 10, "section": "Stat Pools"},
+        {"key": "pools.might.edge", "label": "Might Edge", "type": "number", "default": 0, "section": "Stat Pools"},
+        {"key": "pools.speed.current", "label": "Speed Pool", "type": "number", "default": 10, "section": "Stat Pools"},
+        {"key": "pools.speed.max", "label": "Speed Pool Max", "type": "number", "default": 10, "section": "Stat Pools"},
+        {"key": "pools.speed.edge", "label": "Speed Edge", "type": "number", "default": 0, "section": "Stat Pools"},
+        {"key": "pools.intellect.current", "label": "Intellect Pool", "type": "number", "default": 10, "section": "Stat Pools"},
+        {"key": "pools.intellect.max", "label": "Intellect Pool Max", "type": "number", "default": 10, "section": "Stat Pools"},
+        {"key": "pools.intellect.edge", "label": "Intellect Edge", "type": "number", "default": 0, "section": "Stat Pools"},
+        {"key": "damage.track", "label": "Damage Track", "type": "text", "default": "Hale", "section": "Damage & Recovery"},
+        {"key": "damage.recovery_bonus", "label": "Recovery Roll Bonus", "type": "number", "default": 0, "section": "Damage & Recovery"},
+        {"key": "damage.recovery_uses", "label": "Recovery Rolls Used", "type": "collection", "section": "Damage & Recovery", "default": [
+            {"name": "1 Action", "used": False},
+            {"name": "Ten Minutes", "used": False},
+            {"name": "One Hour", "used": False},
+            {"name": "Ten Hours", "used": False},
+        ], "item_fields": [
+            {"key": "name", "label": "Rest", "type": "text", "default": ""},
+            {"key": "used", "label": "Used", "type": "checkbox", "default": False},
+        ]},
+        {"key": "defenses.ac", "label": "Armor", "type": "number", "default": 0, "section": "Combat"},
+        {"key": "initiative.bonus", "label": "Initiative Modifier", "type": "number", "default": 0, "section": "Combat"},
+        {"key": "attacks", "label": "Attacks", "type": "collection", "section": "Combat", "default": [], "item_fields": [
+            {"key": "name", "label": "Attack", "type": "text", "default": ""},
+            {"key": "modifier", "label": "Modifier", "type": "number", "default": 0},
+            {"key": "damage", "label": "Damage", "type": "text", "default": ""},
+        ]},
+        {"key": "skills", "label": "Skills", "type": "collection", "section": "Skills", "default": [], "item_fields": [
+            {"key": "name", "label": "Skill", "type": "text", "default": ""},
+            {"key": "level", "label": "Level", "type": "text", "default": "Trained"},
+        ]},
+        {"key": "abilities", "label": "Abilities", "type": "collection", "section": "Abilities", "default": [], "item_fields": [
+            {"key": "name", "label": "Ability", "type": "text", "default": ""},
+            {"key": "cost", "label": "Cost", "type": "text", "default": ""},
+            {"key": "description", "label": "Description", "type": "text", "default": ""},
+        ]},
+        {"key": "cypher_limit", "label": "Cypher Limit", "type": "number", "default": 2, "section": "Cyphers & Artifacts"},
+        {"key": "cyphers", "label": "Cyphers", "type": "collection", "section": "Cyphers & Artifacts", "default": [], "item_fields": [
+            {"key": "name", "label": "Cypher", "type": "text", "default": ""},
+            {"key": "level", "label": "Level", "type": "number", "default": 1},
+            {"key": "effect", "label": "Effect", "type": "text", "default": ""},
+        ]},
+        {"key": "artifacts", "label": "Artifacts", "type": "collection", "section": "Cyphers & Artifacts", "default": [], "item_fields": [
+            {"key": "name", "label": "Artifact", "type": "text", "default": ""},
+            {"key": "level", "label": "Level", "type": "number", "default": 1},
+            {"key": "depletion", "label": "Depletion", "type": "text", "default": ""},
+            {"key": "effect", "label": "Effect", "type": "text", "default": ""},
+        ]},
+        {"key": "oddities", "label": "Oddities", "type": "collection", "section": "Cyphers & Artifacts", "default": [], "item_fields": [
+            {"key": "name", "label": "Oddity", "type": "text", "default": ""},
+            {"key": "description", "label": "Description", "type": "text", "default": ""},
+        ]},
+        {"key": "equipment.shins", "label": "Shins", "type": "number", "default": 0, "section": "Equipment"},
+        {"key": "equipment.items", "label": "Equipment", "type": "textarea", "default": "", "section": "Equipment"},
+    ]
+    return {
+        "fields": fields,
+        "summary": [
+            {"label": "Might", "value_key": "hp.current", "secondary_key": "hp.max"},
+            {"label": "Speed", "value_key": "pools.speed.current", "secondary_key": "pools.speed.max"},
+            {"label": "Intellect", "value_key": "pools.intellect.current", "secondary_key": "pools.intellect.max"},
+            {"label": "Armor", "value_key": "defenses.ac"},
+            {"label": "Init", "value_key": "initiative.bonus", "signed": True},
+        ],
+        "player_resource": {
+            "label": "Might Pool",
+            "current_key": "hp.current",
+            "max_key": "hp.max",
+        },
+        "initiative": {"bonus_key": "initiative.bonus"},
+    }
+
+
+def build_numenera_creature_sheet() -> Dict[str, Any]:
+    """Return the Numenera creature/NPC sheet definition (level-based stat block).
+
+    A Numenera creature is defined almost entirely by its level (target number
+    = level x 3); everything else is a modification. Contract keys map as on
+    the character sheet: hp.* is Health, defenses.ac is Armor.
+    """
+    fields = [
+        {"key": "creature.level", "label": "Level", "type": "number", "default": 1, "section": "Identity"},
+        {"key": "creature.motive", "label": "Motive", "type": "text", "default": "", "section": "Identity"},
+        {"key": "creature.environment", "label": "Environment", "type": "text", "default": "", "section": "Identity"},
+        {"key": "hp.current", "label": "Health", "type": "number", "default": 3, "section": "Vitals"},
+        {"key": "hp.max", "label": "Max Health", "type": "number", "default": 3, "section": "Vitals"},
+        {"key": "defenses.ac", "label": "Armor", "type": "number", "default": 0, "section": "Vitals"},
+        {"key": "creature.damage", "label": "Damage", "type": "text", "default": "", "section": "Vitals"},
+        {"key": "creature.movement", "label": "Movement", "type": "text", "default": "short", "section": "Vitals"},
+        {"key": "initiative.bonus", "label": "Initiative Modifier", "type": "number", "default": 0, "section": "Vitals"},
+        {"key": "creature.modifications", "label": "Modifications", "type": "textarea", "default": "", "section": "Behavior"},
+        {"key": "creature.combat", "label": "Combat", "type": "textarea", "default": "", "section": "Behavior"},
+        {"key": "creature.interaction", "label": "Interaction", "type": "textarea", "default": "", "section": "Behavior"},
+        {"key": "creature.use", "label": "Use", "type": "textarea", "default": "", "section": "Behavior"},
+        {"key": "creature.loot", "label": "Loot", "type": "textarea", "default": "", "section": "Behavior"},
+        {"key": "creature.gm_intrusion", "label": "GM Intrusion", "type": "textarea", "default": "", "section": "Behavior"},
+    ]
+    return {
+        "fields": fields,
+        "summary": [
+            {"label": "Health", "value_key": "hp.current", "secondary_key": "hp.max"},
+            {"label": "Armor", "value_key": "defenses.ac"},
+            {"label": "Level", "value_key": "creature.level"},
+            {"label": "Init", "value_key": "initiative.bonus", "signed": True},
+        ],
+        "player_resource": {
+            "label": "Health",
+            "current_key": "hp.current",
+            "max_key": "hp.max",
+        },
+        "initiative": {"bonus_key": "initiative.bonus"},
+    }
+
+
 # Group keys that are numeric distances and get a " ft." suffix; others are labels.
 _DISTANCE_GROUP_KEYS = {
     "base", "fly", "swim", "climb", "burrow", "jet",

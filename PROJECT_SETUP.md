@@ -5,8 +5,8 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 ## Features
 
 ### Phase 1 (Current)
-- **Campaign Management:** Create/load campaigns with ruleset selection (1e/2e); only a campaign persists a ruleset — scenes and actors inherit it
-- **Actor Management:** Add/remove/clone actors (PCs and NPCs) with ruleset-driven stat sheets (Pathfinder 1e and 2e); optional GM-assigned marker colors shown on the player view; read-only **View** card renders an actor's sheet grouped by section with empty fields omitted (works for scene actors and campaign templates)
+- **Campaign Management:** Create/load campaigns with ruleset selection (1e/2e/Numenera); only a campaign persists a ruleset — scenes and actors inherit it
+- **Actor Management:** Add/remove/clone actors (PCs and NPCs) with ruleset-driven stat sheets (Pathfinder 1e and 2e, Numenera); optional GM-assigned marker colors shown on the player view; read-only **View** card renders an actor's sheet grouped by section with empty fields omitted (works for scene actors and campaign templates)
 - **Scenes:** Create/save/load scenes via the Scene Library, with full actor CRUD
 - **Actor Templates:** Save/edit/delete/view actor templates and instantiate them into a scene; template marker colors are inherited by instantiated actors
 - **Initiative Tracking:** Manual initiative entry, sort-by-roll, manual reorder, round tracking; an actor's marker color rings its position number
@@ -17,6 +17,7 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 - **Name Generator:** Per-race syllable-grammar generator for actors, plus multi-template engines for places, items, factions, and events; batches are deduplicated
 - **Chronicle:** Campaign journal (GM Tools > Chronicle, Ctrl+J) styled as an open book — markdown-formatted entries with a formatting guide and live preview, persisted with the campaign; Dissidia 012 uses a silver-blue page texture instead of Morrowind parchment
 - **Bestiary:** Import a user-supplied `bestiary.csv` from the ruleset sources directory into a per-ruleset SQLite FTS5 index; search with CR/type filters, view full monster entries, and create NPC actors or campaign templates from them (1e)
+- **The Harrowing:** Chat with a user-supplied local language model (GM Tools > The Harrowing, Ctrl+P) through any OpenAI-compatible endpoint (Ollama, LM Studio, …); status probe (reachable / model present / loaded), optional grounding in the indexed reference library, and a Sleep button that unloads the model from RAM (Ollama `keep_alive=0`). No model ships with the app; settings persist to `harrowing-settings.json` under the data dir
 - **Character Sheet Import:** OCR a scanned Pathfinder 1e sheet PDF (GM Tools > Import Character Sheet, Ctrl+I) into a reviewable actor draft — abilities, HP, initiative, AC (touch and flat-footed), speed, BAB/CMB/CMD, saves, printed skill rows, name — for GM confirmation before saving. No scene is required: with only a campaign loaded the actor is saved as a campaign template. Handwriting OCR uses PaddleOCR, kept out of the backend environment entirely: extraction runs as a subprocess from a dedicated user-created venv (`backend/requirements-ocr.txt`), and the import dialog shows the exact install commands when it is missing
 - **Player View:** Pop-out window showing only player-visible information
   - Initiative order rotates as turns advance so the active actor always leads the list
@@ -43,12 +44,14 @@ pathfinder_app/
 │   ├── name_generator.py       # Per-race syllable grammars + multi-template name engines
 │   ├── sheet_importer.py       # Scanned 1e character-sheet OCR (PaddleOCR, section det+rec) + OCR subprocess wrapper
 │   ├── ocr_runner.py           # Standalone OCR entry point run as a subprocess by the dedicated OCR venv
+│   ├── harrowing.py            # The Harrowing: local-LLM chat proxy (config, status, grounding, unload)
 │   ├── gm-workbench-backend.spec  # PyInstaller spec for the packaged backend
 │   ├── rules/
 │   │   ├── __init__.py         # Ruleset registry
 │   │   ├── common.py           # Shared sheet-definition helpers
 │   │   ├── ruleset_1e.py       # Pathfinder 1e config
-│   │   └── ruleset_2e.py       # Pathfinder 2e config
+│   │   ├── ruleset_2e.py       # Pathfinder 2e config
+│   │   └── ruleset_numenera.py # Numenera config
 │   ├── tests/                  # pytest suite (StateManager + API)
 │   ├── requirements.txt
 │   └── requirements-ocr.txt    # Dedicated OCR venv pins (matched paddle trio; NOT for the backend venv)
@@ -79,6 +82,7 @@ pathfinder_app/
 │   │   │   ├── Chronicle.jsx
 │   │   │   ├── QuickRoll.jsx
 │   │   │   ├── SheetImporter.jsx
+│   │   ├── Harrowing.jsx
 │   │   │   ├── ReferenceReader.jsx
 │   │   │   ├── SceneLibrary.jsx
 │   │   │   ├── PlayerView.jsx / PlayerActorRow.jsx
@@ -228,6 +232,12 @@ pathfinder_app/
 - `GET /api/names/categories` — List categories (+ races for the loaded campaign)
 - `GET /api/names/generate?category&count&race&place_level` — Generate names
 
+### The Harrowing
+- `GET /api/harrowing/config` / `PUT /api/harrowing/config` — Read/update the local-model endpoint settings
+- `GET /api/harrowing/status` — Probe the endpoint (reachable / model present / currently loaded)
+- `POST /api/harrowing/chat` — Proxy a chat request, optionally grounded in the indexed rulebooks
+- `POST /api/harrowing/unload` — Unload the model from memory (Ollama `keep_alive=0`)
+
 ### Rolls
 - `POST /api/roll` — Roll dice (d20 + modifiers)
 
@@ -330,7 +340,7 @@ Statuses reconciled against shipped releases (through v0.7.0, 2026-09-05).
 
 ### Modifying Rules
 
-1. Edit ruleset config in `backend/rules/ruleset_1e.py` or `ruleset_2e.py` (shared helpers live in `backend/rules/common.py`)
+1. Edit ruleset config in `backend/rules/ruleset_1e.py`, `ruleset_2e.py`, or `ruleset_numenera.py` (shared helpers live in `backend/rules/common.py`)
 2. Rules are automatically loaded from the registry and served via `/api/rules/current` (and `/api/rules/{ruleset}`)
 
 ### Running Tests

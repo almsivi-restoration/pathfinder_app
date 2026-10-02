@@ -34,6 +34,18 @@ const goblin = {
   },
 };
 
+// Numenera sheet shape: skills carry a training level, not a numeric total.
+const nano = {
+  id: 'a3',
+  name: 'Nano',
+  sheet: {
+    skills: [
+      { name: 'Climbing', level: 'Trained' },
+      { name: 'Understanding Numenera', level: 'Specialized' },
+    ],
+  },
+};
+
 beforeEach(() => {
   useStore.setState(initialState, true);
 });
@@ -79,6 +91,23 @@ test('ability checks derive the modifier from the ability score', async () => {
 
   // WIS 9 -> Math.floor((9 - 10) / 2) = -1, matching both rulesets' curve.
   await waitFor(() => expect(rollDice).toHaveBeenCalledWith({ dieType: 20, modifier: -1 }));
+});
+
+test('numenera skills map training levels to +3/+6 modifiers', async () => {
+  const rollDice = seedStore([nano], { total: 19, die_roll: 13, modifier: 6, bonus_dice_roll: null });
+  useStore.setState({ rulesetConfig: { abilities: ['might', 'speed', 'intellect'] } });
+  render(<QuickRoll onClose={() => {}} />);
+
+  fireEvent.change(screen.getByLabelText('Actor'), { target: { value: 'a3' } });
+  fireEvent.change(screen.getByLabelText('Skill'), { target: { value: 'Understanding Numenera' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Roll' }));
+
+  await waitFor(() => expect(rollDice).toHaveBeenCalledWith({ dieType: 20, modifier: 6 }));
+
+  fireEvent.change(screen.getByLabelText('Skill'), { target: { value: 'Climbing' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Roll' }));
+
+  await waitFor(() => expect(rollDice).toHaveBeenLastCalledWith({ dieType: 20, modifier: 3 }));
 });
 
 test('custom rolls work with no scene open and no actor selected', async () => {

@@ -669,7 +669,7 @@ function buildMenuTemplate() {
               message: "Game Master's Workbench",
               detail:
                 `Version ${app.getVersion()}\n\n` +
-                'A tabletop GM companion for Pathfinder 1e and 2e: scene and initiative tracking, reusable actor templates, a searchable rules encyclopedia, a bestiary, a name generator, quick rolls, scanned character-sheet import, a player-safe second-screen view, browser-style per-window zoom (Ctrl+scroll), and switchable UI themes (View > Theme) — Morrowind and Dissidia 012 built in, plus your own local themes.\n\n' +
+                'A tabletop GM companion for Pathfinder 1e and 2e and Numenera: scene and initiative tracking, reusable actor templates, a searchable rules encyclopedia, a bestiary, a name generator, quick rolls, scanned character-sheet import, a chat window to your own local model (GM Tools > The Harrowing), a player-safe second-screen view, browser-style per-window zoom (Ctrl+scroll), and switchable UI themes (View > Theme) — Morrowind and Dissidia 012 built in, plus your own local themes.\n\n' +
                 'Reference PDFs and bestiary CSVs are user-supplied and are never included with the app.\n\n' +
                 'Data directory:\n' +
                 path.join(app.getPath('userData'), 'data'),
