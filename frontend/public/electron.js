@@ -221,6 +221,9 @@ function startBackend() {
       ...process.env,
       GM_WORKBENCH_CAMPAIGNS_DIR: campaignsDir,
       GM_WORKBENCH_REFERENCE_DIR: referenceDir,
+      // The Harrowing's endpoint config (and any future per-user feature
+      // settings) lives under this shared data directory.
+      GM_WORKBENCH_DATA_DIR: dataDir,
       // Sheet-import OCR runs as a subprocess from this dedicated venv
       // (created by the user via the commands shown in the import dialog),
       // never by the frozen backend itself.
@@ -506,10 +509,11 @@ function showHelp() {
       'Chronicle: GM Tools > Chronicle (Ctrl+J) is the campaign journal — markdown-formatted entries for session recaps and anything else worth recording, with a formatting guide on the right page. The Dissidia theme uses cool silver-blue pages instead of Morrowind parchment.\n\n' +
       'Quick Roll: GM Tools > Quick Roll (Ctrl+D) rolls checks for any actor in the open scene using the skill, save, or ability modifier from their sheet, or any custom die and modifier, with a running history of results.\n\n' +
       'Import Character Sheet: GM Tools > Import Character Sheet (Ctrl+I) reads a scanned Pathfinder 1e sheet (PDF) with OCR — abilities, HP, initiative, AC (touch and flat-footed), speed, BAB/CMB/CMD, saves, and the printed skill rows — and shows the extracted values for your review before saving. No scene needs to be open: with only a campaign loaded, the actor is saved as a campaign template you can drop into any scene. OCR uses PaddleOCR, which is not bundled — if the dialog reports the engine missing, it shows the exact commands to create the dedicated OCR environment.\n\n' +
+      'The Harrowing: GM Tools > The Harrowing (Ctrl+P) is a chat window to a local language model you run yourself — spin up story beats, NPC background, and plot hooks at the table. No model ships with the app: start your own server (for example Ollama, with `ollama serve`), open Settings in the dialog, and point the app at its endpoint and model name. Enable "Ground in my rulebooks" to have it answer using passages from your indexed reference PDFs.\n\n' +
       'Themes: View > Theme switches between the built-in Morrowind and Dissidia 012 themes and any local themes installed in the app themes directory. Use Open Themes Folder to add a folder containing theme.json and theme.css, then Reload Themes.\n\n' +
       'Data lives under:\n' +
       path.join(app.getPath('userData'), 'data') +
-      '\n\nKeyboard: Ctrl+B bestiary · Ctrl+D quick roll · Ctrl+E encyclopedia · Ctrl+I import sheet · Ctrl+J chronicle · Ctrl+N name generator · Ctrl+Plus/Ctrl+-/Ctrl+0 zoom · Ctrl+R restart · Ctrl+Q quit · Ctrl+Shift+I developer tools.',
+      '\n\nKeyboard: Ctrl+B bestiary · Ctrl+D quick roll · Ctrl+E encyclopedia · Ctrl+I import sheet · Ctrl+J chronicle · Ctrl+N name generator · Ctrl+P the harrowing · Ctrl+Plus/Ctrl+-/Ctrl+0 zoom · Ctrl+R restart · Ctrl+Q quit · Ctrl+Shift+I developer tools.',
     buttons: ['Close'],
   });
 }
@@ -632,6 +636,14 @@ function buildMenuTemplate() {
         click: () => {
           const window = BrowserWindow.getFocusedWindow() || mainWindow;
           if (window) window.webContents.send('open-sheet-importer');
+        },
+      },
+      {
+        label: 'The Harrowing',
+        accelerator: 'CmdOrCtrl+P',
+        click: () => {
+          const window = BrowserWindow.getFocusedWindow() || mainWindow;
+          if (window) window.webContents.send('open-harrowing');
         },
       },
     ],

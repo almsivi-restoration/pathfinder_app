@@ -14,7 +14,8 @@ from typing import Optional
 from uuid import uuid4
 
 from bestiary import BestiaryLibrary
-from models import Actor, Campaign, Scene, RollRequest, RollResult, Effect, InitiativeOrderRequest, ReferenceImportRequest, ChronicleEntryRequest
+from harrowing import HarrowingClient
+from models import Actor, Campaign, Scene, RollRequest, RollResult, Effect, InitiativeOrderRequest, ReferenceImportRequest, ChronicleEntryRequest, HarrowingConfigRequest, HarrowingChatRequest
 from name_generator import generate_names, list_categories
 from reference_library import ReferenceLibrary
 from sheet_importer import SheetImporter
@@ -41,6 +42,7 @@ state_manager = StateManager(campaigns_dir=campaigns_dir)
 reference_library = ReferenceLibrary()
 bestiary_library = BestiaryLibrary()
 sheet_importer = SheetImporter()
+harrowing_client = HarrowingClient()
 
 # Create the per-ruleset PDF drop directories so users can find them without
 # reading documentation; reference PDFs themselves are user-supplied.
@@ -565,6 +567,70 @@ def generate_name(category: str, count: int = 5, race: Optional[str] = None, pla
         return {"names": generate_names(category, count, race, place_level)}
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error))
+
+
+# ==================== Harrowing Routes ====================
+
+@app.get("/api/harrowing/status")
+def harrowing_status():
+    """Report whether the user-supplied local model endpoint is reachable."""
+    return harrowing_client.status()
+
+
+@app.get("/api/harrowing/config")
+def get_harrowing_config():
+    """Return the current Harrowing endpoint URL and model name."""
+    return harrowing_client.get_config()
+
+
+@app.put("/api/harrowing/config")
+def save_harrowing_config(request: HarrowingConfigRequest):
+    """Persist the endpoint URL and model name the user supplies."""
+    try:
+        return harrowing_client.save_config(request.base_url, request.model)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+
+
+@app.post("/api/harrowing/chat")
+def harrowing_chat(request: HarrowingChatRequest):
+    """Send a chat prompt to the user-supplied local model, optionally grounded.
+
+    No model ships with the app: the endpoint and model name come from the
+    saved config. When use_references is set, hits from the campaign's indexed
+    rulebook library are folded into the system prompt as grounding.
+    """
+    if not request.messages:
+        raise HTTPException(status_code=400, detail="messages must not be empty")
+    snippets = None
+    if request.use_references and state_manager.current_campaign:
+        ruleset = state_manager.current_campaign.ruleset
+        snippets = reference_library.search(ruleset, request.messages[-1].content, limit=5)
+    try:
+        result = harrowing_client.chat(
+            [message.model_dump() for message in request.messages],
+            reference_snippets=snippets,
+            max_tokens=request.max_tokens,
+            temperature=request.temperature,
+        )
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error))
+    return {
+        "content": result["content"],
+        "usage": result.get("usage", {}),
+        "grounded": bool(snippets),
+        "references_used": [s.get("title") for s in snippets] if snippets else [],
+    }
+
+
+@app.post("/api/harrowing/unload")
+def harrowing_unload():
+    """Unload the resident model from memory so it never idles in RAM.
+
+    The model reloads automatically on the next chat; this only frees memory
+    between uses.
+    """
+    return harrowing_client.unload()
 
 
 @app.get("/health")

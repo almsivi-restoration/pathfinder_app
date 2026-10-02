@@ -75,6 +75,51 @@ export const useStore = create((set, get) => ({
     }
   },
 
+  // The Harrowing (local-model chat) actions
+  fetchHarrowingStatus: async () => {
+    try {
+      const res = await axios.get(`${API_URL}/harrowing/status`);
+      return res.data;
+    } catch (error) {
+      console.error('Failed to fetch Harrowing status:', error);
+      return { available: false, error: getErrorMessage(error), configured: false };
+    }
+  },
+
+  saveHarrowingConfig: async (baseUrl, model) => {
+    try {
+      const res = await axios.put(`${API_URL}/harrowing/config`, { base_url: baseUrl, model });
+      return res.data;
+    } catch (error) {
+      console.error('Failed to save Harrowing config:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
+    }
+  },
+
+  sendHarrowingChat: async ({ messages, useReferences }) => {
+    try {
+      const res = await axios.post(`${API_URL}/harrowing/chat`, {
+        messages,
+        use_references: useReferences,
+      });
+      return res.data;
+    } catch (error) {
+      console.error('Harrowing chat failed:', error);
+      return { error: getErrorMessage(error) };
+    }
+  },
+
+  unloadHarrowing: async () => {
+    try {
+      const res = await axios.post(`${API_URL}/harrowing/unload`);
+      return res.data;
+    } catch (error) {
+      console.error('Failed to unload Harrowing model:', error);
+      return { unloaded: false, error: getErrorMessage(error) };
+    }
+  },
+
   // Campaign actions
   listCampaigns: async () => {
     try {

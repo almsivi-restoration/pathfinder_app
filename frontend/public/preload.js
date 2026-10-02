@@ -61,4 +61,9 @@ contextBridge.exposeInMainWorld('electron', {
     ipcRenderer.on('open-sheet-importer', listener);
     return () => ipcRenderer.removeListener('open-sheet-importer', listener);
   },
+  onOpenHarrowing: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on('open-harrowing', listener);
+    return () => ipcRenderer.removeListener('open-harrowing', listener);
+  },
 });

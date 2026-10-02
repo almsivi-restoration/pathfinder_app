@@ -140,3 +140,20 @@ class ChronicleEntryRequest(BaseModel):
 
 class ReferenceImportRequest(BaseModel):
     filename: str
+
+
+class HarrowingConfigRequest(BaseModel):
+    base_url: str
+    model: str
+
+
+class HarrowingMessage(BaseModel):
+    role: str  # 'user' or 'assistant'
+    content: str
+
+
+class HarrowingChatRequest(BaseModel):
+    messages: List[HarrowingMessage]
+    use_references: bool = False  # inject campaign rulebook hits into the system prompt
+    max_tokens: int = 512
+    temperature: float = 0.8

@@ -6,6 +6,7 @@ import NameGenerator from './components/NameGenerator';
 import Chronicle from './components/Chronicle';
 import QuickRoll from './components/QuickRoll';
 import SheetImporter from './components/SheetImporter';
+import Harrowing from './components/Harrowing';
 import CampaignSelector from './pages/CampaignSelector';
 import Encyclopedia from './pages/Encyclopedia';
 import Bestiary from './pages/Bestiary';
@@ -19,6 +20,7 @@ function App() {
   const [showChronicle, setShowChronicle] = useState(false);
   const [showQuickRoll, setShowQuickRoll] = useState(false);
   const [showSheetImporter, setShowSheetImporter] = useState(false);
+  const [showHarrowing, setShowHarrowing] = useState(false);
 
   useEffect(() => {
     listCampaigns();
@@ -54,6 +56,11 @@ function App() {
     return window.electron.onOpenSheetImporter(() => setShowSheetImporter(true));
   }, []);
 
+  useEffect(() => {
+    if (!window.electron?.onOpenHarrowing) return undefined;
+    return window.electron.onOpenHarrowing(() => setShowHarrowing(true));
+  }, []);
+
   // Determine view based on URL or state
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -79,6 +86,7 @@ function App() {
       {showChronicle && <Chronicle onClose={() => setShowChronicle(false)} />}
       {showQuickRoll && <QuickRoll onClose={() => setShowQuickRoll(false)} />}
       {showSheetImporter && <SheetImporter onClose={() => setShowSheetImporter(false)} />}
+      {showHarrowing && <Harrowing onClose={() => setShowHarrowing(false)} />}
     </div>
   );
 }
