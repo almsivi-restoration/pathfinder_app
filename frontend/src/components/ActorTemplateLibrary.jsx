@@ -89,12 +89,16 @@ function ActorTemplateLibrary() {
 
   return (
     <div className="actor-template-library">
-      {actorTemplates.map((template) => (
+      {actorTemplates.map((template) => {
+        // The hover title carries the full summary when a narrow column
+        // ellipsizes the visible text.
+        const summary = formatSummary(template);
+        return (
         <div key={template.id} className="template-row">
           <span className="template-name">{template.name}</span>
           <span className="template-type">{template.is_pc ? 'PC' : 'NPC'}</span>
-          <span className="template-stats">
-            {formatSummary(template)}
+          <span className="template-stats" title={summary}>
+            {summary}
           </span>
           <div className="template-actions">
             <ColorSwatch
@@ -123,7 +127,8 @@ function ActorTemplateLibrary() {
             </button>
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

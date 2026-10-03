@@ -86,6 +86,11 @@ cross-ruleset contract and are not negotiable within a sheet definition.
   drift from the header's. Give that column the same fixed
   `flex: 0 0 <width>` in both the header and row CSS (keep the two values
   in sync), and `min-width: 0` on the flexible columns.
+- **Nowrap is not containment:** `white-space: nowrap` on a flex item stops
+  wrapping but not overflow — the one line keeps painting over its following
+  siblings. Contain it with `min-width: 0` + `overflow: hidden` +
+  `text-overflow: ellipsis` on the text column, and `flex-shrink: 0` on the
+  trailing action cluster so the buttons are never the shrink casualty.
 - **Color inputs:** bare `<input type="color">` ignores CSS sizing in
   Chromium — use the ColorSwatch proxy pattern (fixed-size button +
   visually hidden input).

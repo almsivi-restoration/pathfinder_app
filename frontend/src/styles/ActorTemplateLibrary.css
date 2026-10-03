@@ -28,29 +28,45 @@
 
 .template-name {
   flex: 2;
+  min-width: 0;
+  /* A long name ellipsizes rather than sliding under the action cluster. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-weight: 700;
   color: var(--mw-text-bright);
 }
 
 .template-type {
-  flex: 0.5;
+  /* PC/NPC is fixed vocabulary: natural width, never grown or shrunk. */
+  flex: 0 0 auto;
   color: var(--mw-text-dim);
   font-size: 11px;
   font-variant: small-caps;
 }
 
 .template-stats {
-  flex: 1.5;
+  /* The summary carries the most information in the row, so it takes the
+     largest share of the free space (a Numenera five-stat summary is the
+     widest real content this column must hold). */
+  flex: 4;
   min-width: 0;
-  color: var(--mw-text-dim);
-  /* One line: "HP 30/45 / AC 18 / Init +3" must not wrap mid-stat. */
+  /* One line: "HP 30/45 / AC 18 / Init +3" must not wrap mid-stat. nowrap
+     alone does NOT contain that line — without overflow:hidden it paints
+     over the swatch and action buttons to its right. */
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--mw-text-dim);
 }
 
 .template-actions {
   display: flex;
   gap: 4px;
   align-items: center;
+  /* The swatch + View/Edit/Delete cluster keeps its natural width; the text
+     columns absorb any shrink. */
+  flex-shrink: 0;
 }
 
 .btn-add {
