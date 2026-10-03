@@ -179,6 +179,27 @@ export const useStore = create((set, get) => ({
     }
   },
 
+  renameCampaign: async (name, newName) => {
+    try {
+      const res = await axios.post(`${API_URL}/campaign/rename`, null, {
+        params: { name, new_name: newName },
+      });
+      const state = get();
+      set({
+        campaigns: state.campaigns.map((campaignName) => campaignName === name ? res.data.name : campaignName),
+        currentCampaign: state.currentCampaign?.name === name
+          ? { ...state.currentCampaign, name: res.data.name }
+          : state.currentCampaign,
+        operationError: null,
+      });
+      return res.data;
+    } catch (error) {
+      console.error('Failed to rename campaign:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
+    }
+  },
+
   deleteCampaign: async (name) => {
     try {
       await axios.delete(`${API_URL}/campaign/${encodeURIComponent(name)}`);

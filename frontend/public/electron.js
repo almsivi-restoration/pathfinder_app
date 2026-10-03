@@ -500,6 +500,7 @@ function showHelp() {
     message: "Game Master's Workbench",
     detail:
       `Version ${app.getVersion()}\n\n` +
+      'Campaigns: Rename beside a saved campaign opens an editable name. Save or Enter applies it; Cancel or Escape discards it. Scenes, actor templates, and Chronicle entries are preserved. Invalid or duplicate names are rejected. Delete removes the campaign and its saved scenes after confirmation.\n\n' +
       'Workflow: create or load a campaign, open a scene, add actors, then run initiative from the GM Dashboard. Open a second, player-safe view with View > Open Player View. In the player view the active actor always leads the order, and PCs show their exact HP inside their health bar. Health bars react to what happens at the table: big hits shake the bar and drain a ghost of the lost chunk, small hits flash, and healing glows.\n\n' +
       'Zoom: Ctrl+scroll wheel scales either window, or use View > Zoom In / Zoom Out / Reset Zoom. Zoom is per-window and resets when the app restarts.\n\n' +
       'Actors: the Clone button duplicates any actor in the scene (handy for groups of identical monsters). The color swatch assigns a marker color, shown as a dot and accent border on the player view to match your physical grid. Save frequently used actors as campaign templates and reuse them in any scene.\n\n' +
@@ -669,7 +670,7 @@ function buildMenuTemplate() {
               message: "Game Master's Workbench",
               detail:
                 `Version ${app.getVersion()}\n\n` +
-                'A tabletop GM companion for Pathfinder 1e and 2e and Numenera: scene and initiative tracking, reusable actor templates, a searchable rules encyclopedia, a bestiary, a name generator, quick rolls, scanned character-sheet import, a chat window to your own local model (GM Tools > The Harrowing), a player-safe second-screen view with game-style health-bar impact effects, browser-style per-window zoom (Ctrl+scroll), and switchable UI themes (View > Theme) — Morrowind and Dissidia 012 built in, plus your own local themes.\n\n' +
+                'A tabletop GM companion for Pathfinder 1e and 2e and Numenera: campaign management with renaming, scene and initiative tracking, reusable actor templates, a searchable rules encyclopedia, a bestiary, a name generator, quick rolls, scanned character-sheet import, a chat window to your own local model (GM Tools > The Harrowing), a player-safe second-screen view with game-style health-bar impact effects, browser-style per-window zoom (Ctrl+scroll), and switchable UI themes (View > Theme) — Morrowind and Dissidia 012 built in, plus your own local themes.\n\n' +
                 'Reference PDFs and bestiary CSVs are user-supplied and are never included with the app.\n\n' +
                 'Data directory:\n' +
                 path.join(app.getPath('userData'), 'data'),

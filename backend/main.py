@@ -95,6 +95,18 @@ def save_campaign():
     raise HTTPException(status_code=400, detail="No campaign to save")
 
 
+@app.post("/api/campaign/rename")
+def rename_campaign(name: str, new_name: str):
+    """Rename one saved campaign and its storage directory."""
+    try:
+        campaign = state_manager.rename_campaign(name, new_name)
+    except (ValueError, OSError) as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    return campaign.model_dump()
+
+
 @app.delete("/api/campaign/{campaign_name}")
 def delete_campaign(campaign_name: str):
     """Delete one persisted campaign and all scenes saved under it."""

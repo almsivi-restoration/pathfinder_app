@@ -5,7 +5,7 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 ## Features
 
 ### Phase 1 (Current)
-- **Campaign Management:** Create/load campaigns with ruleset selection (1e/2e/Numenera); only a campaign persists a ruleset — scenes and actors inherit it
+- **Campaign Management:** Create/load/rename/save/delete campaigns with ruleset selection (1e/2e/Numenera); only a campaign persists a ruleset — scenes and actors inherit it. Rename from the selector with Save/Enter or Cancel/Escape; scenes, templates, Chronicle entries, and unsaved edits are preserved, and invalid or duplicate names are rejected
 - **Actor Management:** Add/remove/clone actors (PCs and NPCs) with ruleset-driven stat sheets (Pathfinder 1e and 2e, Numenera); optional GM-assigned marker colors shown on the player view; read-only **View** card renders an actor's sheet grouped by section with empty fields omitted (works for scene actors and campaign templates)
 - **Scenes:** Create/save/load scenes via the Scene Library, with full actor CRUD
 - **Actor Templates:** Save/edit/delete/view actor templates and instantiate them into a scene; template marker colors are inherited by instantiated actors
@@ -92,6 +92,7 @@ pathfinder_app/
 │   │   │   └── *.test.js(x)    # Jest + React Testing Library tests
 │   │   ├── pages/
 │   │   │   ├── CampaignSelector.jsx
+│   │   │   ├── CampaignSelector.test.jsx
 │   │   │   ├── Encyclopedia.jsx
 │   │   │   └── Bestiary.jsx
 │   │   └── styles/
@@ -181,6 +182,7 @@ pathfinder_app/
 - `POST /api/campaign/load` — Load campaign by name
 - `GET /api/campaign/current` — Get active campaign
 - `POST /api/campaign/save` — Save current campaign
+- `POST /api/campaign/rename` — Rename a saved campaign (`name` and `new_name` query parameters)
 - `DELETE /api/campaign/{campaign_name}` — Delete a saved campaign
 
 ### Scene
@@ -261,11 +263,12 @@ Exact request/response shapes are defined in `backend/main.py` and `backend/mode
   id: string
   name: string
   player_name: string (optional)
-  ruleset: "1e" | "2e"
   is_pc: boolean
   color: string (optional hex marker color, shown on the player view)
   sheet: {...}   // ruleset-defined; keys come from the active sheet definition
+  initiative_roll: int (optional)
   effects: [{name, duration_rounds, description}]
+  created_at: datetime
   notes: string
 }
 ```
@@ -276,7 +279,8 @@ on load by the Actor model validator.
 ```
 {
   name: string
-  ruleset: "1e" | "2e"
+  ruleset: "1e" | "2e" | "numenera"
+  created_at: datetime
   scenes: [scene_id]
   actor_templates: [Actor]
   chronicle: [ChronicleEntry]
@@ -289,11 +293,11 @@ on load by the Actor model validator.
 {
   id: string
   name: string
-  ruleset: "1e" | "2e"
   actors: [Actor]
   initiative_order: [actor_id]
   current_round: int
   current_turn_index: int
+  created_at: datetime
 }
 ```
 

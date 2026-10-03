@@ -1,6 +1,6 @@
 {
   "name": "gm-workbench",
-  "version": "0.19.1",
+  "version": "0.20.0",
   "description": "Ruleset-neutral tabletop campaign and scene manager",
   "private": true,
   "homepage": "./",
@@ -70,6 +70,7 @@
     ],
     "files": [
       "build/**/*",
+      "!build/themes/_rip_lab{,/**}",
       "public/electron.js",
       "public/preload.js"
     ],

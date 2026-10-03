@@ -67,6 +67,36 @@ def test_campaign_rulesets_come_from_the_registry(client):
     assert res.status_code == 400
 
 
+def test_rename_campaign_roundtrips_with_saved_scenes(client):
+    client.post("/api/campaign/new", params={"name": "Before", "ruleset": "1e"})
+    scene = client.post("/api/scene/new", params={"name": "Ambush"}).json()
+    client.post("/api/scene/save")
+    client.post("/api/campaign/save")
+
+    response = client.post("/api/campaign/rename", params={"name": "Before", "new_name": " After "})
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "After"
+    assert client.get("/api/campaign/current").json()["name"] == "After"
+    assert client.get("/api/scene/current").json()["id"] == scene["id"]
+    assert client.get("/api/campaign/list").json() == {"campaigns": ["After"]}
+    assert client.post("/api/campaign/load", params={"name": "Before"}).status_code == 404
+    assert client.post("/api/campaign/load", params={"name": "After"}).status_code == 200
+    assert client.get("/api/scenes").json()["scenes"][0]["id"] == scene["id"]
+
+
+def test_rename_campaign_reports_missing_invalid_and_duplicate_names(client):
+    client.post("/api/campaign/new", params={"name": "Before", "ruleset": "1e"})
+    client.post("/api/campaign/new", params={"name": "Keep", "ruleset": "2e"})
+
+    assert client.post("/api/campaign/rename", params={"name": "Missing", "new_name": "After"}).status_code == 404
+    for new_name in [" ", "../Escape", "Keep"]:
+        response = client.post("/api/campaign/rename", params={"name": "Before", "new_name": new_name})
+        assert response.status_code == 400
+        assert response.json()["detail"]
+    assert set(client.get("/api/campaign/list").json()["campaigns"]) == {"Before", "Keep"}
+
+
 def test_delete_campaign_removes_the_saved_campaign(client):
     client.post("/api/campaign/new", params={"name": "Disposable", "ruleset": "1e"})
 

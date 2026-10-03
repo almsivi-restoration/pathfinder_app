@@ -62,6 +62,49 @@ test('removeActor removes only the targeted actor from state', async () => {
   expect(useStore.getState().actors).toEqual([{ id: 'a2', name: 'Orc' }]);
 });
 
+test('renameCampaign updates names without discarding unsaved campaign or scene state', async () => {
+  const scene = { id: 'scene-1', name: 'Ambush' };
+  useStore.setState({
+    campaigns: ['Before', 'Keep'],
+    currentCampaign: { name: 'Before', notes: 'Unsaved notes' },
+    currentScene: scene,
+    isCampaignDirty: true,
+    isSceneDirty: true,
+  });
+  axios.post.mockResolvedValueOnce({ data: { name: 'After', notes: 'Saved notes' } });
+
+  const result = await useStore.getState().renameCampaign('Before', 'After');
+
+  expect(axios.post).toHaveBeenCalledWith(expect.stringContaining('/campaign/rename'), null, {
+    params: { name: 'Before', new_name: 'After' },
+  });
+  expect(result.name).toBe('After');
+  expect(useStore.getState().campaigns).toEqual(['After', 'Keep']);
+  expect(useStore.getState().currentCampaign).toEqual({ name: 'After', notes: 'Unsaved notes' });
+  expect(useStore.getState().currentScene).toBe(scene);
+  expect(useStore.getState().isCampaignDirty).toBe(true);
+  expect(useStore.getState().isSceneDirty).toBe(true);
+});
+
+test('renameCampaign leaves another loaded campaign alone', async () => {
+  const active = { name: 'Keep' };
+  useStore.setState({ campaigns: ['Before', 'Keep'], currentCampaign: active });
+  axios.post.mockResolvedValueOnce({ data: { name: 'After' } });
+
+  await useStore.getState().renameCampaign('Before', 'After');
+
+  expect(useStore.getState().currentCampaign).toBe(active);
+});
+
+test('renameCampaign exposes failure without changing campaign names', async () => {
+  useStore.setState({ campaigns: ['Before', 'Keep'] });
+  axios.post.mockRejectedValueOnce({ response: { data: { detail: 'A campaign with that name already exists' } } });
+
+  expect(await useStore.getState().renameCampaign('Before', 'Keep')).toBeNull();
+  expect(useStore.getState().campaigns).toEqual(['Before', 'Keep']);
+  expect(useStore.getState().operationError).toBe('A campaign with that name already exists');
+});
+
 test('deleteCampaign removes only the targeted campaign from state', async () => {
   useStore.setState({ campaigns: ['Keep', 'Remove'] });
   axios.delete.mockResolvedValueOnce({});

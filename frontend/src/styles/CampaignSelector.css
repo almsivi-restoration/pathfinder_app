@@ -33,6 +33,13 @@
   font-size: 13px;
 }
 
+.campaign-selector > .operation-message {
+  width: 100%;
+  max-width: 900px;
+  box-sizing: border-box;
+  margin-bottom: 20px;
+}
+
 .selector-content {
   display: flex;
   gap: 40px;
@@ -44,6 +51,7 @@
 .load-section,
 .new-section {
   flex: 1;
+  min-width: 0;
   padding: 20px;
   background: linear-gradient(165deg, var(--mw-panel-hi), var(--mw-panel) 55%, var(--mw-panel-lo));
   border: 2px solid var(--mw-frame);
@@ -77,8 +85,30 @@
   gap: 8px;
 }
 
+.campaign-rename-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.campaign-rename-form input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.campaign-rename-form button,
+.campaign-rename-button,
+.campaign-delete-button {
+  flex-shrink: 0;
+}
+
 .campaign-button {
   flex: 1;
+  min-width: 0;
   padding: 12px 16px;
   background: linear-gradient(180deg, var(--mw-wood-light), var(--mw-wood-dark));
   color: var(--mw-text);
@@ -115,6 +145,10 @@
 
 .campaign-button-label {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .campaign-button:hover {
@@ -203,6 +237,12 @@
 }
 
 @media (max-width: 768px) {
+  .load-section,
+  .new-section {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
   .selector-content {
     flex-direction: column;
     gap: 30px;

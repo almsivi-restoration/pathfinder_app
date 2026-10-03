@@ -6,6 +6,7 @@ Handles CRUD operations and persistence.
 import json
 import os
 import shutil
+import tempfile
 from typing import Dict, List, Optional
 from pathlib import Path
 from datetime import datetime
@@ -71,6 +72,55 @@ class StateManager:
     def list_campaigns(self) -> List[str]:
         """List all saved campaigns."""
         return [d.name for d in self.campaigns_dir.iterdir() if d.is_dir()]
+
+    def rename_campaign(self, campaign_name: str, new_name: str) -> Optional[Campaign]:
+        """Rename a saved campaign without changing its scenes or unsaved edits."""
+        new_name = new_name.strip()
+        if (
+            not new_name or new_name in {".", ".."} or new_name.endswith(".")
+            or any(character in '<>:"/\\|?*' or ord(character) < 32 for character in new_name)
+            or new_name.split(".")[0].upper() in {
+                "CON", "PRN", "AUX", "NUL",
+                *{f"COM{number}" for number in range(1, 10)},
+                *{f"LPT{number}" for number in range(1, 10)},
+            }
+        ):
+            raise ValueError("Enter a valid campaign name")
+        campaign_dir = self.campaigns_dir / campaign_name
+        if (
+            campaign_name in {"", ".", ".."} or "/" in campaign_name or "\\" in campaign_name
+            or campaign_dir.is_symlink()
+            or campaign_dir.resolve().parent != self.campaigns_dir.resolve()
+            or not (campaign_dir / "campaign.json").is_file()
+        ):
+            return None
+        target_dir = self.campaigns_dir / new_name
+        if new_name != campaign_name and (target_dir.exists() or new_name in self.campaigns):
+            raise ValueError("A campaign with that name already exists")
+        with open(campaign_dir / "campaign.json", "r") as campaign_file:
+            campaign = Campaign(**json.load(campaign_file))
+        if new_name == campaign_name:
+            return campaign
+        campaign.name = new_name
+        campaign_dir.rename(target_dir)
+        temporary_path = None
+        try:
+            with tempfile.NamedTemporaryFile(mode="w", dir=target_dir, delete=False) as campaign_file:
+                temporary_path = Path(campaign_file.name)
+                json.dump(campaign.model_dump(), campaign_file, indent=2, default=str)
+            os.replace(temporary_path, target_dir / "campaign.json")
+        except OSError:
+            if temporary_path:
+                temporary_path.unlink(missing_ok=True)
+            target_dir.rename(campaign_dir)
+            raise
+        cached_campaign = self.campaigns.pop(campaign_name, None)
+        if cached_campaign:
+            cached_campaign.name = new_name
+        self.campaigns[new_name] = cached_campaign or campaign
+        if self.current_campaign and self.current_campaign.name == campaign_name:
+            self.current_campaign.name = new_name
+        return campaign
 
     def delete_campaign(self, campaign_name: str) -> bool:
         """Delete one persisted campaign and clear it if it is currently loaded."""

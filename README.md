@@ -10,7 +10,7 @@ actor, initiative, or persistence ownership.
 
 ## Features
 
-- Create, load, save, and delete campaigns and their saved scenes.
+- Create, load, rename, save, and delete campaigns and their saved scenes.
 - Create and save scenes with PC and NPC actors.
 - Clone any scene actor in one click, and assign marker colors (fixed-size swatch, native
   picker opens on click) that appear on the player view. Colors assigned to a campaign template
@@ -132,7 +132,7 @@ cd frontend && npm run build
 ```
 
 Artifacts land in `frontend/dist/`. At runtime the Electron main process spawns the backend
-binary and points it at the per-user data directory (`~/.config/GM Workbench/data/` on
+binary and points it at the per-user data directory (`~/.config/Game Masters Workbench/data/` on
 Linux): campaigns persist under `data/campaigns/`, and reference PDFs belong under
 `data/reference_library/sources/<ruleset>/`. Reference PDFs are user-supplied and never ship
 with the application; the packaged app indexes whatever the user places there, exactly as the
@@ -152,6 +152,10 @@ backend/venv/bin/python frontend/build-resources/generate_icon.py
 4. Enter the GM's physical initiative results, arrange the order, and start the scene.
 5. Open the player view for a second monitor when needed.
 6. Use **Save All** to persist the campaign and current scene. The dashboard indicates unsaved campaign or scene changes and reports save failures without discarding edits.
+
+Campaign renaming is available from the campaign selector: choose **Rename**, edit the name,
+then **Save** (or Enter). **Cancel** or Escape discards the edit. Renaming preserves scenes,
+actor templates, Chronicle entries, and unsaved edits; invalid or duplicate names are rejected.
 
 Campaign deletion is available from the campaign selector. It removes that campaign and its
 persisted scenes after confirmation; it cannot be undone.
@@ -280,6 +284,7 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
 - `POST /api/campaign/load`
 - `GET /api/campaign/current`
 - `POST /api/campaign/save`
+- `POST /api/campaign/rename` accepts `name` and `new_name` query parameters.
 - `DELETE /api/campaign/{campaign_name}`
 
 ### Scenes, Actors, And Initiative

@@ -5,6 +5,7 @@ here ever touches the real backend/campaigns/ save data.
 """
 
 from models import Actor, Effect
+import pytest
 import uuid
 
 
@@ -39,6 +40,82 @@ def test_create_save_and_load_campaign(state_manager, tmp_path):
 
 def test_load_missing_campaign_returns_none(state_manager):
     assert state_manager.load_campaign("does-not-exist") is None
+
+
+def test_rename_campaign_preserves_scenes_and_unsaved_state(state_manager):
+    campaign = state_manager.create_campaign("Before", "1e")
+    scene = state_manager.create_scene("Ambush")
+    state_manager.save_scene()
+    state_manager.save_campaign()
+    scene.name = "Unsaved scene edit"
+    campaign.notes = "Unsaved campaign edit"
+
+    renamed = state_manager.rename_campaign("Before", " After ")
+
+    assert renamed.name == "After"
+    assert renamed.notes != campaign.notes
+    assert state_manager.current_campaign is campaign
+    assert campaign.name == "After"
+    assert state_manager.current_scene is scene
+    assert scene.name == "Unsaved scene edit"
+    assert set(state_manager.campaigns) == {"After"}
+    assert state_manager.list_campaigns() == ["After"]
+    assert state_manager.save_scene()
+    loaded = state_manager.load_campaign("After")
+    assert loaded.scenes == [scene.id]
+    assert state_manager.load_scene(scene.id).name == "Unsaved scene edit"
+    assert state_manager.load_campaign("Before") is None
+
+
+def test_rename_inactive_campaign_keeps_current_campaign(state_manager):
+    state_manager.create_campaign("Before", "1e")
+    state_manager.save_campaign()
+    active = state_manager.create_campaign("Active", "2e")
+    state_manager.save_campaign()
+
+    assert state_manager.rename_campaign("Before", "After").ruleset == "1e"
+    assert state_manager.current_campaign is active
+    assert state_manager.rename_campaign("After", "After").name == "After"
+    assert state_manager.rename_campaign("Missing", "Other") is None
+    assert state_manager.rename_campaign("../After", "Other") is None
+
+
+@pytest.mark.parametrize("new_name", ["", " ", ".", "..", "../Escape", "nested/name", "nested\\name", "name?", "name.", "NUL", "COM1.txt"])
+def test_rename_campaign_rejects_invalid_names(state_manager, new_name):
+    campaign = state_manager.create_campaign("Before", "1e")
+    state_manager.save_campaign()
+
+    with pytest.raises(ValueError, match="valid campaign name"):
+        state_manager.rename_campaign("Before", new_name)
+    assert campaign.name == "Before"
+    assert state_manager.list_campaigns() == ["Before"]
+
+
+def test_rename_campaign_rejects_existing_target(state_manager):
+    state_manager.create_campaign("Before", "1e")
+    state_manager.save_campaign()
+    state_manager.create_campaign("Keep", "2e")
+    state_manager.save_campaign()
+
+    with pytest.raises(ValueError, match="already exists"):
+        state_manager.rename_campaign("Before", "Keep")
+    assert state_manager.load_campaign("Before").ruleset == "1e"
+    assert state_manager.load_campaign("Keep").ruleset == "2e"
+
+
+def test_rename_campaign_rolls_back_failed_write(state_manager, monkeypatch):
+    campaign = state_manager.create_campaign("Before", "1e")
+    state_manager.save_campaign()
+
+    def fail_replace(*args):
+        raise OSError("Write failed")
+
+    monkeypatch.setattr("state.os.replace", fail_replace)
+    with pytest.raises(OSError, match="Write failed"):
+        state_manager.rename_campaign("Before", "After")
+    assert campaign.name == "Before"
+    assert state_manager.list_campaigns() == ["Before"]
+    assert state_manager.load_campaign("Before").name == "Before"
 
 
 def test_delete_campaign_removes_only_the_selected_campaign(state_manager):
