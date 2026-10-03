@@ -41,7 +41,10 @@
 
 .template-stats {
   flex: 1.5;
+  min-width: 0;
   color: var(--mw-text-dim);
+  /* One line: "HP 30/45 / AC 18 / Init +3" must not wrap mid-stat. */
+  white-space: nowrap;
 }
 
 .template-actions {

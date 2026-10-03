@@ -107,6 +107,17 @@ function ActorRow({ actor, summaryFields }) {
                 value={editedResource}
                 onChange={(event) => setEditedResource(event.target.value)}
                 onBlur={handleResourceChange}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    handleResourceChange();
+                  } else if (event.key === 'Escape') {
+                    // Reset first so a trailing blur re-commits the untouched
+                    // value instead of the discarded edit.
+                    setEditedResource(getSheetValue(actor.sheet, resource.value_key, ''));
+                    setIsEditing(false);
+                  }
+                }}
                 autoFocus
               />
             ) : (

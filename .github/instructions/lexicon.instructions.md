@@ -80,6 +80,12 @@ cross-ruleset contract and are not negotiable within a sheet definition.
 - **Grid/flex inputs:** set `min-width: 0` and
   `width: 100%; box-sizing: border-box` on inputs inside grid/flex
   fields, or the column overflows and clips.
+- **Header/row column alignment:** in a flex table with a separate header
+  row, a column whose row content is wider than its flex share (e.g. a
+  button cluster) will not shrink below content width, so the row's columns
+  drift from the header's. Give that column the same fixed
+  `flex: 0 0 <width>` in both the header and row CSS (keep the two values
+  in sync), and `min-width: 0` on the flexible columns.
 - **Color inputs:** bare `<input type="color">` ignores CSS sizing in
   Chromium — use the ColorSwatch proxy pattern (fixed-size button +
   visually hidden input).
