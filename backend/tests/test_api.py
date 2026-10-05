@@ -97,6 +97,61 @@ def test_rename_campaign_reports_missing_invalid_and_duplicate_names(client):
     assert set(client.get("/api/campaign/list").json()["campaigns"]) == {"Before", "Keep"}
 
 
+def test_export_import_campaign_roundtrips_scenes_templates_and_chronicle(client):
+    client.post("/api/campaign/new", params={"name": "Origin", "ruleset": "2e"})
+    scene = client.post("/api/scene/new", params={"name": "Ambush"}).json()
+    client.post("/api/actor/add", json=actor_payload("Bandit"))
+    client.post("/api/scene/save")
+    client.post("/api/campaign/actor-template/add", json=actor_payload("Hero", is_pc=True))
+    client.post("/api/campaign/chronicle/add", json={"title": "Session 1", "body": "We met."})
+    client.post("/api/campaign/save")
+
+    response = client.get("/api/campaign/export", params={"name": "Origin"})
+    assert response.status_code == 200
+    bundle = response.json()
+    assert bundle["format"] == "gm-workbench-campaign"
+    assert bundle["version"] == 1
+    assert [s["id"] for s in bundle["scenes"]] == [scene["id"]]
+
+    response = client.post("/api/campaign/import", json=bundle)
+    assert response.status_code == 200
+    assert response.json()["name"] == "Origin (imported)"
+    assert client.post("/api/campaign/import", json=bundle).json()["name"] == "Origin (imported 2)"
+    assert set(client.get("/api/campaign/list").json()["campaigns"]) == {
+        "Origin", "Origin (imported)", "Origin (imported 2)",
+    }
+
+    loaded = client.post("/api/campaign/load", params={"name": "Origin (imported)"}).json()
+    assert loaded["ruleset"] == "2e"
+    assert [t["name"] for t in loaded["actor_templates"]] == ["Hero"]
+    assert [e["title"] for e in loaded["chronicle"]] == ["Session 1"]
+    scenes = client.get("/api/scenes").json()["scenes"]
+    assert [s["id"] for s in scenes] == [scene["id"]]
+    assert [a["name"] for a in scenes[0]["actors"]] == ["Bandit"]
+
+
+def test_import_campaign_rejects_foreign_newer_and_unsafe_bundles(client):
+    client.post("/api/campaign/new", params={"name": "Origin", "ruleset": "1e"})
+    client.post("/api/campaign/save")
+    bundle = client.get("/api/campaign/export", params={"name": "Origin"}).json()
+
+    assert client.get("/api/campaign/export", params={"name": "Missing"}).status_code == 404
+    assert client.get("/api/campaign/export", params={"name": ".."}).status_code == 404
+    bad_bundles = [
+        {"campaign": bundle["campaign"]},
+        {**bundle, "version": 99},
+        {**bundle, "campaign": {"name": "No Ruleset"}},
+        {**bundle, "campaign": {**bundle["campaign"], "ruleset": "unknown"}},
+        {**bundle, "campaign": {**bundle["campaign"], "name": "../Escape"}},
+        {**bundle, "scenes": [{"id": "../escape", "name": "Bad"}]},
+    ]
+    for bad_bundle in bad_bundles:
+        response = client.post("/api/campaign/import", json=bad_bundle)
+        assert response.status_code == 400, bad_bundle
+        assert response.json()["detail"]
+    assert client.get("/api/campaign/list").json() == {"campaigns": ["Origin"]}
+
+
 def test_delete_campaign_removes_the_saved_campaign(client):
     client.post("/api/campaign/new", params={"name": "Disposable", "ruleset": "1e"})
 

@@ -74,6 +74,17 @@
   padding-bottom: 8px;
 }
 
+.load-section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.load-section-header h2 {
+  flex: 1;
+  min-width: 0;
+}
+
 .campaign-list {
   display: flex;
   flex-direction: column;
@@ -102,6 +113,8 @@
 
 .campaign-rename-form button,
 .campaign-rename-button,
+.campaign-export-button,
+.campaign-import-button,
 .campaign-delete-button {
   flex-shrink: 0;
 }

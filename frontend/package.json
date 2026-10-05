@@ -1,6 +1,6 @@
 {
   "name": "gm-workbench",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "description": "Ruleset-neutral tabletop campaign and scene manager",
   "private": true,
   "homepage": "./",
@@ -93,7 +93,11 @@
         },
         {
           "from": "public/themes",
-          "to": "themes"
+          "to": "themes",
+          "filter": [
+            "**/*",
+            "!_rip_lab{,/**}"
+          ]
         }
       ]
     },
@@ -109,7 +113,11 @@
         },
         {
           "from": "public/themes",
-          "to": "themes"
+          "to": "themes",
+          "filter": [
+            "**/*",
+            "!_rip_lab{,/**}"
+          ]
         }
       ]
     },

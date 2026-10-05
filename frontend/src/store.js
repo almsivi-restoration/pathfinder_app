@@ -213,6 +213,36 @@ export const useStore = create((set, get) => ({
     }
   },
 
+  exportCampaign: async (name) => {
+    try {
+      const res = await axios.get(`${API_URL}/campaign/export`, { params: { name } });
+      return res.data;
+    } catch (error) {
+      console.error('Failed to export campaign:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
+    }
+  },
+
+  importCampaign: async (fileText) => {
+    let bundle;
+    try {
+      bundle = JSON.parse(fileText);
+    } catch {
+      set({ operationError: 'That file is not a readable campaign export.' });
+      return null;
+    }
+    try {
+      const res = await axios.post(`${API_URL}/campaign/import`, bundle);
+      set({ campaigns: [...get().campaigns, res.data.name], operationError: null });
+      return res.data;
+    } catch (error) {
+      console.error('Failed to import campaign:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
+    }
+  },
+
   saveCampaign: async () => {
     try {
       await axios.post(`${API_URL}/campaign/save`);

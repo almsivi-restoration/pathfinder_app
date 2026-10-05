@@ -105,6 +105,24 @@ test('renameCampaign exposes failure without changing campaign names', async () 
   expect(useStore.getState().operationError).toBe('A campaign with that name already exists');
 });
 
+test('importCampaign posts the parsed bundle and lists the imported name', async () => {
+  useStore.setState({ campaigns: ['Origin'] });
+  const bundle = { format: 'gm-workbench-campaign', version: 1, campaign: { name: 'Origin' }, scenes: [] };
+  axios.post.mockResolvedValueOnce({ data: { name: 'Origin (imported)' } });
+
+  const result = await useStore.getState().importCampaign(JSON.stringify(bundle));
+
+  expect(axios.post).toHaveBeenCalledWith(expect.stringContaining('/campaign/import'), bundle);
+  expect(result.name).toBe('Origin (imported)');
+  expect(useStore.getState().campaigns).toEqual(['Origin', 'Origin (imported)']);
+});
+
+test('importCampaign rejects unreadable text without calling the backend', async () => {
+  expect(await useStore.getState().importCampaign('not json')).toBeNull();
+  expect(axios.post).not.toHaveBeenCalled();
+  expect(useStore.getState().operationError).toBe('That file is not a readable campaign export.');
+});
+
 test('deleteCampaign removes only the targeted campaign from state', async () => {
   useStore.setState({ campaigns: ['Keep', 'Remove'] });
   axios.delete.mockResolvedValueOnce({});

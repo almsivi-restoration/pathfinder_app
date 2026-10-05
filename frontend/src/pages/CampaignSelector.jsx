@@ -1,6 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../store';
 import '../styles/CampaignSelector.css';
+
+const readFileText = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(reader.result);
+  reader.onerror = () => reject(reader.error);
+  reader.readAsText(file);
+});
 
 function CampaignSelector({ onCampaignLoaded }) {
   const [newCampaignName, setNewCampaignName] = useState('');
@@ -9,12 +16,16 @@ function CampaignSelector({ onCampaignLoaded }) {
   const [renamingCampaign, setRenamingCampaign] = useState(null);
   const [renamedCampaignName, setRenamedCampaignName] = useState('');
   const [isRenaming, setIsRenaming] = useState(false);
+  const [importMessage, setImportMessage] = useState('');
+  const importInputRef = useRef(null);
   const campaigns = useStore((state) => state.campaigns);
   const availableRulesets = useStore((state) => state.availableRulesets);
   const createCampaign = useStore((state) => state.createCampaign);
   const loadCampaign = useStore((state) => state.loadCampaign);
   const deleteCampaign = useStore((state) => state.deleteCampaign);
   const renameCampaign = useStore((state) => state.renameCampaign);
+  const exportCampaign = useStore((state) => state.exportCampaign);
+  const importCampaign = useStore((state) => state.importCampaign);
   const listCampaigns = useStore((state) => state.listCampaigns);
   const fetchRulesets = useStore((state) => state.fetchRulesets);
   const operationError = useStore((state) => state.operationError);
@@ -64,6 +75,37 @@ function CampaignSelector({ onCampaignLoaded }) {
     }
   };
 
+  const handleExportCampaign = async (campaignName) => {
+    clearOperationError();
+    setImportMessage('');
+    const bundle = await exportCampaign(campaignName);
+    if (!bundle) return;
+    const url = URL.createObjectURL(new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${campaignName}.gmw-campaign.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportFile = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    clearOperationError();
+    setImportMessage('');
+    let fileText;
+    try {
+      fileText = await readFileText(file);
+    } catch {
+      fileText = '';
+    }
+    const campaign = await importCampaign(fileText);
+    if (campaign) setImportMessage(`Imported "${campaign.name}".`);
+  };
+
   const footerHint = hoveredCampaign
     ? `Resume "${hoveredCampaign}" where you left off.`
     : 'Load a saved campaign, or forge a new one to begin the session.';
@@ -78,9 +120,27 @@ function CampaignSelector({ onCampaignLoaded }) {
       </div>
 
       {operationError && <div className="operation-message error">{operationError}</div>}
+      {!operationError && importMessage && <div className="operation-message success">{importMessage}</div>}
       <div className="selector-content">
         <div className="load-section">
-          <h2>Load Campaign</h2>
+          <div className="load-section-header">
+            <h2>Load Campaign</h2>
+            <button
+              className="btn-small campaign-import-button"
+              disabled={isRenaming}
+              onClick={() => importInputRef.current?.click()}
+            >
+              Import
+            </button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".json,application/json"
+              aria-label="Campaign export file"
+              hidden
+              onChange={handleImportFile}
+            />
+          </div>
           {campaigns.length > 0 ? (
             <div className="campaign-list">
               {campaigns.map((campaignName) => (
@@ -133,6 +193,14 @@ function CampaignSelector({ onCampaignLoaded }) {
                         }}
                       >
                         Rename
+                      </button>
+                      <button
+                        className="btn-small campaign-export-button"
+                        aria-label={`Export ${campaignName}`}
+                        disabled={isRenaming}
+                        onClick={() => handleExportCampaign(campaignName)}
+                      >
+                        Export
                       </button>
                       <button
                         className="campaign-delete-button"

@@ -5,6 +5,7 @@ Handles CRUD operations and persistence.
 
 import json
 import os
+import re
 import shutil
 import tempfile
 from typing import Dict, List, Optional
@@ -14,6 +15,27 @@ from models import Campaign, Scene, Actor, ChronicleEntry
 from rules import get_ruleset
 from rules.common import get_sheet_value
 import uuid
+
+
+CAMPAIGN_EXPORT_FORMAT = "gm-workbench-campaign"
+CAMPAIGN_EXPORT_VERSION = 1
+_SCENE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
+
+
+def _validate_campaign_name(name: str) -> str:
+    """Return the trimmed name, or raise if it cannot be a campaign folder on any platform."""
+    name = name.strip()
+    if (
+        not name or name in {".", ".."} or name.endswith(".")
+        or any(character in '<>:"/\\|?*' or ord(character) < 32 for character in name)
+        or name.split(".")[0].upper() in {
+            "CON", "PRN", "AUX", "NUL",
+            *{f"COM{number}" for number in range(1, 10)},
+            *{f"LPT{number}" for number in range(1, 10)},
+        }
+    ):
+        raise ValueError("Enter a valid campaign name")
+    return name
 
 
 class StateManager:
@@ -71,28 +93,13 @@ class StateManager:
     
     def list_campaigns(self) -> List[str]:
         """List all saved campaigns."""
-        return [d.name for d in self.campaigns_dir.iterdir() if d.is_dir()]
+        return [d.name for d in self.campaigns_dir.iterdir() if d.is_dir() and not d.name.startswith(".import-")]
 
     def rename_campaign(self, campaign_name: str, new_name: str) -> Optional[Campaign]:
         """Rename a saved campaign without changing its scenes or unsaved edits."""
-        new_name = new_name.strip()
-        if (
-            not new_name or new_name in {".", ".."} or new_name.endswith(".")
-            or any(character in '<>:"/\\|?*' or ord(character) < 32 for character in new_name)
-            or new_name.split(".")[0].upper() in {
-                "CON", "PRN", "AUX", "NUL",
-                *{f"COM{number}" for number in range(1, 10)},
-                *{f"LPT{number}" for number in range(1, 10)},
-            }
-        ):
-            raise ValueError("Enter a valid campaign name")
-        campaign_dir = self.campaigns_dir / campaign_name
-        if (
-            campaign_name in {"", ".", ".."} or "/" in campaign_name or "\\" in campaign_name
-            or campaign_dir.is_symlink()
-            or campaign_dir.resolve().parent != self.campaigns_dir.resolve()
-            or not (campaign_dir / "campaign.json").is_file()
-        ):
+        new_name = _validate_campaign_name(new_name)
+        campaign_dir = self._saved_campaign_dir(campaign_name)
+        if not campaign_dir:
             return None
         target_dir = self.campaigns_dir / new_name
         if new_name != campaign_name and (target_dir.exists() or new_name in self.campaigns):
@@ -120,6 +127,87 @@ class StateManager:
         self.campaigns[new_name] = cached_campaign or campaign
         if self.current_campaign and self.current_campaign.name == campaign_name:
             self.current_campaign.name = new_name
+        return campaign
+
+    def _saved_campaign_dir(self, campaign_name: str) -> Optional[Path]:
+        """Return a saved campaign's directory only if it sits directly inside campaigns_dir."""
+        campaign_dir = self.campaigns_dir / campaign_name
+        if (
+            campaign_name in {"", ".", ".."} or "/" in campaign_name or "\\" in campaign_name
+            or campaign_dir.is_symlink()
+            or campaign_dir.resolve().parent != self.campaigns_dir.resolve()
+            or not (campaign_dir / "campaign.json").is_file()
+        ):
+            return None
+        return campaign_dir
+
+    def export_campaign(self, campaign_name: str) -> Optional[dict]:
+        """Bundle a saved campaign and its saved scenes into one portable JSON document."""
+        campaign_dir = self._saved_campaign_dir(campaign_name)
+        if not campaign_dir:
+            return None
+        with open(campaign_dir / "campaign.json", "r") as campaign_file:
+            campaign = Campaign(**json.load(campaign_file))
+        scenes = []
+        for scene_id in campaign.scenes:
+            if not _SCENE_ID_PATTERN.match(scene_id):
+                continue
+            scene_path = campaign_dir / "scenes" / f"{scene_id}.json"
+            if not scene_path.is_file():
+                scene_path = campaign_dir / "encounters" / f"{scene_id}.json"
+            if scene_path.is_file():
+                with open(scene_path, "r") as scene_file:
+                    scenes.append(Scene(**json.load(scene_file)))
+        campaign.scenes = [scene.id for scene in scenes]
+        return {
+            "format": CAMPAIGN_EXPORT_FORMAT,
+            "version": CAMPAIGN_EXPORT_VERSION,
+            "exported_at": datetime.now().isoformat(),
+            "campaign": campaign.model_dump(mode="json"),
+            "scenes": [scene.model_dump(mode="json") for scene in scenes],
+        }
+
+    def import_campaign(self, bundle: dict) -> Campaign:
+        """Persist an exported campaign bundle as a new saved campaign under a free name."""
+        if not isinstance(bundle, dict) or bundle.get("format") != CAMPAIGN_EXPORT_FORMAT:
+            raise ValueError("That file is not a Game Masters Workbench campaign export")
+        version = bundle.get("version")
+        if not isinstance(version, int) or version < 1:
+            raise ValueError("The campaign export has no valid version")
+        if version > CAMPAIGN_EXPORT_VERSION:
+            raise ValueError("The campaign export was made by a newer version of the app")
+        try:
+            campaign = Campaign(**bundle["campaign"])
+            scenes = [Scene(**scene) for scene in bundle.get("scenes", [])]
+        except (KeyError, TypeError, ValueError):
+            raise ValueError("The campaign export is damaged or incomplete")
+        if not get_ruleset(campaign.ruleset):
+            raise ValueError(f"The campaign uses an unknown ruleset: {campaign.ruleset}")
+        scene_ids = [scene.id for scene in scenes]
+        if len(set(scene_ids)) != len(scene_ids) or not all(_SCENE_ID_PATTERN.match(i) for i in scene_ids):
+            raise ValueError("The campaign export has invalid scene identifiers")
+
+        base_name = _validate_campaign_name(campaign.name)
+        name = base_name
+        suffix = 0
+        while (self.campaigns_dir / name).exists() or name in self.campaigns:
+            suffix += 1
+            name = f"{base_name} (imported)" if suffix == 1 else f"{base_name} (imported {suffix})"
+        campaign.name = name
+        campaign.scenes = scene_ids
+
+        staging_dir = Path(tempfile.mkdtemp(prefix=".import-", dir=self.campaigns_dir))
+        try:
+            (staging_dir / "scenes").mkdir()
+            for scene in scenes:
+                with open(staging_dir / "scenes" / f"{scene.id}.json", "w") as scene_file:
+                    json.dump(scene.model_dump(), scene_file, indent=2, default=str)
+            with open(staging_dir / "campaign.json", "w") as campaign_file:
+                json.dump(campaign.model_dump(), campaign_file, indent=2, default=str)
+            staging_dir.rename(self.campaigns_dir / name)
+        except OSError:
+            shutil.rmtree(staging_dir, ignore_errors=True)
+            raise
         return campaign
 
     def delete_campaign(self, campaign_name: str) -> bool:

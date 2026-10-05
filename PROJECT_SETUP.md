@@ -5,7 +5,7 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 ## Features
 
 ### Phase 1 (Current)
-- **Campaign Management:** Create/load/rename/save/delete campaigns with ruleset selection (1e/2e/Numenera); only a campaign persists a ruleset — scenes and actors inherit it. Rename from the selector with Save/Enter or Cancel/Escape; scenes, templates, Chronicle entries, and unsaved edits are preserved, and invalid or duplicate names are rejected
+- **Campaign Management:** Create/load/rename/save/delete campaigns with ruleset selection (1e/2e/Numenera); only a campaign persists a ruleset — scenes and actors inherit it. Rename from the selector with Save/Enter or Cancel/Escape; scenes, templates, Chronicle entries, and unsaved edits are preserved, and invalid or duplicate names are rejected. Export a campaign (with its saved scenes, templates, and Chronicle) to one portable `.gmw-campaign.json` file and import it back as a new campaign — imports never overwrite
 - **Actor Management:** Add/remove/clone actors (PCs and NPCs) with ruleset-driven stat sheets (Pathfinder 1e and 2e, Numenera); optional GM-assigned marker colors shown on the player view; read-only **View** card renders an actor's sheet grouped by section with empty fields omitted (works for scene actors and campaign templates)
 - **Scenes:** Create/save/load scenes via the Scene Library, with full actor CRUD
 - **Actor Templates:** Save/edit/delete/view actor templates and instantiate them into a scene; template marker colors are inherited by instantiated actors
@@ -183,6 +183,8 @@ pathfinder_app/
 - `GET /api/campaign/current` — Get active campaign
 - `POST /api/campaign/save` — Save current campaign
 - `POST /api/campaign/rename` — Rename a saved campaign (`name` and `new_name` query parameters)
+- `GET /api/campaign/export` — Export a saved campaign and its saved scenes as one JSON bundle (`name` query parameter)
+- `POST /api/campaign/import` — Import an exported bundle (JSON body) as a new campaign; a taken name gets an ` (imported)` suffix
 - `DELETE /api/campaign/{campaign_name}` — Delete a saved campaign
 
 ### Scene

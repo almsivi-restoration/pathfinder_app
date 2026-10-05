@@ -11,6 +11,7 @@ actor, initiative, or persistence ownership.
 ## Features
 
 - Create, load, rename, save, and delete campaigns and their saved scenes.
+- Export a campaign to a single portable file and import it back, on this machine or another.
 - Create and save scenes with PC and NPC actors.
 - Clone any scene actor in one click, and assign marker colors (fixed-size swatch, native
   picker opens on click) that appear on the player view. Colors assigned to a campaign template
@@ -160,6 +161,13 @@ actor templates, Chronicle entries, and unsaved edits; invalid or duplicate name
 Campaign deletion is available from the campaign selector. It removes that campaign and its
 persisted scenes after confirmation; it cannot be undone.
 
+Campaign export and import are available from the campaign selector. **Export** beside a saved
+campaign writes `<name>.gmw-campaign.json` — the campaign, its actor templates, Chronicle
+entries, notes, and saved scenes in one file. **Import** reads such a file back as a new
+campaign; it never overwrites, so a taken name becomes `<name> (imported)`. Export includes
+only saved data, so save before exporting. Files that are not campaign exports, come from a
+newer app version, or use an unknown ruleset are rejected without creating anything.
+
 ## Local References And Encyclopedia
 
 Rulebooks and other published reference PDFs remain local and are never committed or shipped.
@@ -285,6 +293,8 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
 - `GET /api/campaign/current`
 - `POST /api/campaign/save`
 - `POST /api/campaign/rename` accepts `name` and `new_name` query parameters.
+- `GET /api/campaign/export?name=` returns a portable campaign bundle (campaign + saved scenes).
+- `POST /api/campaign/import` accepts that bundle as the JSON body and saves it as a new campaign.
 - `DELETE /api/campaign/{campaign_name}`
 
 ### Scenes, Actors, And Initiative

@@ -63,6 +63,38 @@ test('rename rejects empty and unchanged names before submission', () => {
   expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
 });
 
+test('export downloads the campaign bundle as a json file', async () => {
+  const bundle = { format: 'gm-workbench-campaign', version: 1 };
+  const exportCampaign = jest.fn().mockResolvedValue(bundle);
+  useStore.setState({ exportCampaign });
+  URL.createObjectURL = jest.fn(() => 'blob:campaign');
+  URL.revokeObjectURL = jest.fn();
+  const clickSpy = jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function click() {
+    expect(this.download).toBe('Before.gmw-campaign.json');
+    expect(this.href).toBe('blob:campaign');
+  });
+  render(<CampaignSelector onCampaignLoaded={onCampaignLoaded} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Export Before' }));
+
+  await waitFor(() => expect(clickSpy).toHaveBeenCalledTimes(1));
+  expect(exportCampaign).toHaveBeenCalledWith('Before');
+  expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:campaign');
+  expect(onCampaignLoaded).not.toHaveBeenCalled();
+  clickSpy.mockRestore();
+});
+
+test('import sends the chosen file text and confirms the imported name', async () => {
+  const importCampaign = jest.fn().mockResolvedValue({ name: 'Before (imported)' });
+  useStore.setState({ importCampaign });
+  render(<CampaignSelector onCampaignLoaded={onCampaignLoaded} />);
+  const file = new File(['{"format":"gm-workbench-campaign"}'], 'before.gmw-campaign.json', { type: 'application/json' });
+  fireEvent.change(screen.getByLabelText('Campaign export file'), { target: { files: [file] } });
+
+  await waitFor(() => expect(screen.getByText('Imported "Before (imported)".')).toBeInTheDocument());
+  expect(importCampaign).toHaveBeenCalledWith('{"format":"gm-workbench-campaign"}');
+  expect(onCampaignLoaded).not.toHaveBeenCalled();
+});
+
 test('rename keeps the editor open after failure so the name can be corrected', async () => {
   renameCampaign.mockImplementation(async () => {
     useStore.setState({ operationError: 'A campaign with that name already exists' });

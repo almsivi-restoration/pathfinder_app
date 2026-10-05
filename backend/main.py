@@ -107,6 +107,25 @@ def rename_campaign(name: str, new_name: str):
     return campaign.model_dump()
 
 
+@app.get("/api/campaign/export")
+def export_campaign(name: str):
+    """Export one saved campaign and its saved scenes as a portable JSON bundle."""
+    bundle = state_manager.export_campaign(name)
+    if not bundle:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    return bundle
+
+
+@app.post("/api/campaign/import")
+def import_campaign(bundle: dict):
+    """Import an exported campaign bundle as a new saved campaign."""
+    try:
+        campaign = state_manager.import_campaign(bundle)
+    except (ValueError, OSError) as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    return campaign.model_dump()
+
+
 @app.delete("/api/campaign/{campaign_name}")
 def delete_campaign(campaign_name: str):
     """Delete one persisted campaign and all scenes saved under it."""
