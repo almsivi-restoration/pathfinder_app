@@ -6,6 +6,7 @@ import '../styles/PlayerView.css';
 const POLL_INTERVAL_MS = 2000;
 
 function PlayerView() {
+  const currentScene = useStore((state) => state.currentScene);
   const actors = useStore((state) => state.actors);
   const initiativeOrder = useStore((state) => state.initiativeOrder);
   const currentRound = useStore((state) => state.currentRound);
@@ -44,10 +45,14 @@ function PlayerView() {
       ? displayOrder.slice(currentTurnIndex).concat(displayOrder.slice(0, currentTurnIndex))
       : displayOrder;
 
+  const sceneName = currentScene?.name?.trim();
+
   return (
     <div className="player-view">
       <header className="player-header">
-        <h1>Combat Tracker</h1>
+        <h1 className="player-scene-name" title={sceneName || undefined}>
+          {sceneName || 'Combat Tracker'}
+        </h1>
         {isSceneActive && (
           <div className="combat-info">
             <span className="round-badge">Round {currentRound}</span>

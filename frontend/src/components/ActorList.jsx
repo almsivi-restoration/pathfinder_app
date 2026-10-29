@@ -6,6 +6,9 @@ import '../styles/ActorList.css';
 function ActorList() {
   const actors = useStore((state) => state.actors);
   const rulesetConfig = useStore((state) => state.rulesetConfig);
+  const currentActorId = useStore((state) =>
+    state.isSceneActive ? state.initiativeOrder[state.currentTurnIndex] ?? null : null
+  );
   const summaryFields = rulesetConfig?.actor_sheet?.summary || [];
 
   if (actors.length === 0) {
@@ -23,7 +26,12 @@ function ActorList() {
         <span className="col-actions">Actions</span>
       </div>
       {actors.map((actor) => (
-        <ActorRow key={actor.id} actor={actor} summaryFields={summaryFields} />
+        <ActorRow
+          key={actor.id}
+          actor={actor}
+          summaryFields={summaryFields}
+          isCurrent={actor.id === currentActorId}
+        />
       ))}
     </div>
   );

@@ -91,11 +91,32 @@
      from danger-bright so the lost chunk reads over any fill color. */
   --mw-hp-ghost: rgba(255, 122, 89, 0.9);
 
+  /* Whose-turn-is-it highlight (GM actor table, GM initiative list, player
+     rows). Derived from the accent so every theme inherits a matching cue;
+     the tint stays faint because gold is accent-only, never a surface. */
+  --mw-turn-accent: var(--mw-gold-bright);
+  --mw-turn-tint: color-mix(in srgb, var(--mw-gold-bright) 13%, transparent);
+  --mw-turn-glow: color-mix(in srgb, var(--mw-gold-bright) 45%, transparent);
+
   --mw-shadow: rgba(0, 0, 0, 0.65);
   /* Linux Libertine — bundled under OFL (see @font-face above); Georgia is the
      last-ditch fallback if font loading fails entirely. */
   --mw-font-display: 'Linux Libertine Display O', 'Linux Libertine O', Georgia, serif;
   --mw-font-body: 'Linux Libertine O', Georgia, serif;
+}
+
+/* Shared current-turn arrival: the accent wash fades in once when the turn
+   lands on a row. One-shot by design — a looping pulse would pull the eye
+   all round long. */
+@keyframes mw-turn-arrive {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .current-turn::before {
+    animation: none !important;
+  }
 }
 
 /* Reusable window: near-black panel in a carved stone frame. The frame runs

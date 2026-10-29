@@ -20,6 +20,9 @@ actor, initiative, or persistence ownership.
   fields omitted, effects and marker color up top. Available for scene actors and campaign
   templates alike.
 - Save reusable actor templates on a campaign.
+- The player view's banner shows the current scene name.
+- The actor whose turn it is is highlighted on both the GM dashboard and the player view
+  (accent outline/bar, tint, and a text label or marker; respects reduced-motion).
 - Enter physical initiative results, order actors manually, and advance turns and rounds. An
 	actor's assigned marker color shows as a ring around its position number in the initiative order.
 - Roll checks on the spot through **GM Tools > Quick Roll** (Ctrl+D): pick a scene actor and roll a

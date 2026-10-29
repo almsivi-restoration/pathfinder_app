@@ -674,11 +674,21 @@ def health_check():
 
 # ==================== Main ====================
 
-if __name__ == "__main__":
-    # Loopback-only by default: this is a single-machine desktop app, and the
-    # API has no authentication. Override with env vars if ever needed.
+def run_server():
+    """Serve the API. Loopback-only by default: this is a single-machine desktop
+    app, and the API has no authentication. Override with env vars if ever needed.
+
+    access_log is off: a per-request log line is pure noise for a desktop app,
+    and it was the byte stream that filled the desktop shell's stdout pipe and
+    hung the server mid-session. Errors and startup still log to stderr.
+    """
     uvicorn.run(
         app,
         host=os.environ.get("GM_WORKBENCH_HOST", "127.0.0.1"),
         port=int(os.environ.get("GM_WORKBENCH_PORT", "8000")),
+        access_log=False,
     )
+
+
+if __name__ == "__main__":
+    run_server()

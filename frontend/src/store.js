@@ -3,6 +3,16 @@ import axios from 'axios';
 
 export const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
+// Ordinary CRUD answers in milliseconds. Without a ceiling, a stalled backend
+// leaves every request pending forever (and Chromium's per-host connection
+// cap then queues all later ones behind them), so the UI looks frozen with no
+// error. A timeout surfaces it through operationError instead. Calls that can
+// legitimately run long (local-model chat, PDF/CSV indexing, OCR) opt out
+// with NO_TIMEOUT.
+export const REQUEST_TIMEOUT_MS = 15000;
+const NO_TIMEOUT = { timeout: 0 };
+axios.defaults.timeout = REQUEST_TIMEOUT_MS;
+
 const getErrorMessage = (error) => error.response?.data?.detail || error.message || 'The request failed.';
 
 export const useStore = create((set, get) => ({
@@ -102,7 +112,7 @@ export const useStore = create((set, get) => ({
       const res = await axios.post(`${API_URL}/harrowing/chat`, {
         messages,
         use_references: useReferences,
-      });
+      }, NO_TIMEOUT);
       return res.data;
     } catch (error) {
       console.error('Harrowing chat failed:', error);
@@ -112,7 +122,7 @@ export const useStore = create((set, get) => ({
 
   unloadHarrowing: async () => {
     try {
-      const res = await axios.post(`${API_URL}/harrowing/unload`);
+      const res = await axios.post(`${API_URL}/harrowing/unload`, null, NO_TIMEOUT);
       return res.data;
     } catch (error) {
       console.error('Failed to unload Harrowing model:', error);
@@ -281,7 +291,7 @@ export const useStore = create((set, get) => ({
 
   importCurrentReference: async (filename) => {
     try {
-      const res = await axios.post(`${API_URL}/references/current/import`, { filename });
+      const res = await axios.post(`${API_URL}/references/current/import`, { filename }, NO_TIMEOUT);
       await get().fetchCurrentReferences();
       return res.data;
     } catch (error) {
@@ -322,7 +332,7 @@ export const useStore = create((set, get) => ({
 
   importBestiary: async () => {
     try {
-      const res = await axios.post(`${API_URL}/bestiary/current/import`);
+      const res = await axios.post(`${API_URL}/bestiary/current/import`, null, NO_TIMEOUT);
       await get().fetchBestiaryStatus();
       return res.data;
     } catch (error) {
@@ -475,6 +485,10 @@ export const useStore = create((set, get) => ({
         initiativeOrder: res.data.initiative_order || [],
         currentRound: res.data.current_round || 0,
         currentTurnIndex: res.data.current_turn_index || 0,
+        // Same rule the player view uses: a saved order means combat was
+        // started, so a reopened mid-combat scene resumes with its turn
+        // highlight and Next Turn control instead of looking un-started.
+        isSceneActive: (res.data.initiative_order || []).length > 0,
         isSceneDirty: false,
       });
       return res.data;
@@ -541,8 +555,20 @@ export const useStore = create((set, get) => ({
       });
       return res.data;
     } catch (error) {
-      // 404 simply means no scene is loaded yet; not an error worth logging on every poll.
-      if (error.response?.status !== 404) {
+      // 404 means no scene is loaded (never opened, or the GM closed it):
+      // clear the snapshot so the player screen stops showing a stale scene.
+      // Any other failure keeps the last good snapshot rather than blanking
+      // the shared screen over a transient error.
+      if (error.response?.status === 404) {
+        set({
+          currentScene: null,
+          actors: [],
+          initiativeOrder: [],
+          currentRound: 0,
+          currentTurnIndex: 0,
+          isSceneActive: false,
+        });
+      } else {
         console.error('Failed to fetch current scene:', error);
       }
       return null;
@@ -560,6 +586,7 @@ export const useStore = create((set, get) => ({
       form.append('file', file);
       const res = await axios.post(`${API_URL}/import/sheet`, form, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        ...NO_TIMEOUT,
       });
       return res.data;
     } catch (error) {

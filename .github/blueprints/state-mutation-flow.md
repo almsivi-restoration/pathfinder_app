@@ -1,7 +1,7 @@
 ---
 description: "Blueprint: how state changes flow from UI to disk in Game Master's Workbench — store action, API route, StateManager, persisted JSON. Load when adding any feature that reads or writes persistent state."
 name: "bp-state-mutation-flow"
-version: "1.0.0"
+version: "1.1.0"
 applyTo: "**"
 ---
 
@@ -33,6 +33,10 @@ fetches via axios and `set()`s the slice.
 - **Store actions own error surfacing:** catch, `console.error`, and set
   `operationError` via `getErrorMessage`. Return `null`/`false` on
   failure so callers can branch.
+- **Every request is bounded.** `store.js` sets `axios.defaults.timeout`
+  (`REQUEST_TIMEOUT_MS`), so a wedged backend surfaces as an
+  `operationError` instead of a silently frozen UI. Only genuinely
+  long-running calls (model chat, imports) opt out with `NO_TIMEOUT`.
 - **Routes never do file I/O.** Persistence is the StateManager's job.
 - **The StateManager is the only writer** of campaign/scene JSON. Domain
   libraries (bestiary, reference) own their own indexes and never touch
@@ -51,3 +55,8 @@ A feature needing server-side computation the StateManager shouldn't own
 (e.g. PDF indexing) gets its own domain library — constructed once at
 startup, called from routes. That extends the path; it doesn't fork it.
 The forbidden move is a second, parallel write path to the same state.
+
+## Revisions
+
+- 1.1.0: added the bounded-request contract (axios default timeout) after the
+  v0.22.0 freeze fix; a hung backend previously froze the UI silently.

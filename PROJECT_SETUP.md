@@ -20,8 +20,11 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 - **The Harrowing:** Chat with a user-supplied local language model (GM Tools > The Harrowing, Ctrl+P) through any OpenAI-compatible endpoint (Ollama, LM Studio, …); status probe (reachable / model present / loaded), optional grounding in the indexed reference library, and a Sleep button that unloads the model from RAM (Ollama `keep_alive=0`). No model ships with the app; settings persist to `harrowing-settings.json` under the data dir
 - **Character Sheet Import:** OCR a scanned Pathfinder 1e sheet PDF (GM Tools > Import Character Sheet, Ctrl+I) into a reviewable actor draft — abilities, HP, initiative, AC (touch and flat-footed), speed, BAB/CMB/CMD, saves, printed skill rows, name — for GM confirmation before saving. No scene is required: with only a campaign loaded the actor is saved as a campaign template. Handwriting OCR uses PaddleOCR, kept out of the backend environment entirely: extraction runs as a subprocess from a dedicated user-created venv (`backend/requirements-ocr.txt`), and the import dialog shows the exact install commands when it is missing
 - **Player View:** Pop-out window showing only player-visible information
+  - The header banner shows the current scene name (long names truncate with an ellipsis)
   - Initiative order rotates as turns advance so the active actor always leads the list
     (position badges keep their true initiative numbers), with the current actor highlighted
+    by an accent outline, tint, and a Current Turn tag (the GM actor table and initiative list
+    mark the same actor with an accent bar and a marker)
   - Health bars for everyone: PCs show exact current/max values centered inside the bar,
     NPCs show a green→red gradient bar without numbers
   - Health bars play impact effects when a poll sees HP move: big hits (≥20% of max) shake

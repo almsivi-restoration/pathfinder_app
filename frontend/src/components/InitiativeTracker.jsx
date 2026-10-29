@@ -23,6 +23,9 @@ function InitiativeTracker() {
   const getActor = (actorId) => actors.find((a) => a.id === actorId);
 
   const orderedIds = localOrder || (initiativeOrder.length > 0 ? initiativeOrder : actors.map((a) => a.id));
+  // Resolve the turn from the saved order by ID: an unsaved local reorder
+  // must not slide the highlight onto whoever now occupies that index.
+  const currentActorId = isSceneActive ? initiativeOrder[currentTurnIndex] : null;
 
   const handleInitiativeRollChange = async (actorId, value) => {
     const actor = getActor(actorId);
@@ -89,9 +92,13 @@ function InitiativeTracker() {
         {orderedIds.map((actorId, index) => {
           const actor = getActor(actorId);
           if (!actor) return null;
-          const isCurrent = isSceneActive && index === currentTurnIndex;
+          const isCurrent = actorId === currentActorId;
           return (
-            <div key={actorId} className={`initiative-item ${isCurrent ? 'active' : ''}`}>
+            <div
+              key={actorId}
+              className={`initiative-item ${isCurrent ? 'current-turn' : ''}`}
+              aria-current={isCurrent ? 'true' : undefined}
+            >
               <span
                 className="position"
                 style={actor.color ? { boxShadow: `0 0 0 2px ${actor.color}` } : undefined}

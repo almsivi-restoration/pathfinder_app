@@ -7,10 +7,36 @@
   font-size: 14px;
   color: var(--mw-text);
   transition: background-color 0.2s;
+  /* Stacking context for the current-turn wash (::before, z-index -1). */
+  position: relative;
+  isolation: isolate;
 }
 
 .actor-row:hover {
   background: rgba(179, 163, 126, 0.1);
+}
+
+/* Current turn: accent edge (inset, so no layout shift), faint accent wash
+   under the content, and a ▶ marker on the name. Mirrors the initiative list
+   and player screen so the GM's eye lands on the same actor everywhere. */
+.actor-row.current-turn {
+  box-shadow: inset 4px 0 0 var(--mw-turn-accent);
+}
+
+.actor-row.current-turn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--mw-turn-tint);
+  pointer-events: none;
+  animation: mw-turn-arrive 0.5s ease-out;
+}
+
+.actor-row .turn-marker {
+  margin-right: 6px;
+  color: var(--mw-turn-accent);
+  font-size: 0.85em;
 }
 
 .actor-row .col-name {

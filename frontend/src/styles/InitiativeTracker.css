@@ -19,8 +19,7 @@
   gap: 12px;
 }
 
-.round-info,
-.current-turn {
+.round-info {
   padding: 12px;
   background: var(--mw-well);
   border: 1px solid var(--mw-border-dark);
@@ -28,8 +27,7 @@
   border-radius: 2px;
 }
 
-.round-info strong,
-.current-turn strong {
+.round-info strong {
   color: var(--mw-text-bright);
 }
 
@@ -67,12 +65,30 @@
   border-radius: 2px;
   margin-bottom: 4px;
   transition: all 0.2s;
+  position: relative;
+  isolation: isolate;
 }
 
-.initiative-item.active {
-  background: linear-gradient(180deg, var(--mw-gold-bright), var(--mw-gold));
+/* Current turn: accent edge + frame, faint accent wash, bold bright name.
+   Accent-only (no gold surface) so the roll input stays legible. */
+.initiative-item.current-turn {
+  border-color: var(--mw-turn-accent);
+  box-shadow: inset 4px 0 0 var(--mw-turn-accent), 0 0 10px var(--mw-turn-glow);
   font-weight: 700;
-  color: var(--mw-ink);
+}
+
+.initiative-item.current-turn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--mw-turn-tint);
+  pointer-events: none;
+  animation: mw-turn-arrive 0.5s ease-out;
+}
+
+.initiative-item.current-turn .name {
+  color: var(--mw-text-bright);
 }
 
 .initiative-item .position {
@@ -89,9 +105,9 @@
   font-weight: 600;
 }
 
-.initiative-item.active .position {
-  background: var(--mw-ink);
-  color: var(--mw-gold-bright);
+.initiative-item.current-turn .position {
+  background: var(--mw-turn-accent);
+  color: var(--mw-panel-lo);
 }
 
 .initiative-item .name {

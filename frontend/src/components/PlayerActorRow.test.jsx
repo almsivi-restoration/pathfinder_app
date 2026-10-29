@@ -77,6 +77,24 @@ test('the current-turn actor gets the highlight class', () => {
   expect(container.querySelector('.player-actor-row')).toHaveClass('current-turn');
 });
 
+test('the current-turn actor is labelled in text and for assistive tech, not by color alone', () => {
+  const { container } = render(
+    <PlayerActorRow actor={baseActor} position={1} isCurrent={true} rulesetConfig={rulesetConfig} />
+  );
+
+  expect(screen.getByText('Current Turn')).toHaveClass('turn-pill');
+  expect(container.querySelector('.player-actor-row')).toHaveAttribute('aria-current', 'true');
+});
+
+test('other actors carry no turn label', () => {
+  const { container } = render(
+    <PlayerActorRow actor={baseActor} position={1} isCurrent={false} rulesetConfig={rulesetConfig} />
+  );
+
+  expect(screen.queryByText('Current Turn')).not.toBeInTheDocument();
+  expect(container.querySelector('.player-actor-row')).not.toHaveAttribute('aria-current');
+});
+
 test('an assigned marker color renders a dot and a left accent border', () => {
   const actor = { ...baseActor, color: '#8e44ad' };
   const { container } = render(

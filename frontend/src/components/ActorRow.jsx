@@ -35,7 +35,7 @@ function ColorSwatch({ color, onChange, onClear, title }) {
   );
 }
 
-function ActorRow({ actor, summaryFields }) {
+function ActorRow({ actor, summaryFields, isCurrent = false }) {
   const removeActor = useStore((state) => state.removeActor);
   const updateActor = useStore((state) => state.updateActor);
   const addActor = useStore((state) => state.addActor);
@@ -88,8 +88,12 @@ function ActorRow({ actor, summaryFields }) {
   };
 
   return (
-    <div className="actor-row">
-      <span className="col-name" onClick={handleSelect}>
+    <div
+      className={`actor-row ${isCurrent ? 'current-turn' : ''}`}
+      aria-current={isCurrent ? 'true' : undefined}
+    >
+      <span className="col-name" onClick={handleSelect} title={isCurrent ? 'Current turn' : undefined}>
+        {isCurrent && <span className="turn-marker" aria-hidden="true">▶</span>}
         {actor.name}
       </span>
       <span className="col-type">{actor.is_pc ? 'PC' : 'NPC'}</span>

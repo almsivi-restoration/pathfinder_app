@@ -12,14 +12,51 @@
   border-radius: 2px;
   color: var(--mw-text);
   transition: all 0.3s;
+  position: relative;
+  /* Own stacking context so the current-turn tint (::before, z-index -1)
+     paints above the row's themed surface but beneath its content. */
+  isolation: isolate;
 }
 
+/* Current turn: accent frame + glow, a faint accent wash, and a text pill —
+   redundant cues so it reads at a glance from across the table without
+   relying on color alone. Arrives with one soft fade; never loops. */
 .player-actor-row.current-turn {
-  border-color: var(--mw-gold-bright);
+  border-color: var(--mw-turn-accent);
   box-shadow:
     0 0 0 1px var(--mw-frame-dark),
-    inset 0 0 0 1px var(--mw-frame-dark),
-    0 0 14px rgba(227, 200, 122, 0.5);
+    0 0 0 3px var(--mw-turn-accent),
+    0 0 22px var(--mw-turn-glow),
+    0 4px 12px var(--mw-shadow);
+}
+
+.player-actor-row.current-turn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--mw-turn-tint);
+  pointer-events: none;
+  animation: mw-turn-arrive 0.5s ease-out;
+}
+
+.player-actor-row.current-turn .actor-name {
+  color: var(--mw-turn-accent);
+}
+
+.turn-pill {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border: 1px solid var(--mw-turn-accent);
+  border-radius: 999px;
+  background: var(--mw-turn-tint);
+  color: var(--mw-turn-accent);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
 }
 
 .position-badge {
@@ -37,20 +74,24 @@
 }
 
 .player-actor-row.current-turn .position-badge {
-  background: var(--mw-gold);
-  color: var(--mw-wood-dark);
+  background: var(--mw-turn-accent);
+  color: var(--mw-panel-lo);
   font-size: 22px;
 }
 
 .actor-info {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
+/* Wraps so badges (PC, Current Turn) drop to a second line on a narrow
+   window instead of overflowing the row and being clipped. */
 .name-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
 }

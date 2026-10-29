@@ -3,7 +3,7 @@
  * actor leads the list (position badges keep true initiative numbers); outside
  * combat the order is untouched.
  */
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import PlayerView from './PlayerView';
 import { useStore } from '../store';
 
@@ -65,4 +65,28 @@ test('order is untouched when the scene is not in combat', () => {
   const { container } = render(<PlayerView />);
 
   expect(renderedNames(container)).toEqual(['Alpha', 'Bravo', 'Charlie']);
+});
+
+test('the banner shows the loaded scene name', () => {
+  seedStore({ currentScene: { id: 's1', name: 'Ambush at Thistle Ford' } });
+  render(<PlayerView />);
+
+  expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Ambush at Thistle Ford');
+});
+
+test('the banner falls back to a generic title when no scene is loaded', () => {
+  seedStore({ currentScene: null, actors: [], initiativeOrder: [], isSceneActive: false });
+  render(<PlayerView />);
+
+  expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Combat Tracker');
+});
+
+test('only the active actor is marked as the current turn', () => {
+  seedStore({ currentTurnIndex: 1 });
+  const { container } = render(<PlayerView />);
+
+  const current = container.querySelectorAll('.player-actor-row.current-turn');
+  expect(current).toHaveLength(1);
+  expect(current[0]).toHaveTextContent('Bravo');
+  expect(current[0]).toHaveAttribute('aria-current', 'true');
 });

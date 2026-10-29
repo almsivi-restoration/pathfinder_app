@@ -1,7 +1,7 @@
 ---
 description: "Canonical domain vocabulary, naming, casing, and formatting conventions for Game Master's Workbench. The singular voice of the codebase — ALWAYS load this instruction."
 name: "gmw-lexicon"
-version: "1.0.0"
+version: "1.1.0"
 applyTo: "**"
 ---
 
@@ -97,6 +97,14 @@ cross-ruleset contract and are not negotiable within a sheet definition.
   visually hidden input).
 - **Fonts:** Linux Libertine O / Display O, bundled under OFL; family
   names match the system package so dev and packaged rendering agree.
+- **Current turn:** the actor whose turn it is carries the class
+  `current-turn` and `aria-current="true"` on every screen, styled only
+  from the `--mw-turn-accent` / `--mw-turn-tint` / `--mw-turn-glow`
+  tokens (derived from the theme accent in `theme.css`). Always pair the
+  color with a non-color cue (label or marker), never shift layout, and
+  keep motion one-shot (`mw-turn-arrive`, disabled under
+  `prefers-reduced-motion`). Resolve the current actor by ID from
+  `initiativeOrder[currentTurnIndex]`, never by index into a local list.
 - **Theme:** gold is accent-only, never a surface or frame color.
   `color-scheme: dark` in `:root` is load-bearing for native controls.
 

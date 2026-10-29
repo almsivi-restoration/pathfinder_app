@@ -53,6 +53,7 @@ function PlayerActorRow({ actor, position, isCurrent, rulesetConfig }) {
     <div
       className={`player-actor-row ${isCurrent ? 'current-turn' : ''}`}
       style={actor.color ? { borderLeft: `14px solid ${actor.color}` } : undefined}
+      aria-current={isCurrent ? 'true' : undefined}
     >
       <div className="position-badge">{position}</div>
       <div className="actor-info">
@@ -62,6 +63,7 @@ function PlayerActorRow({ actor, position, isCurrent, rulesetConfig }) {
           )}
           <span className="actor-name">{actor.name}</span>
           {actor.is_pc && <span className="pc-badge">PC</span>}
+          {isCurrent && <span className="turn-pill">Current Turn</span>}
         </div>
 
         {resource && (

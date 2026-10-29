@@ -4,7 +4,7 @@
  * not the API contract (that's covered by backend/tests/test_api.py).
  */
 import axios from 'axios';
-import { useStore } from './store';
+import { REQUEST_TIMEOUT_MS, useStore } from './store';
 
 jest.mock('axios');
 
@@ -234,4 +234,82 @@ test('rollDice surfaces a failure via operationError and returns null', async ()
 
   expect(returned).toBeNull();
   expect(useStore.getState().operationError).toBe('Roll failed');
+});
+
+test('ordinary requests carry a timeout so a stalled backend cannot hang the UI', () => {
+  expect(axios.defaults.timeout).toBe(REQUEST_TIMEOUT_MS);
+  expect(REQUEST_TIMEOUT_MS).toBeGreaterThan(0);
+});
+
+test('updateActor surfaces a timed-out request via operationError and returns null', async () => {
+  useStore.setState({ actors: [{ id: 'a1', name: 'Kira', sheet: { hp: { current: 9 } } }] });
+  axios.put.mockRejectedValueOnce({ code: 'ECONNABORTED', message: 'timeout of 15000ms exceeded' });
+
+  const returned = await useStore.getState().updateActor('a1', { id: 'a1', name: 'Kira', sheet: { hp: { current: 4 } } });
+
+  expect(returned).toBeNull();
+  expect(useStore.getState().operationError).toBe('timeout of 15000ms exceeded');
+  expect(useStore.getState().actors[0].sheet.hp.current).toBe(9);
+});
+
+test('long-running calls opt out of the default timeout', async () => {
+  axios.post.mockResolvedValue({ data: {} });
+  axios.get.mockResolvedValue({ data: {} });
+
+  await useStore.getState().sendHarrowingChat({ messages: [], useReferences: false });
+  await useStore.getState().importBestiary();
+
+  expect(axios.post).toHaveBeenCalledWith(expect.stringContaining('/harrowing/chat'), expect.anything(), { timeout: 0 });
+  expect(axios.post).toHaveBeenCalledWith(expect.stringContaining('/bestiary/current/import'), null, { timeout: 0 });
+});
+
+test('fetchCurrentScene clears a closed scene on 404 so the player screen goes blank', async () => {
+  useStore.setState({
+    currentScene: { id: 's1', name: 'Old Scene' },
+    actors: [{ id: 'a1' }],
+    initiativeOrder: ['a1'],
+    currentTurnIndex: 0,
+    isSceneActive: true,
+  });
+  axios.get.mockRejectedValueOnce({ response: { status: 404 } });
+
+  await useStore.getState().fetchCurrentScene();
+
+  const state = useStore.getState();
+  expect(state.currentScene).toBeNull();
+  expect(state.actors).toEqual([]);
+  expect(state.isSceneActive).toBe(false);
+});
+
+test('fetchCurrentScene keeps the last good snapshot on a transient failure', async () => {
+  const scene = { id: 's1', name: 'Live Scene' };
+  useStore.setState({ currentScene: scene, actors: [{ id: 'a1' }], isSceneActive: true });
+  axios.get.mockRejectedValueOnce({ code: 'ECONNABORTED', message: 'timeout' });
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+
+  await useStore.getState().fetchCurrentScene();
+
+  expect(useStore.getState().currentScene).toBe(scene);
+  expect(useStore.getState().actors).toEqual([{ id: 'a1' }]);
+  console.error.mockRestore();
+});
+
+test('loadScene resumes combat for a saved scene that has an initiative order', async () => {
+  axios.post.mockResolvedValueOnce({
+    data: { id: 's1', name: 'Mid-fight', actors: [], initiative_order: ['a', 'b'], current_round: 2, current_turn_index: 1 },
+  });
+
+  await useStore.getState().loadScene('s1');
+
+  expect(useStore.getState().isSceneActive).toBe(true);
+  expect(useStore.getState().currentTurnIndex).toBe(1);
+});
+
+test('loadScene does not carry combat state over into an un-started scene', async () => {
+  useStore.setState({ isSceneActive: true });
+  axios.post.mockResolvedValueOnce({ data: { id: 's2', name: 'Fresh', actors: [], initiative_order: [] } });
+
+  await useStore.getState().loadScene('s2');
+
+  expect(useStore.getState().isSceneActive).toBe(false);
 });
