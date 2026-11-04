@@ -131,9 +131,13 @@ screen, Chronicle as a DMG LCD) layered on the shared panel contract.
   `frame-stone.png` (`artifacts/local/theme_pass/prompts/mw-frame.txt`)
   shipped from the first generation this way.
 - **The `border` shorthand resets `border-image`.** That is the insulating
-  mechanism, not a hazard: a frame applied in the base sheet reaches only
-  skins that *don't* redeclare `border` on that selector. Dissidia and
-  Pokémon both do, so they kept their own silhouettes with no change.
+  mechanism — and the leak path. A frame applied in the base sheet reaches
+  every panel selector a skin does *not* redeclare `border` on. Dissidia's
+  panel list was missing `.reference-sources`, `.reference-search`, and
+  `.bestiary-picker`, and the Encyclopedia grew a Morrowind stone frame
+  (the user spotted it mid-capture; the agent's dashboard-only review
+  missed it). When a frame lands in the base, diff the base selector list
+  against each skin's panel list and review every page capture.
 - **Crop a hover/selection texture below its sheen.** A glossy bar's
   brightest band is where white hover text goes to die; crop the strip from
   the saturated zone and add a light scrim plus a text shadow.
