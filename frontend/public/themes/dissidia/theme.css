@@ -598,3 +598,46 @@ select option {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 1px 3px var(--mw-shadow);
   text-shadow: 0 1px 2px rgba(13, 19, 48, 0.6);
 }
+
+/* ---------- Generated textures (2026-11-03): header streaks, selection bar ---------- */
+
+/* Header bars: midnight navy with ice-blue light streaks across dark glass
+   (header-streaks.jpg, cropped to ~12:1 so `cover` loses nothing). A thin
+   scrim keeps the white title crisp over the brightest streak. */
+.gm-header,
+.player-header,
+.actor-header {
+  background:
+    linear-gradient(180deg, rgba(27, 35, 71, 0.35), rgba(27, 35, 71, 0.55)),
+    url('header-streaks.jpg') center / cover no-repeat,
+    linear-gradient(180deg, #33406f, #1b2347);
+}
+
+/* The selection bar: glossy royal blue with white light streaks
+   (select-bar.jpg, cropped below the sheen so white text stays legible).
+   Every "the cursor is here" state shares it. */
+.btn:hover:not(:disabled),
+.btn:focus-visible:not(:disabled),
+.btn-primary:hover:not(:disabled),
+.btn-small:hover:not(:disabled),
+.btn-arrow:hover:not(:disabled),
+.campaign-button:hover,
+.campaign-button:focus-visible,
+.create-button:hover:not(:disabled),
+.chronicle-btn:hover:not(:disabled),
+.chronicle-btn:focus-visible:not(:disabled),
+.round-badge {
+  background:
+    linear-gradient(180deg, rgba(26, 63, 176, 0.18), rgba(26, 63, 176, 0.5)),
+    url('select-bar.jpg') center / cover no-repeat,
+    linear-gradient(180deg, var(--diss-select), var(--diss-select-lo));
+}
+
+.campaign-button:hover,
+.campaign-button:focus-visible {
+  text-shadow: 0 1px 2px rgba(13, 19, 48, 0.8), 0 0 6px rgba(13, 19, 48, 0.5);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: url('select-bar.jpg') center / cover no-repeat, var(--diss-select);
+}

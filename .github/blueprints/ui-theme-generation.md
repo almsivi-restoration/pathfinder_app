@@ -1,7 +1,7 @@
 ---
 description: "Blueprint: how a UI theme / skin is produced for Game Master's Workbench — deriving a look from reference screenshots, generating textures with an image API, wiring CSS without the cover-crop and origin traps, and verifying against real rendered pixels. Load when building or editing a theme, generating UI textures, or tuning a skin."
 name: "bp-ui-theme-generation"
-version: "1.4.0"
+version: "1.5.0"
 applyTo: "frontend/src/**,frontend/public/themes/**,artifacts/local/**_ui/**"
 ---
 
@@ -119,6 +119,25 @@ screen, Chronicle as a DMG LCD) layered on the shared panel contract.
 
 ### Generating a texture with an image API
 
+- **A generated 9-slice frame is a one-shot win if the prompt pins the
+  geometry.** Ask for a square ring whose outer edge *is* the image edge,
+  a uniform thin band (state the percentage), a dead-straight inner edge,
+  and a solid pure-black interior — then *measure* the band from the pixels
+  (scan to the first black pixel on each side), mirror one quadrant across
+  both axes so the four corners are identical and every edge slice is
+  symmetric (a symmetric slice joins to itself seamlessly under `round`),
+  make the interior transparent, and wire
+  `border-image: url() <slice> / <width> round` with no `fill`. Morrowind's
+  `frame-stone.png` (`artifacts/local/theme_pass/prompts/mw-frame.txt`)
+  shipped from the first generation this way.
+- **The `border` shorthand resets `border-image`.** That is the insulating
+  mechanism, not a hazard: a frame applied in the base sheet reaches only
+  skins that *don't* redeclare `border` on that selector. Dissidia and
+  Pokémon both do, so they kept their own silhouettes with no change.
+- **Crop a hover/selection texture below its sheen.** A glossy bar's
+  brightest band is where white hover text goes to die; crop the strip from
+  the saturated zone and add a light scrim plus a text shadow.
+
 - **Design the prompt for the container, not for the picture.** An image
   model asked for "a nameplate" returns a *complete ornate object*
   floating in a margin; a menu bar is a *texture to be sampled*. State the
@@ -206,3 +225,7 @@ means, not a requirement.
 - 1.4.0 — revision pass over Morrowind and Dissidia: base-sheet changes
   must be captured under every built-in; revision scope comes from a fresh
   capture, not recollection.
+- 1.5.0 — generated-asset pass over Morrowind (carved 9-slice frame via
+  `border-image`) and Dissidia (header light-streak band, glossy selection
+  bar); records the frame-generation recipe and the `border`-shorthand
+  insulation mechanism. Generator: `artifacts/local/theme_pass/gen_image.sh`.

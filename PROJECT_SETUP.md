@@ -81,6 +81,7 @@ pathfinder_app/
 │   │   ├── sheet.js            # Generic sheet helpers (ruleset-neutral)
 │   │   ├── theme.js            # Theme bridge (applies built-in extra and local theme skins)
 │   │   ├── assets/fonts/       # Bundled Libertine fonts (OFL)
+│   │   ├── assets/textures/    # Generated Morrowind textures (ash backdrop, banner, parchment, carved 9-slice frame)
 │   │   ├── components/
 │   │   │   ├── GMDashboard.jsx
 │   │   │   ├── ActorList.jsx / ActorRow.jsx / ActorForm.jsx

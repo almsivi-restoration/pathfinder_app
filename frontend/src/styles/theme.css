@@ -126,18 +126,42 @@
   }
 }
 
-/* Reusable window: near-black panel in a carved stone frame. The frame runs
-   thicker across the top — in the game, that is where the nameplate sits. */
+/* Reusable window: near-black panel in a carved stone frame. The frame is a
+   generated 9-slice (assets/textures/frame-stone.png — carved Dunmer chevrons
+   with a corner boss, quadrant-mirrored so the four corners match exactly;
+   slice 50 of 512 is the measured band). Edges `round` so the chevrons tile
+   without a seam; no `fill`, so the panel surface shows through. */
 .mw-panel {
   background: linear-gradient(165deg, var(--mw-panel-hi), var(--mw-panel) 55%, var(--mw-panel-lo));
-  border: 2px solid var(--mw-frame);
-  border-top-width: 10px;
+  border: 14px solid var(--mw-frame);
+  border-image: url('../assets/textures/frame-stone.png') 50 / 14px round;
   box-shadow:
-    0 0 0 1px var(--mw-frame-dark),
-    inset 0 0 0 1px var(--mw-frame-dark),
     inset 0 0 22px rgba(0, 0, 0, 0.55),
     0 4px 12px var(--mw-shadow);
   color: var(--mw-text);
+}
+
+/* The same carved frame on every window the component sheets draw with the
+   plain 2px/10px border. This sheet loads after the component sheets, so the
+   border-image lands on top of their `border` shorthand; a skin that sets its
+   own `border` shorthand (Dissidia, Pokémon) resets border-image and keeps
+   its own silhouette. */
+.scene-creator,
+.left-panel,
+.right-panel,
+.load-section,
+.new-section,
+.actor-form,
+.actor-edit-modal,
+.actor-view-modal,
+.reference-sources,
+.reference-search,
+.bestiary-picker {
+  border: 14px solid var(--mw-frame);
+  border-image: url('../assets/textures/frame-stone.png') 50 / 14px round;
+  box-shadow:
+    inset 0 0 22px rgba(0, 0, 0, 0.55),
+    0 4px 12px var(--mw-shadow);
 }
 
 /* Reusable header/nameplate banner: dark dwemer-metal band (generated
