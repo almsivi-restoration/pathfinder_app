@@ -34,15 +34,19 @@
   flex-shrink: 0;
 }
 
+/* Round counter: a dark nameplate with a gold edge — gold stays an accent. */
 .round-badge {
   display: inline-block;
   padding: 8px 16px;
-  background: linear-gradient(180deg, var(--mw-gold-bright), var(--mw-gold));
-  color: var(--mw-wood-dark);
+  background: linear-gradient(180deg, var(--mw-wood-light), var(--mw-wood-dark));
+  color: var(--mw-gold-bright);
+  border: 1px solid var(--mw-gold);
+  box-shadow: 0 0 0 1px var(--mw-frame-dark), inset 0 0 0 1px var(--mw-frame-dark);
   border-radius: 2px;
   font-weight: 700;
   font-size: 16px;
   font-variant: small-caps;
+  text-shadow: 0 1px 1px #000;
 }
 
 .player-content {

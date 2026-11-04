@@ -68,14 +68,18 @@
   background: var(--mw-wood-dark);
   color: var(--mw-gold-bright);
   border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--mw-frame-lo), inset 0 0 6px rgba(0, 0, 0, 0.6);
   font-weight: 700;
   font-size: 20px;
   flex-shrink: 0;
 }
 
+/* Current turn: the disc stays dark and takes a bright accent ring — gold is
+   an accent, never a surface, so the number lights up rather than the coin. */
 .player-actor-row.current-turn .position-badge {
-  background: var(--mw-turn-accent);
-  color: var(--mw-panel-lo);
+  background: var(--mw-wood-dark);
+  color: var(--mw-turn-accent);
+  box-shadow: 0 0 0 2px var(--mw-turn-accent), 0 0 10px var(--mw-turn-glow), inset 0 0 6px rgba(0, 0, 0, 0.6);
   font-size: 22px;
 }
 
@@ -128,6 +132,8 @@
   gap: 14px;
 }
 
+/* The gauge: a dark well set in the same beige-stone frame as the windows,
+   as the game's health/magicka/fatigue bars sit in their carved strip. */
 .health-bar-background {
   flex: 1;
   position: relative;
@@ -135,13 +141,17 @@
   background: var(--mw-well);
   border-radius: 2px;
   overflow: hidden;
-  border: 1px solid var(--mw-border-dark);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--mw-frame-lo);
+  box-shadow: 0 0 0 1px var(--mw-frame-dark), inset 0 2px 4px rgba(0, 0, 0, 0.55);
 }
 
+/* Bevelled fill: a lit top edge over a shaded base, like the game's bars. */
 .health-bar-fill {
   height: 100%;
   transition: width 0.3s ease;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.3);
 }
 
 .health-bar-fill.hp-high {

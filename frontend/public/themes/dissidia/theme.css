@@ -510,3 +510,91 @@ select option {
   color: #ffffff;
   text-shadow: none;
 }
+
+/* ---------- Revision pass (2026-11-03): contrast defects + the HP gauge ---------- */
+
+/* The initiative reorder arrows inherited the base's dark tile with dark
+   text — navy glyphs on a navy square, invisible on this light skin. */
+.btn-arrow {
+  background: linear-gradient(180deg, #f4f7fd, #ccd7ec);
+  color: var(--mw-ink);
+  border: 1px solid var(--mw-frame-lo);
+  border-radius: 2px;
+}
+
+.btn-arrow:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--diss-select), var(--diss-select-lo));
+  border-color: var(--diss-select-lo);
+  color: #ffffff;
+  box-shadow: 0 0 6px var(--diss-cyan-glow);
+}
+
+/* Actor-table column header: the base paints its labels in the accent slot,
+   which here is selection blue — blue on the navy band did not read. */
+.actor-header {
+  background: linear-gradient(180deg, #33406f, #1b2347);
+  border-bottom: 1px solid var(--mw-frame-lo);
+  color: #dfe7fa;
+  letter-spacing: 1.5px;
+}
+
+/* "Unsaved changes" rides on the navy header bar: use the one true-gold
+   accent the theme keeps, not selection blue. */
+.dirty-indicator {
+  color: var(--diss-gold);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* The HP gauge, PSP-style: a glossy brave-blue bar in a silver channel that
+   turns amber, then rose, as it empties. Fill tokens are read by the base
+   .health-bar-fill band classes. */
+:root {
+  --mw-hp-high: #3a7bff;
+  --mw-hp-mid: #e8a020;
+  --mw-hp-low: #e0566c;
+}
+
+.health-bar-background {
+  background: linear-gradient(180deg, #d0dbee, #e9eff9);
+  border: 1px solid var(--mw-frame-lo);
+  border-radius: 3px;
+  box-shadow: inset 0 1px 3px rgba(28, 36, 80, 0.25), 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.health-bar-fill {
+  border-radius: 2px;
+  box-shadow:
+    inset 0 7px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -1px 0 rgba(13, 19, 48, 0.25);
+}
+
+/* The current/max numerals sat white on a near-white channel once the fill
+   receded; navy with a white halo reads over both fill and channel. */
+.health-bar-value {
+  color: var(--mw-ink);
+  text-shadow:
+    0 0 3px rgba(255, 255, 255, 0.95),
+    0 0 6px rgba(255, 255, 255, 0.9),
+    0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* Popup title bars crop the filigree strip to a thin band; a heavier, larger
+   title keeps "Quick Roll" legible over the engraving. */
+.mw-banner {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.campaign-selector-titlebar .mw-banner {
+  font-size: 28px;
+}
+
+/* Round counter keeps the selection-bar blue (the base's dark nameplate
+   with a gold edge is Morrowind's idiom, not this one). */
+.round-badge {
+  background: linear-gradient(180deg, var(--diss-select), var(--diss-select-lo));
+  color: #ffffff;
+  border: 1px solid var(--diss-select-lo);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 1px 3px var(--mw-shadow);
+  text-shadow: 0 1px 2px rgba(13, 19, 48, 0.6);
+}

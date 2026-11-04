@@ -105,9 +105,14 @@
   font-weight: 600;
 }
 
+/* Current turn: dark disc, bright accent ring and numeral — accent, not a
+   gold surface. The ring is an outline because the component paints the
+   actor-colour ring inline as box-shadow; the two stack. */
 .initiative-item.current-turn .position {
-  background: var(--mw-turn-accent);
-  color: var(--mw-panel-lo);
+  background: var(--mw-wood-dark);
+  color: var(--mw-turn-accent);
+  outline: 2px solid var(--mw-turn-accent);
+  outline-offset: 2px;
 }
 
 .initiative-item .name {

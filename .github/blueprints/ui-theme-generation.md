@@ -1,7 +1,7 @@
 ---
 description: "Blueprint: how a UI theme / skin is produced for Game Master's Workbench — deriving a look from reference screenshots, generating textures with an image API, wiring CSS without the cover-crop and origin traps, and verifying against real rendered pixels. Load when building or editing a theme, generating UI textures, or tuning a skin."
 name: "bp-ui-theme-generation"
-version: "1.3.0"
+version: "1.4.0"
 applyTo: "frontend/src/**,frontend/public/themes/**,artifacts/local/**_ui/**"
 ---
 
@@ -172,6 +172,18 @@ screen, Chronicle as a DMG LCD) layered on the shared panel contract.
   background image finishes loading — a flat render that resolves on its
   own. Probe the image (`new Image().onload` reporting natural size)
   before trusting any capture.
+- **A base-sheet change is a change to every theme — capture all of them.**
+  The base (Morrowind) component sheets are the floor the vendored skins
+  stand on. When a base surface changes (the HP gauge, a badge), run the
+  harness against every built-in (`artifacts/local/theme_pass/
+  capture_theme.js <id>`) before committing: the 2026-11-03 pass fixed the
+  Morrowind round badge and silently turned Dissidia's blue one into a dark
+  nameplate until the capture showed it.
+- **Revise by capture, not by memory.** A revision pass on an existing skin
+  starts with a fresh capture of every screen; the defects it finds are
+  the scope. The same pass found four Dissidia contrast failures (navy
+  arrows on navy tiles, blue header labels on navy, the dirty indicator,
+  white HP numerals on a white channel) that had shipped in three releases.
 - **Two-strike rule.** After two "still doesn't look right" reports on the
   same asset, stop tuning numbers by intuition and go measure the pixels,
   or fall back to a plain CSS solution.
@@ -191,3 +203,6 @@ means, not a requirement.
   generated programmatically, no image model), and four lessons from it:
   digit-legibility verification for body faces, pixel-face sizing, surfaces
   the base backdrop was carrying, and inline colors vs. tokens.
+- 1.4.0 — revision pass over Morrowind and Dissidia: base-sheet changes
+  must be captured under every built-in; revision scope comes from a fresh
+  capture, not recollection.

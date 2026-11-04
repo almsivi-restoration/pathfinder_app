@@ -26,8 +26,9 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
     by an accent outline, tint, and a Current Turn tag (the GM actor table and initiative list
     mark the same actor with an accent bar and a marker)
   - Health bars for everyone: PCs show exact current/max values centered inside the bar,
-    NPCs show a green→yellow→red band bar without numbers (band colors are the
-    `--mw-hp-high/mid/low` theme tokens, selected by the `hp-high/hp-mid/hp-low` class)
+    NPCs show a three-band bar without numbers (band colors are the `--mw-hp-high/mid/low`
+    theme tokens, selected by the `hp-high/hp-mid/hp-low` class — Morrowind moss/ochre/red,
+    Dissidia brave-blue/amber/rose, Pokémon green/yellow/red)
   - Health bars play impact effects when a poll sees HP move: big hits (≥20% of max) shake
     the bar, any loss flashes and drains a damage ghost of the lost chunk, heals glow —
     ghost tint is the `--mw-hp-ghost` theme token
