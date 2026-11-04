@@ -181,3 +181,16 @@
   text-shadow: 0 1px 2px #000;
   padding: 6px 12px;
 }
+
+/* Window header bars: engraved Dwemer bronze plating (generated texture,
+   header-dwemer.jpg — horizontal grooves, rivets and stepped reliefs cut
+   from a 16:1 band so `cover` keeps the relief). The scrim keeps the gold
+   campaign title and the straw controls legible over the seams. */
+.gm-header,
+.player-header,
+.actor-header {
+  background:
+    linear-gradient(180deg, rgba(19, 17, 16, 0.25), rgba(19, 17, 16, 0.45)),
+    url('../assets/textures/header-dwemer.jpg') center / cover no-repeat,
+    linear-gradient(180deg, var(--mw-wood-light), var(--mw-wood-dark));
+}

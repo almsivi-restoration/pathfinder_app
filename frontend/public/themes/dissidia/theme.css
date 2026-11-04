@@ -716,3 +716,31 @@ input[type='search']:focus {
   border-color: var(--diss-select);
   box-shadow: inset 0 2px 4px rgba(28, 36, 80, 0.12), 0 0 8px var(--diss-cyan-glow);
 }
+
+/* ---------- Replacement (2026-11-03): the popup/title banner ---------- */
+
+/* The engraved silver strip is retired. The banner is now the crystal of
+   Cosmos: a dark indigo field with ice-blue shards rising from a sharp line
+   of light along the bottom edge (cosmos-banner.jpg, composed from the
+   generated original so the calm zone sits behind the title). A banded
+   scrim darkens only the title line; the shards and the light line below
+   stay bright. */
+.mw-banner {
+  background:
+    linear-gradient(180deg,
+      rgba(10, 14, 40, 0.35) 0%,
+      rgba(10, 14, 40, 0.55) 40%,
+      rgba(10, 14, 40, 0.2) 70%,
+      rgba(10, 14, 40, 0) 100%),
+    url('cosmos-banner.jpg') center bottom / cover no-repeat,
+    linear-gradient(180deg, #141c44, #0b1030);
+  border-bottom: 1px solid #7fd4f2;
+  box-shadow: 0 1px 0 rgba(127, 212, 242, 0.35), 0 2px 10px rgba(47, 107, 255, 0.35);
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(127, 212, 242, 0.7), 0 1px 2px rgba(10, 14, 40, 0.9);
+}
+
+.campaign-selector-titlebar .mw-banner {
+  border: 1px solid var(--mw-frame-lo);
+  border-bottom: 1px solid #7fd4f2;
+}
