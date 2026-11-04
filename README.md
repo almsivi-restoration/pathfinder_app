@@ -242,6 +242,11 @@ layered on top of the built-in theme; external themes can break readability if t
 incompatible values, so treat them as cosmetic experiments. Use **View > Theme > Reload Themes**
 after adding or editing a folder.
 
+Theme authors: `.github/blueprints/ui-theme-generation.md` is the build procedure and the
+selector contract every skin must redeclare, and `frontend/scripts/theme-capture.js` drives the
+real Electron app through every screen under a chosen theme and writes one screenshot per
+screen for review (prerequisites in its header comment).
+
 ## Testing
 
 Run backend tests:

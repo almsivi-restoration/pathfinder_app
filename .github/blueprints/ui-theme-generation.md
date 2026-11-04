@@ -1,7 +1,7 @@
 ---
 description: "Blueprint: how a UI theme / skin is produced for Game Master's Workbench — deriving a look from reference screenshots, generating textures with an image API, wiring CSS without the cover-crop and origin traps, and verifying against real rendered pixels. Load when building or editing a theme, generating UI textures, or tuning a skin."
 name: "bp-ui-theme-generation"
-version: "1.5.0"
+version: "2.0.0"
 applyTo: "frontend/src/**,frontend/public/themes/**,artifacts/local/**_ui/**"
 ---
 
@@ -32,10 +32,95 @@ The built-in `pokemon` theme
 ([frontend/public/themes/pokemon/theme.css](../../frontend/public/themes/pokemon/theme.css))
 is the second exemplar and the one to copy for a *pixel-era* skin: no image
 model at all — its tiles are hand-placed 16px pixel art upscaled with
-NEAREST (`artifacts/local/pokemon_ui/gen_assets.py`), its capture harness
-(`capture_app.js` beside it) drives the real Electron main through every
-screen, and it shows a per-screen metaphor (player view as the battle
-screen, Chronicle as a DMG LCD) layered on the shared panel contract.
+NEAREST (`artifacts/local/pokemon_ui/gen_assets.py`), and it shows a
+per-screen metaphor (player view as the battle screen, Chronicle as a DMG
+LCD) layered on the shared panel contract. It was built in one pass from a
+single prompt by following the procedure below, which is why the procedure
+is written down.
+
+## Procedure — building a new shipped theme
+
+This is the order that worked. Each step's output is the next step's
+input; skipping one is how a theme ends up as a palette swap, a font that
+can't render digits, or a frame on a page nobody looked at.
+
+1. **Survey the mechanism, not the mood.** Read `frontend/src/theme.js`
+   (how a skin loads), `electron.js` `BUILT_IN_EXTRA_THEMES` (how a
+   built-in registers), one existing built-in sheet end to end, and the
+   base `frontend/src/styles/theme.css`. Then build the **selector
+   inventory**: grep every `frontend/src/styles/*.css` and `App.css` for
+   rule selectors and every `background`/`border`/`font` the component
+   sheets *bake* (the panels, header bars, rows, badges, inputs, the HP
+   bar). The inventory is the list of things the skin must redeclare; a
+   skin written from memory misses the ones the base backdrop was
+   quietly carrying.
+2. **Write the design brief before any CSS.** One paragraph at the top of
+   `theme.css`: the reference era, the *structure* (light or dark
+   surfaces, where ornament lives, the selection idiom, the accent), and
+   a **per-screen metaphor** — what the player view *is* in this world,
+   what the Chronicle *is*, what a header bar *is*. The player view is the
+   screen players stare at for four hours; it deserves the strongest idea.
+   Decide what the accent slot (`--mw-gold`) means here and what
+   `--mw-turn-accent` means; they need not be the same color.
+3. **Choose and verify fonts** (OFL, bundled with the license file). Render
+   `0123456789`, `fi`, and a real stat string at the component sizes with
+   every candidate before committing to one — see the digit-legibility
+   rule below. Display face and body face are separate decisions.
+4. **Make or generate textures.** Match the instrument to the era: a
+   pixel-era skin gets hand-placed tiles from a PIL script (deterministic,
+   seamless, no model); a painterly skin gets the image API with prompts
+   written for the *container* (see the texture section). Every asset
+   gets a generator script or a prompt file beside the working copies
+   under `artifacts/local/<theme>_ui/`, and is measured, cropped to the
+   element's aspect, and sized before it is referenced.
+5. **Remove inline-color traps as you find them.** If a component paints
+   a palette value inline, move it to a `--mw-*` token selected by a
+   class in the same change (the HP bands are the precedent); the base
+   renders identically and every skin gains the hook. Update the tests.
+6. **Write `theme.json` + `theme.css` as overrides on the base**,
+   redeclaring every selector in the **panel list** and **header list**
+   below with a full `border` / `background` shorthand. Parse the sheet
+   (postcss) before building on it.
+7. **Register and document in the same change:** `BUILT_IN_EXTRA_THEMES`
+   in `electron.js`, the Help and About strings (single-quoted — `node
+   --check` after editing), `cp public/electron.js public/preload.js
+   build/`, README (feature bullet + Themes section), PROJECT_SETUP
+   (feature list + tree), the lexicon's Local Theme row, and this
+   blueprint's holotype list if the theme teaches something.
+8. **Capture every screen of every built-in** with
+   `frontend/scripts/theme-capture.js` (prereqs in its header) and *look at
+   the pixels*: zoom crops of digits, frame corners, hovered text. Fix,
+   re-capture, repeat. The capture set is the review artifact; a theme
+   whose screens were not all captured is not done.
+9. **Revise the base from captures, not from recollection.** A pass over
+   an existing skin starts by capturing it; the defects in the captures
+   are the scope.
+
+### The selector contract
+
+A skin that wants its own silhouette must redeclare **`border`** (full
+shorthand — it resets any base `border-image`) and **`background`** on
+every selector in these lists. Missing one is how a Morrowind stone frame
+ended up on Dissidia's Encyclopedia.
+
+- **Panels:** `.mw-panel`, `.scene-creator`, `.left-panel`,
+  `.right-panel`, `.load-section`, `.new-section`, `.actor-form`,
+  `.actor-edit-modal`, `.actor-view-modal`, `.reference-sources`,
+  `.reference-search`, `.bestiary-picker`, `.player-actor-row`.
+- **Header bars:** `.gm-header`, `.player-header`, `.actor-header`,
+  `.mw-banner`.
+- **Bare-on-backdrop surfaces** (no panel in the base; plate them if the
+  skin's backdrop is light or busy): `.encyclopedia-header`,
+  `.bestiary-header`, `.reference-reader-header`, `.bestiary-source`,
+  `.bestiary-search-panel`, `.bestiary-detail`.
+- **Rows/wells:** `.template-row`, `.scene-library-row`,
+  `.initiative-item`, `.edit-list-row`, `.bestiary-result-row`,
+  `.reference-result`, `.round-info`, `.campaign-button`, `.actor-list`,
+  `.initiative-order`; and `input[type='search']` alongside the text,
+  number, select, and textarea rules.
+
+When a selector is added to the base panel or header rules, add it here
+and to every shipped skin in the same commit.
 
 ## Contract
 
@@ -198,8 +283,8 @@ screen, Chronicle as a DMG LCD) layered on the shared panel contract.
 - **A base-sheet change is a change to every theme — capture all of them.**
   The base (Morrowind) component sheets are the floor the vendored skins
   stand on. When a base surface changes (the HP gauge, a badge), run the
-  harness against every built-in (`artifacts/local/theme_pass/
-  capture_theme.js <id>`) before committing: the 2026-11-03 pass fixed the
+  harness against every built-in (`node frontend/scripts/theme-capture.js
+  <id>`) before committing: the 2026-11-03 pass fixed the
   Morrowind round badge and silently turned Dissidia's blue one into a dark
   nameplate until the capture showed it.
 - **Revise by capture, not by memory.** A revision pass on an existing skin
@@ -233,3 +318,7 @@ means, not a requirement.
   `border-image`) and Dissidia (header light-streak band, glossy selection
   bar); records the frame-generation recipe and the `border`-shorthand
   insulation mechanism. Generator: `artifacts/local/theme_pass/gen_image.sh`.
+- 2.0.0 — added the Procedure (the nine-step order that produced the
+  pokemon theme in one pass) and the selector contract (panel, header,
+  bare-on-backdrop, row lists every skin must redeclare); the capture
+  harness moved into the repo at `frontend/scripts/theme-capture.js`.

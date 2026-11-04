@@ -73,6 +73,7 @@ pathfinder_app/
 │   │   ├── icons/              # Generated icon set
 │   │   └── themes/             # Vendored built-in themes (dissidia, pokemon: css, fonts OFL, textures)
 │   ├── build-resources/        # Icon generation script
+│   ├── scripts/                # Playwright harnesses (theme-capture.js: every screen under a theme)
 │   ├── src/
 │   │   ├── App.jsx
 │   │   ├── App.css
