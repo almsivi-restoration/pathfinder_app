@@ -144,6 +144,18 @@
   transition: width 0.3s ease;
 }
 
+.health-bar-fill.hp-high {
+  background-color: var(--mw-hp-high);
+}
+
+.health-bar-fill.hp-mid {
+  background-color: var(--mw-hp-mid);
+}
+
+.health-bar-fill.hp-low {
+  background-color: var(--mw-hp-low);
+}
+
 .health-bar-value {
   position: absolute;
   inset: 0;

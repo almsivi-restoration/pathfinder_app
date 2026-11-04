@@ -50,9 +50,9 @@ actor, initiative, or persistence ownership.
 	point the app at any OpenAI-compatible endpoint (Ollama, LM Studio, …), optionally ground
 	answers in your indexed rulebook PDFs, and unload the model from RAM when you are done. No
 	model ships with the app.
-- Switch the app's look through **View > Theme**: the built-in Morrowind and Dissidia 012 themes
-  ship with the app, and additional local themes install by dropping a folder into the themes
-  directory (see Themes below).
+- Switch the app's look through **View > Theme**: the built-in Morrowind, Dissidia 012, and
+  Pokémon (Gen I–III) themes ship with the app, and additional local themes install by dropping
+  a folder into the themes directory (see Themes below).
 - Keep a campaign journal through **GM Tools > Chronicle** (Ctrl+J): markdown-formatted entries
 	with a built-in formatting guide, styled as an open book.
 - Import a scanned Pathfinder 1e character sheet through **GM Tools > Import Character Sheet**
@@ -213,14 +213,19 @@ summary keys the initiative tracker and player view rely on.
 anything else worth recording about the campaign, styled as an open book. Entries support
 markdown formatting; a formatting guide sits on the right page while reading, and a live preview
 replaces it while writing. The Dissidia 012 theme gives its pages a cool silver-blue texture
-instead of the Morrowind parchment. Entries persist with the campaign.
+instead of the Morrowind parchment; the Pokémon theme turns the book into a Game Boy screen.
+Entries persist with the campaign.
 
 ## Themes
 
-**View > Theme** switches between the built-in Morrowind and Dissidia 012 themes and any locally
-installed themes; the selection persists across launches and falls back to Morrowind if a selected
-theme goes missing. A local theme is a folder under the themes directory (**View > Theme > Open
-Themes Folder** opens it) containing a `theme.json` manifest and a `theme.css` stylesheet:
+**View > Theme** switches between the built-in Morrowind, Dissidia 012, and Pokémon (Gen I–III)
+themes and any locally installed themes; the selection persists across launches and falls back
+to Morrowind if a selected theme goes missing. The Pokémon theme styles the player view as a
+Game Boy Advance battle screen — Poké Ball turn badges, cream HP boxes with the orange "HP" tag
+on a dark track, and a green/yellow/red bar that drains — over white text boxes on an overworld
+grass route everywhere else. A local theme is a folder under the themes directory (**View >
+Theme > Open Themes Folder** opens it) containing a `theme.json` manifest and a `theme.css`
+stylesheet:
 
 ```json
 {
@@ -340,8 +345,8 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
 - **View > Open Player View** opens the player-facing window.
 - **View > Zoom In / Zoom Out / Reset Zoom** (Ctrl+Plus / Ctrl+- / Ctrl+0) scale the focused
   window; Ctrl+scroll wheel does the same. Zoom is per-window and session-only.
-- **View > Theme** switches between the built-in Morrowind and Dissidia 012 themes and local
-  themes, and can open or rescan the themes directory.
+- **View > Theme** switches between the built-in Morrowind, Dissidia 012, and Pokémon (Gen I–III)
+  themes and local themes, and can open or rescan the themes directory.
 - **GM Tools > Encyclopedia** (Ctrl+E) opens the active ruleset's local reference search.
 - **GM Tools > Bestiary** (Ctrl+B) opens the bestiary search.
 - **GM Tools > Chronicle** (Ctrl+J) opens the campaign journal.

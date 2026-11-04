@@ -34,28 +34,31 @@ test('PC actors display exact current/max HP inside a health bar', () => {
   expect(healthBar.querySelector('.health-bar-fill')).toBeInTheDocument();
 });
 
-test('NPC actors above 50% health render a green bar', () => {
+test('NPC actors above 50% health render the high band', () => {
   const actor = { ...baseActor, sheet: { hp: { current: 8, max: 10 } } }; // 80%
   const { container } = render(<PlayerActorRow actor={actor} position={1} isCurrent={false} rulesetConfig={rulesetConfig} />);
 
   const fill = container.querySelector('.health-bar-fill');
-  expect(fill).toHaveStyle({ backgroundColor: '#4CAF50', width: '80%' });
+  expect(fill).toHaveClass('hp-high');
+  expect(fill).toHaveStyle({ width: '80%' });
 });
 
-test('NPC actors at or below 50% health render an orange bar', () => {
+test('NPC actors at or below 50% health render the mid band', () => {
   const actor = { ...baseActor, sheet: { hp: { current: 5, max: 10 } } }; // 50%
   const { container } = render(<PlayerActorRow actor={actor} position={1} isCurrent={false} rulesetConfig={rulesetConfig} />);
 
   const fill = container.querySelector('.health-bar-fill');
-  expect(fill).toHaveStyle({ backgroundColor: '#FF9800' });
+  expect(fill).toHaveClass('hp-mid');
+  expect(fill).not.toHaveClass('hp-high');
 });
 
-test('NPC actors at or below 25% health render a red bar', () => {
+test('NPC actors at or below 25% health render the low band', () => {
   const actor = { ...baseActor, sheet: { hp: { current: 2, max: 10 } } }; // 20%
   const { container } = render(<PlayerActorRow actor={actor} position={1} isCurrent={false} rulesetConfig={rulesetConfig} />);
 
   const fill = container.querySelector('.health-bar-fill');
-  expect(fill).toHaveStyle({ backgroundColor: '#F44336' });
+  expect(fill).toHaveClass('hp-low');
+  expect(fill).not.toHaveClass('hp-mid');
 });
 
 test('status effects render with their remaining duration', () => {

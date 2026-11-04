@@ -52,6 +52,7 @@ function builtInThemeUrl(themeId) {
 
 const BUILT_IN_EXTRA_THEMES = [
   { id: 'dissidia', name: 'Dissidia 012', builtIn: true },
+  { id: 'pokemon', name: 'Pokémon (Gen I–III)', builtIn: true },
 ].map((theme) => ({ ...theme, cssUrl: builtInThemeUrl(theme.id) }));
 
 // No apostrophe: electron-builder embeds productName in single-quoted shell in
@@ -513,11 +514,11 @@ function showHelp() {
       'Bestiary: GM Tools > Bestiary (Ctrl+B) searches a monster CSV you supply. Drop a file named bestiary.csv into the ruleset sources directory (alongside your reference PDFs), Import it, then view entries, create NPCs directly from them, or save them as campaign templates.\n\n' +
       'Encyclopedia: GM Tools > Encyclopedia (Ctrl+E) searches rulebook PDFs you supply. Drop PDFs for a ruleset into its source directory, then Index them there.\n\n' +
       'Name Generator: GM Tools > Name Generator (Ctrl+N) generates fantasy names for characters, places, items, factions, and events.\n\n' +
-      'Chronicle: GM Tools > Chronicle (Ctrl+J) is the campaign journal — markdown-formatted entries for session recaps and anything else worth recording, with a formatting guide on the right page. The Dissidia theme uses cool silver-blue pages instead of Morrowind parchment.\n\n' +
+      'Chronicle: GM Tools > Chronicle (Ctrl+J) is the campaign journal — markdown-formatted entries for session recaps and anything else worth recording, with a formatting guide on the right page. The Dissidia theme uses cool silver-blue pages instead of Morrowind parchment; the Pokémon theme turns the book into a Game Boy screen.\n\n' +
       'Quick Roll: GM Tools > Quick Roll (Ctrl+D) rolls checks for any actor in the open scene using the skill, save, or ability modifier from their sheet, or any custom die and modifier, with a running history of results.\n\n' +
       'Import Character Sheet: GM Tools > Import Character Sheet (Ctrl+I) reads a scanned Pathfinder 1e sheet (PDF) with OCR — abilities, HP, initiative, AC (touch and flat-footed), speed, BAB/CMB/CMD, saves, and the printed skill rows — and shows the extracted values for your review before saving. No scene needs to be open: with only a campaign loaded, the actor is saved as a campaign template you can drop into any scene. OCR uses PaddleOCR, which is not bundled — if the dialog reports the engine missing, it shows the exact commands to create the dedicated OCR environment.\n\n' +
       'The Harrowing: GM Tools > The Harrowing (Ctrl+P) is a chat window to a local language model you run yourself — spin up story beats, NPC background, and plot hooks at the table. No model ships with the app: start your own server (for example Ollama, with `ollama serve`), open Settings in the dialog, and point the app at its endpoint and model name. Enable "Ground in my rulebooks" to have it answer using passages from your indexed reference PDFs.\n\n' +
-      'Themes: View > Theme switches between the built-in Morrowind and Dissidia 012 themes and any local themes installed in the app themes directory. Use Open Themes Folder to add a folder containing theme.json and theme.css, then Reload Themes.\n\n' +
+      'Themes: View > Theme switches between the built-in Morrowind, Dissidia 012, and Pokémon (Gen I–III) themes and any local themes installed in the app themes directory. The Pokémon theme styles the player view as a Game Boy Advance battle screen (HP boxes, draining HP bars). Use Open Themes Folder to add a folder containing theme.json and theme.css, then Reload Themes.\n\n' +
       'Data lives under:\n' +
       path.join(app.getPath('userData'), 'data') +
       '\n\nKeyboard: Ctrl+B bestiary · Ctrl+D quick roll · Ctrl+E encyclopedia · Ctrl+I import sheet · Ctrl+J chronicle · Ctrl+N name generator · Ctrl+P the harrowing · Ctrl+Plus/Ctrl+-/Ctrl+0 zoom · Ctrl+R restart · Ctrl+Q quit · Ctrl+Shift+I developer tools.',
@@ -676,7 +677,7 @@ function buildMenuTemplate() {
               message: "Game Master's Workbench",
               detail:
                 `Version ${app.getVersion()}\n\n` +
-                'A tabletop GM companion for Pathfinder 1e and 2e and Numenera: campaign management with renaming and portable export/import, scene and initiative tracking, reusable actor templates, a searchable rules encyclopedia, a bestiary, a name generator, quick rolls, scanned character-sheet import, a chat window to your own local model (GM Tools > The Harrowing), a player-safe second-screen view with the scene name, current-turn highlighting, and game-style health-bar impact effects, browser-style per-window zoom (Ctrl+scroll), and switchable UI themes (View > Theme) — Morrowind and Dissidia 012 built in, plus your own local themes.\n\n' +
+                'A tabletop GM companion for Pathfinder 1e and 2e and Numenera: campaign management with renaming and portable export/import, scene and initiative tracking, reusable actor templates, a searchable rules encyclopedia, a bestiary, a name generator, quick rolls, scanned character-sheet import, a chat window to your own local model (GM Tools > The Harrowing), a player-safe second-screen view with the scene name, current-turn highlighting, and game-style health-bar impact effects, browser-style per-window zoom (Ctrl+scroll), and switchable UI themes (View > Theme) — Morrowind, Dissidia 012, and Pokémon (Gen I–III) built in, plus your own local themes.\n\n' +
                 'Reference PDFs and bestiary CSVs are user-supplied and are never included with the app.\n\n' +
                 'Data directory:\n' +
                 path.join(app.getPath('userData'), 'data'),

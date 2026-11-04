@@ -90,6 +90,12 @@
   /* Player-screen damage ghost (PlayerActorRow.css): hot ember, brightened
      from danger-bright so the lost chunk reads over any fill color. */
   --mw-hp-ghost: rgba(255, 122, 89, 0.9);
+  /* Player-screen health bands: above half, half-to-quarter, quarter and
+     below. Game-style traffic lights rather than the Morrowind stat palette
+     so the fill reads at a glance from across the table. */
+  --mw-hp-high: #4caf50;
+  --mw-hp-mid: #ff9800;
+  --mw-hp-low: #f44336;
 
   /* Whose-turn-is-it highlight (GM actor table, GM initiative list, player
      rows). Derived from the accent so every theme inherits a matching cue;

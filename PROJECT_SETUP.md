@@ -15,7 +15,7 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 - **Reference Library:** Index user-supplied rulebook PDFs into a local SQLite FTS5 index and search them per-ruleset from the Encyclopedia page; scanned pages (no embedded text) are OCR'd with Tesseract when available
 - **Reference Reader:** In-app PDF reading with page-number jump and fit-to-view zoom
 - **Name Generator:** Per-race syllable-grammar generator for actors, plus multi-template engines for places, items, factions, and events; batches are deduplicated
-- **Chronicle:** Campaign journal (GM Tools > Chronicle, Ctrl+J) styled as an open book — markdown-formatted entries with a formatting guide and live preview, persisted with the campaign; Dissidia 012 uses a silver-blue page texture instead of Morrowind parchment
+- **Chronicle:** Campaign journal (GM Tools > Chronicle, Ctrl+J) styled as an open book — markdown-formatted entries with a formatting guide and live preview, persisted with the campaign; Dissidia 012 uses a silver-blue page texture instead of Morrowind parchment, and the Pokémon theme renders it as a Game Boy DMG screen
 - **Bestiary:** Import a user-supplied `bestiary.csv` from the ruleset sources directory into a per-ruleset SQLite FTS5 index; search with CR/type filters, view full monster entries, and create NPC actors or campaign templates from them (1e)
 - **The Harrowing:** Chat with a user-supplied local language model (GM Tools > The Harrowing, Ctrl+P) through any OpenAI-compatible endpoint (Ollama, LM Studio, …); status probe (reachable / model present / loaded), optional grounding in the indexed reference library, and a Sleep button that unloads the model from RAM (Ollama `keep_alive=0`). No model ships with the app; settings persist to `harrowing-settings.json` under the data dir
 - **Character Sheet Import:** OCR a scanned Pathfinder 1e sheet PDF (GM Tools > Import Character Sheet, Ctrl+I) into a reviewable actor draft — abilities, HP, initiative, AC (touch and flat-footed), speed, BAB/CMB/CMD, saves, printed skill rows, name — for GM confirmation before saving. No scene is required: with only a campaign loaded the actor is saved as a campaign template. Handwriting OCR uses PaddleOCR, kept out of the backend environment entirely: extraction runs as a subprocess from a dedicated user-created venv (`backend/requirements-ocr.txt`), and the import dialog shows the exact install commands when it is missing
@@ -26,7 +26,8 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
     by an accent outline, tint, and a Current Turn tag (the GM actor table and initiative list
     mark the same actor with an accent bar and a marker)
   - Health bars for everyone: PCs show exact current/max values centered inside the bar,
-    NPCs show a green→red gradient bar without numbers
+    NPCs show a green→yellow→red band bar without numbers (band colors are the
+    `--mw-hp-high/mid/low` theme tokens, selected by the `hp-high/hp-mid/hp-low` class)
   - Health bars play impact effects when a poll sees HP move: big hits (≥20% of max) shake
     the bar, any loss flashes and drains a damage ghost of the lost chunk, heals glow —
     ghost tint is the `--mw-hp-ghost` theme token
@@ -34,6 +35,7 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
   - GM-assigned marker color as a thick accent bar on each row
 - **Zoom:** Ctrl+scroll wheel or View > Zoom In / Zoom Out / Reset Zoom (Ctrl+Plus / Ctrl+- /
   Ctrl+0) scale either window independently; zoom is per-window and resets on relaunch
+- **Themes:** View > Theme switches between the built-in Morrowind (base), Dissidia 012, and Pokémon (Gen I–III) skins and any local theme folder; the Pokémon theme styles the player view as a GBA battle screen and the Chronicle as a Game Boy DMG screen
 - **Persistence:** Save/load campaigns and scenes as JSON files
 - **Packaged Desktop App:** Installable AppImage and deb builds with auto-update (AppImage) and an apt-managed deb
 
@@ -68,7 +70,7 @@ pathfinder_app/
 │   │   ├── electron.js         # Electron main process
 │   │   ├── preload.js          # Electron preload
 │   │   ├── icons/              # Generated icon set
-│   │   └── themes/             # Vendored built-in themes (dissidia: css, fonts OFL, textures)
+│   │   └── themes/             # Vendored built-in themes (dissidia, pokemon: css, fonts OFL, textures)
 │   ├── build-resources/        # Icon generation script
 │   ├── src/
 │   │   ├── App.jsx

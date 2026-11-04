@@ -1,7 +1,7 @@
 ---
 description: "Canonical domain vocabulary, naming, casing, and formatting conventions for Game Master's Workbench. The singular voice of the codebase — ALWAYS load this instruction."
 name: "gmw-lexicon"
-version: "1.1.0"
+version: "1.2.0"
 applyTo: "**"
 ---
 
@@ -40,7 +40,7 @@ controlling behavior boundary.
 | **Reference Library** | Per-ruleset collection of user-supplied reference PDFs, indexed for search. | Routes under `/api/references/current/*`. |
 | **Source Manifest** | JSON manifest describing a ruleset's reference sources. | `manifests/<ruleset>.json`. |
 | **Campaign Export** | A single portable JSON bundle (`format: "gm-workbench-campaign"`, integer `version`) holding a saved Campaign and its saved Scenes. | `GET /api/campaign/export`, `POST /api/campaign/import`; import never overwrites — a taken name gets an ` (imported)` suffix. |
-| **Local Theme** | A user-installed UI skin: a folder under the themes directory with a `theme.json` manifest and a `theme.css` stylesheet overriding `--mw-*` tokens. | Built-in `morrowind` theme always available; selection persists via `theme-settings.json`. |
+| **Local Theme** | A user-installed UI skin: a folder under the themes directory with a `theme.json` manifest and a `theme.css` stylesheet overriding `--mw-*` tokens. | Built-in `morrowind` theme always available (the base sheet); `dissidia` and `pokemon` ship as vendored built-ins layered on it; selection persists via `theme-settings.json`. |
 
 ## Shared sheet contract keys
 

@@ -40,13 +40,14 @@ function PlayerActorRow({ actor, position, isCurrent, rulesetConfig }) {
 
   useEffect(() => () => clearTimeout(fxTimerRef.current), []);
 
-  // Determine color gradient: green -> yellow -> red
-  let barColor = '#4CAF50'; // green
+  // Health band (green -> yellow -> red): a class, so the colors live in the
+  // theme tokens (--mw-hp-high/mid/low) and a skin can recolor the bar.
+  let hpBand = 'hp-high';
   if (healthPercentage <= 50) {
-    barColor = '#FF9800'; // yellow/orange
+    hpBand = 'hp-mid';
   }
   if (healthPercentage <= 25) {
-    barColor = '#F44336'; // red
+    hpBand = 'hp-low';
   }
 
   return (
@@ -77,11 +78,8 @@ function PlayerActorRow({ actor, position, isCurrent, rulesetConfig }) {
               className={`health-bar-background${hpFx ? ` hp-fx-${hpFx.kind}` : ''}`}
             >
               <div
-                className="health-bar-fill"
-                style={{
-                  width: `${Math.max(0, Math.min(100, healthPercentage))}%`,
-                  backgroundColor: barColor,
-                }}
+                className={`health-bar-fill ${hpBand}`}
+                style={{ width: `${Math.max(0, Math.min(100, healthPercentage))}%` }}
               />
               {hpFx && hpFx.kind !== 'heal' && (
                 <div className="health-bar-ghost" style={{ width: `${hpFx.prevPct}%` }} />

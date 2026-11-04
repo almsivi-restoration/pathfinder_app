@@ -1,7 +1,7 @@
 ---
 description: "Blueprint: how a UI theme / skin is produced for Game Master's Workbench — deriving a look from reference screenshots, generating textures with an image API, wiring CSS without the cover-crop and origin traps, and verifying against real rendered pixels. Load when building or editing a theme, generating UI textures, or tuning a skin."
 name: "bp-ui-theme-generation"
-version: "1.2.0"
+version: "1.3.0"
 applyTo: "frontend/src/**,frontend/public/themes/**,artifacts/local/**_ui/**"
 ---
 
@@ -28,6 +28,15 @@ file (`banner-strip.jpg`, `panel-sheen.jpg`, `waves.png`). Its generation
 scripts live beside the working copies in
 `artifacts/local/dissidia_ui/` (`gen_banner.sh`).
 
+The built-in `pokemon` theme
+([frontend/public/themes/pokemon/theme.css](../../frontend/public/themes/pokemon/theme.css))
+is the second exemplar and the one to copy for a *pixel-era* skin: no image
+model at all — its tiles are hand-placed 16px pixel art upscaled with
+NEAREST (`artifacts/local/pokemon_ui/gen_assets.py`), its capture harness
+(`capture_app.js` beside it) drives the real Electron main through every
+screen, and it shows a per-screen metaphor (player view as the battle
+screen, Chronicle as a DMG LCD) layered on the shared panel contract.
+
 ## Contract
 
 ### Deriving a look from reference screenshots
@@ -44,6 +53,28 @@ scripts live beside the working copies in
   theme" even when every color is right. Bundle the face under a
   redistributable license (OFL) with `@font-face` and the license file
   riding alongside; family names must match what you actually ship.
+- **Verify a body face's digits at the rendered pixel before wiring it.**
+  This is a GM tool: HP, AC, and rolls are the content. The first pokemon
+  body face (Pixelify Sans) looked right in the specimen and rendered
+  `30/45` as `30/4S` and `Ironfist` as `IronAst` in the app capture. Render
+  `0123456789`, `fi`, and a real stat string with every candidate at the
+  sizes the components actually use (PIL is enough), and reject any face
+  whose 5/S, 3/8/9, or ligatures blur — before the theme is written around
+  it.
+- **Pixel faces run small for their nominal size.** A face drawn on a
+  20px grid (Jersey 20) at the component sheets' 14px is a 10px read.
+  Step body copy up in the theme (`body`, rows, inputs) rather than
+  shrinking the design to the font.
+- **Find the surfaces the base backdrop was carrying.** Some components
+  have no panel of their own and only read because the Morrowind backdrop
+  is dark (Bestiary's search/detail columns, its source row, the page-level
+  `h2`s). A light or busy backdrop exposes every one of them; walk every
+  screen in the capture harness, not just the ones you styled.
+- **Inline colors defeat tokens.** A component that paints a palette value
+  inline (the player HP bar's green/yellow/red once did) cannot be skinned
+  without `!important`. Move the value to a `--mw-*` token and select it
+  with a class (`hp-high/mid/low`) in the same change — the base theme
+  renders identically and every skin inherits the hook.
 - **A local theme is userData-only; a built-in is vendored.** Local themes
   live under the app's `userData/themes/<id>/`. A built-in ships in-repo
   under `frontend/public/themes/<id>/` and is registered in
@@ -153,3 +184,10 @@ This blueprint governs *skins* — looks meant to be switched, shipped, or
 reused. If a texture genuinely can't carry the design (a flat gradient
 reads better), prefer the gradient and say so; a generated image is a
 means, not a requirement.
+
+## Revision notes
+
+- 1.3.0 — added the `pokemon` built-in as a second holotype (pixel art
+  generated programmatically, no image model), and four lessons from it:
+  digit-legibility verification for body faces, pixel-face sizing, surfaces
+  the base backdrop was carrying, and inline colors vs. tokens.
