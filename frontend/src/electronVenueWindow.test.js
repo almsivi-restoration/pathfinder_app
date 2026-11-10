@@ -160,3 +160,30 @@ test('the preload bridge exposes openVenueWindow over the same channel', () => {
 
   expect(preload).toMatch(/openVenueWindow:\s*\(\)\s*=>\s*ipcRenderer\.invoke\('open-venue-window'\)/);
 });
+
+// The Venue Screen and Player View are player-facing: a GM tool opened from the menu while
+// one of them has focus must land on the GM window, never on the screen the table can see.
+test('GM Tools always open on the GM window, whichever window has focus', async () => {
+  const state = loadMain({ dev: true });
+  await state.appHandlers.ready();
+  const gmWindow = state.windows[0];
+  await state.ipc['open-venue-window']();
+  const venueWindow = state.windows[state.windows.length - 1];
+  state.focused = venueWindow;
+
+  const tools = state.menu.find((entry) => entry.label === 'GM Tools').submenu;
+  tools.forEach((item) => item.click());
+
+  expect(venueWindow.sent).toEqual([]);
+  expect(gmWindow.sent).toEqual([
+    'open-encyclopedia',
+    'open-bestiary',
+    'open-venues',
+    'open-chronicle',
+    'open-name-generator',
+    'open-quick-roll',
+    'open-sheet-importer',
+    'open-harrowing',
+  ]);
+  expect(gmWindow.focusCount).toBe(tools.length);
+});

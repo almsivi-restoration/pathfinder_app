@@ -407,6 +407,8 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
   window; Ctrl+scroll wheel does the same. Zoom is per-window and session-only.
 - **View > Theme** switches between the built-in Morrowind, Dissidia 012, and Pokémon (Gen I–III)
   themes and local themes, and can open or rescan the themes directory.
+- **GM Tools** items and their shortcuts always open on the GM window, even when the Player View or
+  the Venue Screen has focus, so a GM tool never appears on a screen the players can see.
 - **GM Tools > Encyclopedia** (Ctrl+E) opens the active ruleset's local reference search.
 - **GM Tools > Bestiary** (Ctrl+B) opens the bestiary search.
 - **GM Tools > Venues** (Ctrl+M) opens the venue library and editor.

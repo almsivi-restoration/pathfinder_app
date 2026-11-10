@@ -67,7 +67,9 @@ function ActorRow({ actor, summaryFields }) {
 - **Dialogs/tools:** the GM Tools menu triggers an IPC event
   (`open-<tool>`), which the dialog component listens for. Keyboard
   shortcut (Ctrl+letter) fires the same event. See NameGenerator for the
-  pattern.
+  pattern. The event always goes to the GM window (`sendToGmWindow` in
+  `electron.js`), never the focused one: the Player View and the Venue
+  Screen are what the table sees.
 
 ## When this doesn't fit
 
@@ -91,4 +93,5 @@ uses tokens. See the content-catalog blueprint.
   (after the zoom-out "−" vanished under the Pokémon pixel font, and the
   typed rotate arrows after it); recorded the map-art-is-content deviation
   for venues and marker bases; portaled popovers manage focus; column
-  labels stretch.
+  labels stretch; GM Tools open on the GM window whichever window has
+  focus (they used to follow focus onto the player-facing windows).

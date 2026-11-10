@@ -560,6 +560,14 @@ function showHelp() {
   });
 }
 
+// GM Tools always open on the GM window. The Player View and the Venue Screen are what the
+// table sees: a tool opened from the menu while one of them has focus must not appear there.
+function sendToGmWindow(channel) {
+  if (!mainWindow) return;
+  mainWindow.focus();
+  mainWindow.webContents.send(channel);
+}
+
 function buildMenuTemplate() {
   return [
     {
@@ -641,66 +649,42 @@ function buildMenuTemplate() {
       {
         label: 'Encyclopedia',
         accelerator: 'CmdOrCtrl+E',
-        click: () => {
-          const window = BrowserWindow.getFocusedWindow() || mainWindow;
-          if (window) window.webContents.send('open-encyclopedia');
-        },
+        click: () => sendToGmWindow('open-encyclopedia'),
       },
       {
         label: 'Bestiary',
         accelerator: 'CmdOrCtrl+B',
-        click: () => {
-          const window = BrowserWindow.getFocusedWindow() || mainWindow;
-          if (window) window.webContents.send('open-bestiary');
-        },
+        click: () => sendToGmWindow('open-bestiary'),
       },
       {
         label: 'Venues',
         accelerator: 'CmdOrCtrl+M',
-        click: () => {
-          // Always the GM window: the editor shows secret doors and notes.
-          if (mainWindow) mainWindow.webContents.send('open-venues');
-        },
+        click: () => sendToGmWindow('open-venues'),
       },
       {
         label: 'Chronicle',
         accelerator: 'CmdOrCtrl+J',
-        click: () => {
-          const window = BrowserWindow.getFocusedWindow() || mainWindow;
-          if (window) window.webContents.send('open-chronicle');
-        },
+        click: () => sendToGmWindow('open-chronicle'),
       },
       {
         label: 'Name Generator',
         accelerator: 'CmdOrCtrl+N',
-        click: () => {
-          const window = BrowserWindow.getFocusedWindow() || mainWindow;
-          if (window) window.webContents.send('open-name-generator');
-        },
+        click: () => sendToGmWindow('open-name-generator'),
       },
       {
         label: 'Quick Roll',
         accelerator: 'CmdOrCtrl+D',
-        click: () => {
-          const window = BrowserWindow.getFocusedWindow() || mainWindow;
-          if (window) window.webContents.send('open-quick-roll');
-        },
+        click: () => sendToGmWindow('open-quick-roll'),
       },
       {
         label: 'Import Character Sheet',
         accelerator: 'CmdOrCtrl+I',
-        click: () => {
-          const window = BrowserWindow.getFocusedWindow() || mainWindow;
-          if (window) window.webContents.send('open-sheet-importer');
-        },
+        click: () => sendToGmWindow('open-sheet-importer'),
       },
       {
         label: 'The Harrowing',
         accelerator: 'CmdOrCtrl+P',
-        click: () => {
-          const window = BrowserWindow.getFocusedWindow() || mainWindow;
-          if (window) window.webContents.send('open-harrowing');
-        },
+        click: () => sendToGmWindow('open-harrowing'),
       },
     ],
   },
