@@ -1,7 +1,7 @@
 ---
 description: "Blueprint: how a UI theme / skin is produced for Game Master's Workbench — deriving a look from reference screenshots, generating textures with an image API, wiring CSS without the cover-crop and origin traps, and verifying against real rendered pixels. Load when building or editing a theme, generating UI textures, or tuning a skin."
 name: "bp-ui-theme-generation"
-version: "2.0.0"
+version: "2.1.0"
 applyTo: "frontend/src/**,frontend/public/themes/**,artifacts/local/**_ui/**"
 ---
 
@@ -105,14 +105,20 @@ ended up on Dissidia's Encyclopedia.
 
 - **Panels:** `.mw-panel`, `.scene-creator`, `.left-panel`,
   `.right-panel`, `.load-section`, `.new-section`, `.actor-form`,
-  `.actor-edit-modal`, `.actor-view-modal`, `.reference-sources`,
-  `.reference-search`, `.bestiary-picker`, `.player-actor-row`.
+  `.actor-edit-modal`, `.actor-view-modal`, `.mat-guide`,
+  `.reference-sources`, `.reference-search`, `.bestiary-picker`,
+  `.player-actor-row`.
 - **Header bars:** `.gm-header`, `.player-header`, `.actor-header`,
-  `.mw-banner`.
+  `.mw-banner`, `.venue-screen-header`.
 - **Bare-on-backdrop surfaces** (no panel in the base; plate them if the
   skin's backdrop is light or busy): `.encyclopedia-header`,
-  `.bestiary-header`, `.reference-reader-header`, `.bestiary-source`,
-  `.bestiary-search-panel`, `.bestiary-detail`.
+  `.bestiary-header`, `.reference-reader-header`, `.venues-header`,
+  `.bestiary-source`, `.bestiary-search-panel`, `.bestiary-detail`, and
+  the venue editor's chrome — `.venue-toolbar`, `.venue-sidebar-section`,
+  `.venue-library-new`, `.venue-status`.
+- **Bare text on the backdrop** (no surface at all; the base's light
+  header ink vanishes on a pale backdrop): `.waiting`,
+  `.venue-screen-waiting`.
 - **Rows/wells:** `.template-row`, `.scene-library-row`,
   `.initiative-item`, `.edit-list-row`, `.bestiary-result-row`,
   `.reference-result`, `.round-info`, `.campaign-button`, `.actor-list`,
@@ -121,6 +127,11 @@ ended up on Dissidia's Encyclopedia.
 
 When a selector is added to the base panel or header rules, add it here
 and to every shipped skin in the same commit.
+`frontend/src/themeSelectorContract.test.js` is the mechanical half of
+this contract: it reads the base sheet's framed windows and the lists
+above and fails when a shipped skin owns no rule for one of them. It
+proves a rule exists, not that it looks right — the capture pass is still
+the review. Add a new surface to that test's lists in the same change.
 
 ## Contract
 
@@ -322,3 +333,14 @@ means, not a requirement.
   pokemon theme in one pass) and the selector contract (panel, header,
   bare-on-backdrop, row lists every skin must redeclare); the capture
   harness moved into the repo at `frontend/scripts/theme-capture.js`.
+- 2.1.0 — venues: `.venue-screen-header` joins the header bars,
+  `.mat-guide` the panels, `.venues-header` and the venue editor's chrome
+  the bare-on-backdrop surfaces, and the two second-screen waiting lines
+  become a list of their own. A header bar's title color is part of the
+  redeclaration — a skin with a dark bar and dark heading ink (Dissidia)
+  must restate `h1` on it, or the title vanishes (it had, on the Player
+  View). The contract gained a test, after a review found the Mat Guide
+  unframed in Morrowind and the venue editor wearing flat token boxes
+  under Pokémon — both from selectors no skin had been told about. A
+  window framed in the base or a skin must keep its print rules scoped
+  above the skins: framing `.mat-guide` printed the frame until they were.

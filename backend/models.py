@@ -1,5 +1,6 @@
+import re
 from pydantic import BaseModel, Field, model_validator
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Literal
 from datetime import datetime
 
 
@@ -15,6 +16,9 @@ class Actor(BaseModel):
     player_name: Optional[str] = None  # None for NPCs
     is_pc: bool
     color: Optional[str] = None  # GM-assigned marker color (hex), shown on the player view
+    # GM-assigned marker symbol id (frontend markerSymbols.js catalog), drawn on the physical base.
+    # Unknown ids are kept, not rejected, so a newer catalog's symbols survive an older backend.
+    symbol: Optional[str] = Field(default=None, max_length=32)
 
     # Scene state shared across rulesets.
     initiative_roll: Optional[int] = None  # actual rolled value (physical die + bonus), GM-entered
@@ -114,6 +118,81 @@ class Campaign(BaseModel):
         campaign = value.copy()
         campaign["scenes"] = campaign.pop("encounters")
         return campaign
+
+
+VENUE_MAX_SIDE = 100  # cells; the 34x48 table mat fits with room for larger maps split into sections
+_VENUE_CELL_KEY = re.compile(r"^(\d{1,3}),(\d{1,3})$")
+
+
+class VenueEdge(BaseModel):
+    """A drawn grid line. side "n" is the top edge of cell (x, y); "w" is its left edge, so the
+    bottom/right map border is addressed as y == height / x == width.
+
+    Walls between floor and empty space are derived when rendering and are never stored here;
+    edges hold only explicit walls, doors, and secret doors (kind ids from the frontend catalog).
+    """
+    x: int = Field(ge=0, le=VENUE_MAX_SIDE)
+    y: int = Field(ge=0, le=VENUE_MAX_SIDE)
+    side: Literal["n", "w"]
+    kind: str = Field(min_length=1, max_length=32)
+
+
+class VenueFeature(BaseModel):
+    """A catalog stamp (furniture, stairs, labels, traps...) anchored on one cell."""
+    id: str = Field(min_length=1, max_length=64)
+    kind: str = Field(min_length=1, max_length=32)
+    x: int = Field(ge=0, lt=VENUE_MAX_SIDE)
+    y: int = Field(ge=0, lt=VENUE_MAX_SIDE)
+    rotation: Literal[0, 90, 180, 270] = 0
+    label: str = Field(default="", max_length=80)
+    gm_only: bool = False  # stripped server-side before the venue reaches the Venue Screen
+
+
+class Venue(BaseModel):
+    """A campaign-owned grid map. cells is sparse: "x,y" -> terrain id; absent cells are void."""
+    id: str = Field(min_length=1, max_length=128)
+    name: str = Field(min_length=1, max_length=120)
+    notes: str = ""  # GM-only; never sent to the Venue Screen
+    grid: Literal["square"] = "square"
+    width: int = Field(ge=1, le=VENUE_MAX_SIDE)
+    height: int = Field(ge=1, le=VENUE_MAX_SIDE)
+    cells: Dict[str, str] = Field(default_factory=dict)
+    edges: List[VenueEdge] = Field(default_factory=list)
+    features: List[VenueFeature] = Field(default_factory=list, max_length=2000)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+
+    @model_validator(mode="after")
+    def check_contents_fit_the_grid(self) -> "Venue":
+        for key, terrain in self.cells.items():
+            match = _VENUE_CELL_KEY.match(key)
+            if not match or int(match[1]) >= self.width or int(match[2]) >= self.height:
+                raise ValueError(f"Cell {key!r} is outside the {self.width}x{self.height} venue")
+            if not terrain or len(terrain) > 32:
+                raise ValueError(f"Cell {key!r} has an invalid terrain id")
+        seen_edges = set()
+        for edge in self.edges:
+            max_x = self.width - 1 if edge.side == "n" else self.width
+            max_y = self.height if edge.side == "n" else self.height - 1
+            if edge.x > max_x or edge.y > max_y:
+                raise ValueError(f"Edge {edge.side} at {edge.x},{edge.y} is outside the venue")
+            if (edge.x, edge.y, edge.side) in seen_edges:
+                raise ValueError(f"Edge {edge.side} at {edge.x},{edge.y} is listed twice")
+            seen_edges.add((edge.x, edge.y, edge.side))
+        feature_ids = set()
+        for feature in self.features:
+            if feature.x >= self.width or feature.y >= self.height:
+                raise ValueError(f"Feature {feature.id!r} is outside the venue")
+            if feature.id in feature_ids:
+                raise ValueError(f"Feature id {feature.id!r} is listed twice")
+            feature_ids.add(feature.id)
+        return self
+
+
+class VenueCreateRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    width: int = Field(ge=1, le=VENUE_MAX_SIDE)
+    height: int = Field(ge=1, le=VENUE_MAX_SIDE)
 
 
 class RollRequest(BaseModel):

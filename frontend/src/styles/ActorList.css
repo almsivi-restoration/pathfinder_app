@@ -36,4 +36,4 @@
 .actor-header .col-type { flex: 1; min-width: 0; }
 .actor-header .col-stat { flex: 1; min-width: 0; text-align: center; }
 /* Must match .actor-row .col-actions in ActorRow.css or headers drift. */
-.actor-header .col-actions { flex: 0 0 300px; min-width: 0; }
+.actor-header .col-actions { flex: 0 0 330px; min-width: 0; }

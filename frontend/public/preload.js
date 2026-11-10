@@ -22,6 +22,7 @@ window.addEventListener(
 contextBridge.exposeInMainWorld('electron', {
   appVersion: process.env.npm_package_version || '',
   openPlayerWindow: () => ipcRenderer.invoke('open-player-window'),
+  openVenueWindow: () => ipcRenderer.invoke('open-venue-window'),
   getThemeState: () => ipcRenderer.invoke('get-theme-state'),
   setTheme: (themeId) => ipcRenderer.invoke('set-theme', themeId),
   reloadThemes: () => ipcRenderer.invoke('reload-themes'),
@@ -45,6 +46,11 @@ contextBridge.exposeInMainWorld('electron', {
     const listener = () => callback();
     ipcRenderer.on('open-bestiary', listener);
     return () => ipcRenderer.removeListener('open-bestiary', listener);
+  },
+  onOpenVenues: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on('open-venues', listener);
+    return () => ipcRenderer.removeListener('open-venues', listener);
   },
   onOpenChronicle: (callback) => {
     const listener = () => callback();

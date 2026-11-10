@@ -181,7 +181,8 @@ h4 { font-size: 9px; }
 /* Component sheets pin their own heading sizes at higher specificity than a
    bare tag — restate each at 8-bit scale. */
 .header-left h1 { font-size: 16px; }
-.player-header h1 { font-size: 18px; }
+.player-header h1,
+.venue-screen-header h1 { font-size: 18px; }
 .initiative-section h2 { font-size: 14px; }
 .load-section h2,
 .new-section h2,
@@ -193,10 +194,15 @@ h4 { font-size: 9px; }
 .actor-form-header h2,
 .actor-edit-header h2,
 .actor-view-header h2,
+.mat-guide-header h2,
+.venue-library h2,
 .scene-creator h2 { font-size: 12px; }
 .scene-creator h3,
 .bestiary-entry-header h3,
-.bestiary-picker-header h3 { font-size: 10px; }
+.bestiary-picker-header h3,
+.venue-sidebar-section h3,
+.mat-guide-steps h3,
+.mat-guide-key h3 { font-size: 10px; }
 .initiative-order h3,
 .sheet-section h4,
 .edit-section h4,
@@ -204,7 +210,8 @@ h4 { font-size: 9px; }
 .bestiary-entry h4 { font-size: 9px; }
 .encyclopedia-header h1,
 .reference-reader-header h1,
-.bestiary-header h1 { font-size: 16px; }
+.bestiary-header h1,
+.venues-header h1 { font-size: 16px; }
 
 .actor-view-section h4 {
   color: var(--pk-blue);
@@ -227,6 +234,7 @@ h4 { font-size: 9px; }
 .encyclopedia-header,
 .bestiary-header,
 .reference-reader-header,
+.venues-header,
 .bestiary-source,
 .bestiary-search-panel,
 .bestiary-detail {
@@ -255,7 +263,8 @@ h4 { font-size: 9px; }
 
 .encyclopedia-header p,
 .reference-reader-header p,
-.bestiary-header p {
+.bestiary-header p,
+.venues-header p {
   color: var(--mw-text-dim);
   opacity: 1;
 }
@@ -282,6 +291,7 @@ label,
 .actor-form,
 .actor-edit-modal,
 .actor-view-modal,
+.mat-guide,
 .reference-sources,
 .reference-search,
 .bestiary-picker,
@@ -312,21 +322,173 @@ label,
 .quick-roll-backdrop,
 .name-generator-backdrop,
 .sheet-importer-backdrop,
-.bestiary-picker-overlay {
+.bestiary-picker-overlay,
+.mat-guide-overlay {
   background: rgba(16, 24, 16, 0.55);
+}
+
+/* ---------- Venues: editor chrome as text boxes on the route ---------- */
+
+/* Every piece of the editor sits straight on the grass, so each is its own
+   text box. The rings are box-shadows reaching 5px past the border: the gaps
+   widen to keep neighbours apart, and the two scrolling columns get padding
+   so their overflow does not shear the rings off. */
+.venue-toolbar,
+.venue-sidebar-section,
+.venue-library-new,
+.venue-status,
+.venue-canvas,
+.venues-placeholder {
+  background: var(--mw-panel);
+  border: 2px solid var(--mw-frame);
+  border-radius: 6px;
+  box-shadow: 0 0 0 3px var(--mw-frame-lo), 0 0 0 5px var(--mw-frame);
+}
+
+.venue-canvas,
+.venues-placeholder {
+  background: var(--mw-well);
+}
+
+.venues-page { gap: 16px; }
+.venues-body { gap: 16px; }
+.venue-editor { gap: 14px; }
+/* The sidebar column widens by the padding its rings need. */
+.venue-editor-body { gap: 16px; grid-template-columns: minmax(0, 1fr) 288px; }
+.venue-sidebar { gap: 16px; padding: 5px 7px 5px 5px; }
+.venue-library { gap: 14px; padding: 5px; }
+
+/* The list heading and the empty notes have no box: white on the grass with
+   the dark drop, like the player screen's "Initiative Order". */
+.venue-library > h2,
+.venue-library-empty,
+.venues-empty {
+  color: #ffffff;
+  font-style: normal;
+  text-shadow: 2px 2px 0 #203050;
+}
+
+.venue-library-row {
+  background: #ffffff;
+  border: 2px solid var(--mw-border-dark);
+  border-radius: 4px;
+}
+
+.venue-library-row:hover {
+  border-color: var(--pk-red);
+  background: var(--pk-cream);
+}
+
+.venue-library-row.selected {
+  border-color: var(--pk-red);
+  background: linear-gradient(var(--mw-turn-tint), var(--mw-turn-tint)), #ffffff;
+}
+
+.venue-library-open:hover .venue-library-name {
+  color: var(--pk-red-dark);
+}
+
+.venue-palette-item {
+  border-width: 2px;
+  border-radius: 3px;
+  font-size: 14px;
+}
+
+.venue-field,
+.venue-status {
+  font-size: 15px;
+}
+
+.venue-status-cell {
+  font-size: 10px;
+}
+
+/* Mat Guide captions: Press Start has no small caps to synthesize from. */
+.mat-guide-venue-name {
+  font-family: var(--mw-font-body);
+  font-size: 17px;
+  text-shadow: none;
+}
+
+.mat-guide-field > span {
+  font-family: var(--mw-font-body);
+  font-variant: normal;
+  text-transform: uppercase;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+
+.mat-guide-steps h3,
+.mat-guide-key h3 {
+  font-variant: normal;
+  color: var(--pk-blue);
+  border-bottom: 2px solid var(--mw-border-dark);
+}
+
+.mat-guide-header {
+  border-bottom: 2px solid var(--mw-frame);
+}
+
+.mat-guide-steps ol,
+.mat-guide-key-label {
+  font-size: 16px;
+}
+
+.mat-guide-key-hint,
+.mat-guide-note {
+  font-size: 14px;
+}
+
+.mat-guide-sheet {
+  border: 2px solid var(--mw-border-dark);
+  border-radius: 4px;
+  box-shadow: none;
+}
+
+/* The marker-symbol popover: a small menu box with the hard pixel drop; the
+   red cursor marks the current symbol. */
+.symbol-picker-popover {
+  background: #f8f8f8;
+  border: 2px solid var(--mw-frame);
+  border-radius: 4px;
+  box-shadow: 0 3px 0 var(--mw-frame);
+}
+
+.symbol-picker-option {
+  background: #ffffff;
+  border: 2px solid var(--mw-border-dark);
+  border-radius: 3px;
+  font-size: 15px;
+}
+
+.symbol-picker-option:hover,
+.symbol-picker-option.selected {
+  border-color: var(--pk-red);
+  box-shadow: none;
+}
+
+.symbol-picker-option.selected {
+  background: var(--pk-cream);
+}
+
+.symbol-picker-button:hover,
+.symbol-picker-button[aria-expanded='true'] {
+  box-shadow: 0 0 0 2px var(--pk-red);
 }
 
 /* ---------- Header bars: the Poké Ball (red / black band / white) ---------- */
 
 .gm-header,
-.player-header {
+.player-header,
+.venue-screen-header {
   background: linear-gradient(180deg, #f85858 0%, #e03838 45%, #c82424 100%);
   border-bottom: 6px solid #202028;
   box-shadow: 0 4px 0 #f8f8f8, 0 8px 12px var(--mw-shadow);
 }
 
 .gm-header h1,
-.player-header h1 {
+.player-header h1,
+.venue-screen-header h1 {
   color: #ffffff;
   text-shadow: 2px 2px 0 var(--pk-red-dark);
 }
@@ -742,7 +904,8 @@ select option {
   text-shadow: 2px 2px 0 #203050;
 }
 
-.waiting {
+.waiting,
+.venue-screen-waiting {
   color: #ffffff;
   font-family: var(--mw-font-display);
   font-size: 14px;

@@ -1,0 +1,391 @@
+.mat-guide-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.mat-guide {
+  display: flex;
+  flex-direction: column;
+  width: min(1320px, 96vw);
+  height: 92vh;
+  box-sizing: border-box;
+  padding: 16px 20px 20px;
+  background: linear-gradient(165deg, var(--mw-panel-hi), var(--mw-panel) 55%, var(--mw-panel-lo));
+  border: 2px solid var(--mw-frame);
+  border-top-width: 10px;
+  border-radius: 2px;
+  box-shadow:
+    0 0 0 1px var(--mw-frame-dark),
+    inset 0 0 0 1px var(--mw-frame-dark),
+    inset 0 0 22px rgba(0, 0, 0, 0.55),
+    0 8px 24px var(--mw-shadow);
+  color: var(--mw-text);
+}
+
+.mat-guide-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--mw-border-dark);
+}
+
+.mat-guide-header h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  font-size: 22px;
+  color: var(--mw-text-bright);
+}
+
+.mat-guide-venue-name {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 16px;
+  color: var(--mw-text-dim);
+}
+
+.mat-guide-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.mat-guide-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 18px;
+}
+
+.mat-guide-side {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.mat-guide-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mat-guide-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.mat-guide-field > span {
+  font-family: var(--mw-font-display);
+  font-variant: small-caps;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  color: var(--mw-text-dim);
+}
+
+.mat-guide-segments {
+  display: flex;
+  gap: 4px;
+}
+
+/* Composed on .btn so every theme's button restyle reaches the segments:
+   this class sets only layout and the active accent, never the surface. */
+.btn.mat-guide-segment {
+  display: inline-flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 30px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+.btn.mat-guide-segment.active {
+  border-color: var(--mw-turn-accent);
+  color: var(--mw-turn-accent);
+  box-shadow: 0 0 0 1px var(--mw-turn-accent), 0 0 6px var(--mw-turn-glow);
+}
+
+.mat-guide-sections {
+  display: grid;
+  justify-content: start;
+  gap: 4px;
+}
+
+.mat-guide-sections .btn.mat-guide-segment {
+  padding: 3px 0;
+}
+
+.mat-guide-size-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.mat-guide-size-row input {
+  flex: 1 1 0;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mat-guide-steps h3,
+.mat-guide-key h3 {
+  margin: 0 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--mw-border-dark);
+  font-family: var(--mw-font-display);
+  font-variant: small-caps;
+  font-size: 17px;
+  color: var(--mw-text-bright);
+}
+
+.mat-guide-steps ol {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.mat-guide-steps p {
+  margin: 0;
+}
+
+.mat-guide-steps strong {
+  color: var(--mw-text-bright);
+}
+
+.mat-guide-note {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--mw-text-dim);
+}
+
+.mat-guide-key ul {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mat-guide-key li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.mat-guide-key-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mat-guide-key-label {
+  font-size: 14px;
+  color: var(--mw-text-bright);
+}
+
+.mat-guide-key-hint {
+  font-size: 12.5px;
+  color: var(--mw-text-dim);
+}
+
+.mat-guide-sheet {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  padding: 12px;
+  background: var(--mw-well);
+  border: 1px solid var(--mw-border-dark);
+  box-shadow: inset 0 0 14px var(--mw-shadow);
+}
+
+/* Printing prints only the guide, as plain ink on paper whatever the theme.
+   The base theme sheet and every skin load after this file and restyle these
+   classes (the frame, the fonts, heading shadows), so each print rule is scoped
+   under body.mat-guide-open to outrank them, and the faces are named directly:
+   a theme token would hand the page back to the skin. */
+@media print {
+  @page {
+    margin: 0.4in;
+  }
+
+  body.mat-guide-open > :not(.mat-guide-overlay) {
+    display: none !important;
+  }
+
+  body.mat-guide-open {
+    background: #fff !important;
+  }
+
+  body.mat-guide-open .mat-guide-overlay {
+    position: static;
+    display: block;
+    background: none;
+  }
+
+  body.mat-guide-open .mat-guide {
+    width: auto;
+    height: auto;
+    padding: 0;
+    border: none;
+    border-image: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: #fff;
+    color: #000;
+    font-family: 'Linux Libertine O', Georgia, serif;
+    text-shadow: none;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  body.mat-guide-open .mat-guide-header h2,
+  body.mat-guide-open .mat-guide-steps h3,
+  body.mat-guide-open .mat-guide-key h3 {
+    font-family: 'Linux Libertine Display O', 'Linux Libertine O', Georgia, serif;
+    font-variant: small-caps;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    text-shadow: none;
+  }
+
+  body.mat-guide-open .mat-guide-venue-name {
+    font-family: inherit;
+    font-weight: normal;
+    letter-spacing: normal;
+    text-shadow: none;
+  }
+
+  body.mat-guide-open .mat-guide-actions,
+  body.mat-guide-open .mat-guide-controls {
+    display: none;
+  }
+
+  body.mat-guide-open .mat-guide-header {
+    border-bottom-color: #000;
+  }
+
+  body.mat-guide-open .mat-guide-header h2,
+  body.mat-guide-open .mat-guide-venue-name,
+  body.mat-guide-open .mat-guide-steps h3,
+  body.mat-guide-open .mat-guide-key h3,
+  body.mat-guide-open .mat-guide-steps strong,
+  body.mat-guide-open .mat-guide-key-label {
+    color: #000;
+  }
+
+  body.mat-guide-open .mat-guide-steps h3,
+  body.mat-guide-open .mat-guide-key h3 {
+    border-bottom-color: #000;
+  }
+
+  body.mat-guide-open .mat-guide-note,
+  body.mat-guide-open .mat-guide-key-hint {
+    color: #444;
+  }
+
+  body.mat-guide-open .mat-guide-body {
+    grid-template-columns: 2.7in minmax(0, 1fr);
+    gap: 0.25in;
+  }
+
+  body.mat-guide-open .mat-guide-header {
+    margin-bottom: 0.1in;
+    padding-bottom: 0.06in;
+  }
+
+  body.mat-guide-open .mat-guide-header h2 {
+    font-size: 16pt;
+  }
+
+  body.mat-guide-open .mat-guide-venue-name {
+    font-size: 12pt;
+  }
+
+  body.mat-guide-open .mat-guide-side {
+    gap: 0.14in;
+    overflow: visible;
+  }
+
+  body.mat-guide-open .mat-guide-steps h3,
+  body.mat-guide-open .mat-guide-key h3 {
+    margin-bottom: 4pt;
+    font-size: 12pt;
+  }
+
+  body.mat-guide-open .mat-guide-steps ol {
+    gap: 3pt;
+    font-size: 9.5pt;
+    line-height: 1.35;
+  }
+
+  body.mat-guide-open .mat-guide-note {
+    font-size: 8.5pt;
+  }
+
+  /* Two compact columns, so even a long key fits beside the sheet on one page. */
+  body.mat-guide-open .mat-guide-key ul {
+    display: block;
+    columns: 2;
+    column-gap: 0.12in;
+  }
+
+  body.mat-guide-open .mat-guide-key li {
+    gap: 4pt;
+    margin-bottom: 4pt;
+    break-inside: avoid;
+  }
+
+  body.mat-guide-open .mat-guide-key .mat-swatch {
+    width: 18px;
+    height: 18px;
+  }
+
+  body.mat-guide-open .mat-guide-key-label {
+    font-size: 8.5pt;
+  }
+
+  body.mat-guide-open .mat-guide-key-hint {
+    font-size: 7pt;
+    line-height: 1.2;
+  }
+
+  body.mat-guide-open .mat-guide-sheet {
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}

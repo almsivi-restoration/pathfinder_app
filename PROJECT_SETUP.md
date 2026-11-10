@@ -5,10 +5,10 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 ## Features
 
 ### Phase 1 (Current)
-- **Campaign Management:** Create/load/rename/save/delete campaigns with ruleset selection (1e/2e/Numenera); only a campaign persists a ruleset — scenes and actors inherit it. Rename from the selector with Save/Enter or Cancel/Escape; scenes, templates, Chronicle entries, and unsaved edits are preserved, and invalid or duplicate names are rejected. Export a campaign (with its saved scenes, templates, and Chronicle) to one portable `.gmw-campaign.json` file and import it back as a new campaign — imports never overwrite
-- **Actor Management:** Add/remove/clone actors (PCs and NPCs) with ruleset-driven stat sheets (Pathfinder 1e and 2e, Numenera); optional GM-assigned marker colors shown on the player view; read-only **View** card renders an actor's sheet grouped by section with empty fields omitted (works for scene actors and campaign templates)
+- **Campaign Management:** Create/load/rename/save/delete campaigns with ruleset selection (1e/2e/Numenera); only a campaign persists a ruleset — scenes and actors inherit it. Rename from the selector with Save/Enter or Cancel/Escape; scenes, templates, Chronicle entries, and unsaved edits are preserved, and invalid or duplicate names are rejected. Export a campaign (with its saved scenes, templates, Chronicle, and venues) to one portable `.gmw-campaign.json` file and import it back as a new campaign — imports never overwrite
+- **Actor Management:** Add/remove/clone actors (PCs and NPCs) with ruleset-driven stat sheets (Pathfinder 1e and 2e, Numenera); optional GM-assigned marker colors and marker symbols (twelve hand-drawable marks from `markerSymbols.js`, picked beside the color swatch) shown on the player view, the initiative order, and the actor card; read-only **View** card renders an actor's sheet grouped by section with empty fields omitted (works for scene actors and campaign templates)
 - **Scenes:** Create/save/load scenes via the Scene Library, with full actor CRUD
-- **Actor Templates:** Save/edit/delete/view actor templates and instantiate them into a scene; template marker colors are inherited by instantiated actors
+- **Actor Templates:** Save/edit/delete/view actor templates and instantiate them into a scene; template marker colors and symbols are inherited by instantiated actors
 - **Initiative Tracking:** Manual initiative entry, sort-by-roll, manual reorder, round tracking; an actor's marker color rings its position number
 - **Quick Roll:** GM Tools > Quick Roll (Ctrl+D) rolls a scene actor's skill/save/ability check using the modifier from their sheet, or a custom die and modifier, with a session roll history
 - **Effect Countdown:** Effect durations decrement automatically at the end of each round
@@ -16,6 +16,9 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 - **Reference Reader:** In-app PDF reading with page-number jump and fit-to-view zoom
 - **Name Generator:** Per-race syllable-grammar generator for actors, plus multi-template engines for places, items, factions, and events; batches are deduplicated
 - **Chronicle:** Campaign journal (GM Tools > Chronicle, Ctrl+J) styled as an open book — markdown-formatted entries with a formatting guide and live preview, persisted with the campaign; Dissidia 012 uses a silver-blue page texture instead of Morrowind parchment, and the Pokémon theme renders it as a Game Boy DMG screen
+- **Venues:** Square-grid map builder (GM Tools > Venues, Ctrl+M) with mat-sized presets (48×34, 34×48, 34×24, 24×24, 12×12, or custom up to 100×100); one-key tools for rooms, terrain paint, erase, walls, doors, secret doors, stamps, and select/move/rotate; undo/redo and explicit save; a player preview. Catalog terrain, edges, and stamps live in `venueCatalog.jsx`; each venue persists to its own JSON file in the campaign folder and travels in the campaign export
+  - **Venue Screen:** Pop-out second-monitor window (View > Open Venue Screen) showing the venue the GM chose to show players; the backend strips GM notes and GM-only stamps and draws secret doors as walls before the window receives it
+  - **Mat Guide:** Translates a venue into numbered drawing steps with grid coordinates (e.g. H14) and a four-marker color key (black, red, green, blue) for the physical one-inch mat (34×48 by default, adjustable); best-fit/portrait/landscape orientation, whole-mat or close-up view, sections for venues larger than the mat, and print
 - **Bestiary:** Import a user-supplied `bestiary.csv` from the ruleset sources directory into a per-ruleset SQLite FTS5 index; search with CR/type filters, view full monster entries, and create NPC actors or campaign templates from them (1e)
 - **The Harrowing:** Chat with a user-supplied local language model (GM Tools > The Harrowing, Ctrl+P) through any OpenAI-compatible endpoint (Ollama, LM Studio, …); status probe (reachable / model present / loaded), optional grounding in the indexed reference library, and a Sleep button that unloads the model from RAM (Ollama `keep_alive=0`). No model ships with the app; settings persist to `harrowing-settings.json` under the data dir
 - **Character Sheet Import:** OCR a scanned Pathfinder 1e sheet PDF (GM Tools > Import Character Sheet, Ctrl+I) into a reviewable actor draft — abilities, HP, initiative, AC (touch and flat-footed), speed, BAB/CMB/CMD, saves, printed skill rows, name — for GM confirmation before saving. No scene is required: with only a campaign loaded the actor is saved as a campaign template. Handwriting OCR uses PaddleOCR, kept out of the backend environment entirely: extraction runs as a subprocess from a dedicated user-created venv (`backend/requirements-ocr.txt`), and the import dialog shows the exact install commands when it is missing
@@ -37,7 +40,7 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 - **Zoom:** Ctrl+scroll wheel or View > Zoom In / Zoom Out / Reset Zoom (Ctrl+Plus / Ctrl+- /
   Ctrl+0) scale either window independently; zoom is per-window and resets on relaunch
 - **Themes:** View > Theme switches between the built-in Morrowind (base), Dissidia 012, and Pokémon (Gen I–III) skins and any local theme folder; the Pokémon theme styles the player view as a GBA battle screen and the Chronicle as a Game Boy DMG screen
-- **Persistence:** Save/load campaigns and scenes as JSON files
+- **Persistence:** Save/load campaigns, scenes, and venues as JSON files
 - **Packaged Desktop App:** Installable AppImage and deb builds with auto-update (AppImage) and an apt-managed deb
 
 ## Project Structure
@@ -81,6 +84,11 @@ pathfinder_app/
 │   │   ├── store.js            # Zustand state store
 │   │   ├── sheet.js            # Generic sheet helpers (ruleset-neutral)
 │   │   ├── theme.js            # Theme bridge (applies built-in extra and local theme skins)
+│   │   ├── markerSymbols.js    # Marker symbol catalog (append-only ids, hand-drawable marks) and base discs
+│   │   ├── venueCatalog.jsx    # Venue terrain/edge/stamp catalog: art, mat translation, mat colors
+│   │   ├── venueGeometry.js    # Venue grid math (cell labels, derived walls, edges, paint, stamps)
+│   │   ├── matGuide.js         # Mat Guide planner (fit, orientation, sections, placement, color key)
+│   │   ├── themeSelectorContract.test.js  # Skins own every contract selector; Mat Guide print rules outrank skins
 │   │   ├── assets/fonts/       # Bundled Libertine fonts (OFL)
 │   │   ├── assets/textures/    # Generated Morrowind textures (ash backdrop, banner, parchment, carved 9-slice frame)
 │   │   ├── components/
@@ -88,6 +96,7 @@ pathfinder_app/
 │   │   │   ├── ActorList.jsx / ActorRow.jsx / ActorForm.jsx
 │   │   │   ├── ActorEditModal.jsx / ActorViewModal.jsx / ActorStatFields.jsx
 │   │   │   ├── ActorTemplateLibrary.jsx
+│   │   │   ├── ColorSwatch.jsx / SymbolPicker.jsx / MarkerSymbol.jsx
 │   │   │   ├── InitiativeTracker.jsx
 │   │   │   ├── NameGenerator.jsx
 │   │   │   ├── Chronicle.jsx
@@ -97,12 +106,16 @@ pathfinder_app/
 │   │   │   ├── ReferenceReader.jsx
 │   │   │   ├── SceneLibrary.jsx
 │   │   │   ├── PlayerView.jsx / PlayerActorRow.jsx
+│   │   │   ├── VenueLibrary.jsx / VenueEditor.jsx / VenueMap.jsx
+│   │   │   ├── VenueScreen.jsx     # Venue Screen window (polls the player-safe shown venue)
+│   │   │   ├── MatGuide.jsx / MatSheet.jsx
 │   │   │   └── *.test.js(x)    # Jest + React Testing Library tests
 │   │   ├── pages/
 │   │   │   ├── CampaignSelector.jsx
 │   │   │   ├── CampaignSelector.test.jsx
 │   │   │   ├── Encyclopedia.jsx
-│   │   │   └── Bestiary.jsx
+│   │   │   ├── Bestiary.jsx
+│   │   │   └── Venues.jsx
 │   │   └── styles/
 │   │       ├── theme.css       # Morrowind theme tokens (built-in default; local themes
 │   │       │                   # override these --mw-* variables)
@@ -172,6 +185,7 @@ pathfinder_app/
 6. **Run Combat:** Click "Next Turn" to advance through rounds — effect durations count down automatically at the end of each round
 7. **Track Stats:** Click on HP values to edit, manage effects and status
 8. **Reference Lookup:** Use `GM Tools > Encyclopedia` to index and search local rulebook PDFs, and open them in the Reference Reader
+9. **Venues:** Use `GM Tools > Venues` to build a map, **Show players** to put it on the Venue Screen (View > Open Venue Screen), and **Mat Guide** to copy it onto the table mat
 
 ### Player Workflow
 
@@ -191,7 +205,7 @@ pathfinder_app/
 - `GET /api/campaign/current` — Get active campaign
 - `POST /api/campaign/save` — Save current campaign
 - `POST /api/campaign/rename` — Rename a saved campaign (`name` and `new_name` query parameters)
-- `GET /api/campaign/export` — Export a saved campaign and its saved scenes as one JSON bundle (`name` query parameter)
+- `GET /api/campaign/export` — Export a saved campaign with its saved scenes and venues as one JSON bundle (`name` query parameter; bundle `version` 2, version 1 bundles still import)
 - `POST /api/campaign/import` — Import an exported bundle (JSON body) as a new campaign; a taken name gets an ` (imported)` suffix
 - `DELETE /api/campaign/{campaign_name}` — Delete a saved campaign
 
@@ -235,6 +249,16 @@ pathfinder_app/
 - `PUT /api/campaign/chronicle/{entry_id}` — Update a chronicle entry
 - `DELETE /api/campaign/chronicle/{entry_id}` — Delete a chronicle entry
 
+### Venues
+- `GET /api/venues` — List the active campaign's venues
+- `POST /api/venue/new` — Create a venue (`name`, `width`, `height` JSON body)
+- `GET /api/venue/{venue_id}` — Get a venue
+- `PUT /api/venue/{venue_id}` — Save a venue
+- `DELETE /api/venue/{venue_id}` — Delete a venue (hides it first if shown)
+- `POST /api/venue/show` — Show a venue on the Venue Screen (`venue_id` query parameter)
+- `POST /api/venue/hide` — Clear the Venue Screen
+- `GET /api/venue/shown` — The shown venue's player-safe copy as `{"venue": ...}` (`null` when none)
+
 ### Bestiary
 - `GET /api/bestiary/current/status` — CSV presence and index state for the active ruleset
 - `POST /api/bestiary/current/import` — Parse and index the ruleset's `bestiary.csv`
@@ -275,6 +299,7 @@ Exact request/response shapes are defined in `backend/main.py` and `backend/mode
   player_name: string (optional)
   is_pc: boolean
   color: string (optional hex marker color, shown on the player view)
+  symbol: string (optional marker symbol id from markerSymbols.js, max 32 chars)
   sheet: {...}   // ruleset-defined; keys come from the active sheet definition
   initiative_roll: int (optional)
   effects: [{name, duration_rounds, description}]
@@ -322,6 +347,26 @@ on load by the Actor model validator.
 }
 ```
 
+### Venue
+Stored one per file at `campaigns/<name>/venues/<venue_id>.json` — the folder is the index, so
+venues are not listed in `campaign.json`.
+```
+{
+  id: string
+  name: string
+  notes: string         // GM-only; never sent to the Venue Screen
+  grid: "square"
+  width: int            // 1..100 cells
+  height: int           // 1..100 cells
+  cells: {"x,y": terrain_id}   // sparse; absent cells are empty space
+  edges: [{x, y, side: "n" | "w", kind}]   // explicit walls/doors/secret doors on grid lines
+  features: [{id, kind, x, y, rotation: 0|90|180|270, label, gm_only}]
+  created_at: datetime
+  updated_at: datetime
+}
+```
+Walls between a filled cell and empty space are derived when drawing and are not stored.
+
 ## Roadmap — Future Phases
 
 Statuses reconciled against shipped releases (through v0.7.0, 2026-09-05).
@@ -335,7 +380,7 @@ Statuses reconciled against shipped releases (through v0.7.0, 2026-09-05).
 
 ### Phase 3
 - Full Pathfinder mechanics (feats, conditions, skills DC) — open; derived totals (AC, saves, CMB/CMD, etc.) are manual entry today
-- Grid/token map visualization — deferred indefinitely; the GM uses a physical dry-erase grid
+- ~~Grid map visualization~~ — **shipped** as Venues: square-grid maps built in the app, shown to players on the Venue Screen, and translated by the Mat Guide for the physical dry-erase grid. Tokens/actor positions on a venue remain open — the physical mat is still where minis move
 - Spell/ability tracking — partial: spells are editable sheet data with per-day fields; no slot usage tracking or reset
 - ~~Campaign history/logging~~ — **shipped** (v0.10.0): the Chronicle is the campaign journal (markdown entries, persisted with the campaign)
 - Import from D&D Beyond / Pathfinder tools — open

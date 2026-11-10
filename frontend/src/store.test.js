@@ -313,3 +313,37 @@ test('loadScene does not carry combat state over into an un-started scene', asyn
 
   expect(useStore.getState().isSceneActive).toBe(false);
 });
+
+test('showVenue and hideVenue track which venue is on the Venue Screen', async () => {
+  axios.post.mockResolvedValueOnce({ data: { shown_venue_id: 'crypt' } });
+  expect(await useStore.getState().showVenue('crypt')).toBe(true);
+  expect(axios.post).toHaveBeenLastCalledWith(expect.stringMatching(/\/venue\/show$/), null, { params: { venue_id: 'crypt' } });
+  expect(useStore.getState().shownVenueId).toBe('crypt');
+
+  axios.post.mockResolvedValueOnce({ data: { shown_venue_id: null } });
+  expect(await useStore.getState().hideVenue()).toBe(true);
+  expect(axios.post).toHaveBeenLastCalledWith(expect.stringMatching(/\/venue\/hide$/));
+  expect(useStore.getState().shownVenueId).toBeNull();
+});
+
+test('fetchShownVenue keeps one object while the venue is unchanged and the last picture on failure', async () => {
+  const shown = { id: 'crypt', name: 'Crypt', cells: { '0,0': 'floor' }, updated_at: '2026-11-10T00:00:00' };
+  axios.get.mockResolvedValueOnce({ data: { venue: shown } });
+  await useStore.getState().fetchShownVenue();
+  const first = useStore.getState().shownVenue;
+  expect(first).toEqual(shown);
+
+  axios.get.mockResolvedValueOnce({ data: { venue: { ...shown, cells: { '0,0': 'floor' } } } });
+  await useStore.getState().fetchShownVenue();
+  expect(useStore.getState().shownVenue).toBe(first);
+
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+  axios.get.mockRejectedValueOnce(new Error('Network Error'));
+  await useStore.getState().fetchShownVenue();
+  expect(useStore.getState().shownVenue).toBe(first);
+  console.error.mockRestore();
+
+  axios.get.mockResolvedValueOnce({ data: { venue: null } });
+  await useStore.getState().fetchShownVenue();
+  expect(useStore.getState().shownVenue).toBeNull();
+});

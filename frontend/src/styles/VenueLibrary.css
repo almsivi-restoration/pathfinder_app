@@ -1,0 +1,115 @@
+.venue-library {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.venue-library h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.venue-library-new {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.6rem;
+  background: var(--mw-panel);
+  border: 1px solid var(--mw-frame-lo);
+  box-shadow: 0 0 0 1px var(--mw-frame-dark);
+}
+
+.venue-library-new input[type='text'],
+.venue-library-new select {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.venue-library-custom {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.venue-library-custom input[type='number'] {
+  flex: 1 1 0;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.venue-library-empty {
+  margin: 0;
+  color: var(--mw-text-dim);
+  font-style: italic;
+}
+
+.venue-library-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.venue-library-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 3px;
+  border: 1px solid transparent;
+  background: var(--mw-panel-lo);
+}
+
+/* The tint is translucent and the list sits on the page backdrop: layer it
+   over the row's own surface so the row reads on any theme. */
+.venue-library-row.selected {
+  border-color: var(--mw-turn-accent);
+  background: linear-gradient(var(--mw-turn-tint), var(--mw-turn-tint)), var(--mw-panel-lo);
+}
+
+.venue-library-open {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+  padding: 3px 5px;
+  border: none;
+  background: none;
+  color: var(--mw-text);
+  font-family: var(--mw-font-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.venue-library-open:hover .venue-library-name {
+  color: var(--mw-gold-bright);
+}
+
+.venue-library-name,
+.venue-library-meta {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.venue-library-name {
+  font-size: 15px;
+}
+
+.venue-library-meta {
+  font-size: 12px;
+  color: var(--mw-text-dim);
+}
+
+.venue-library-row .btn-small {
+  flex-shrink: 0;
+}

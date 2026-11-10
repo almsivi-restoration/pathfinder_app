@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
+import MarkerSymbol from './MarkerSymbol';
 import '../styles/InitiativeTracker.css';
 
 function InitiativeTracker() {
@@ -105,7 +106,12 @@ function InitiativeTracker() {
               >
                 {index + 1}
               </span>
-              <span className="name">{actor.name}</span>
+              <span className="name">
+                {actor.symbol && (
+                  <MarkerSymbol symbol={actor.symbol} color={actor.color} size={20} className="initiative-marker" />
+                )}
+                {actor.name}
+              </span>
               <label className="roll-label">
                 Roll:
                 <input

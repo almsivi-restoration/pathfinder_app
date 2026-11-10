@@ -120,6 +120,10 @@
   color: var(--mw-text);
 }
 
+.initiative-item .initiative-marker {
+  margin-right: 6px;
+}
+
 .roll-label {
   display: flex;
   align-items: center;

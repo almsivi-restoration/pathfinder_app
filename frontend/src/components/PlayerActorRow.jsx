@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { getSheetValue } from '../sheet';
+import { getMarkerSymbol } from '../markerSymbols';
+import MarkerSymbol from './MarkerSymbol';
 import '../styles/PlayerActorRow.css';
 
 // Losing at least this fraction of max HP in one update counts as a "big hit":
@@ -59,7 +61,9 @@ function PlayerActorRow({ actor, position, isCurrent, rulesetConfig }) {
       <div className="position-badge">{position}</div>
       <div className="actor-info">
         <div className="name-row">
-          {actor.color && (
+          {getMarkerSymbol(actor.symbol) ? (
+            <MarkerSymbol symbol={actor.symbol} color={actor.color} size={30} className="actor-marker" />
+          ) : actor.color && (
             <span className="actor-color-dot" style={{ backgroundColor: actor.color }} />
           )}
           <span className="actor-name">{actor.name}</span>

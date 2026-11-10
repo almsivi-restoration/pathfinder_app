@@ -83,3 +83,15 @@ test('fetches the ruleset config so the summary stats column renders', () => {
   expect(useStore.getState().fetchRulesetConfig).toHaveBeenCalled();
   expect(screen.getByText('HP 6/6 / AC 16 / Init +2')).toBeInTheDocument();
 });
+
+test('the symbol picker assigns and clears a template marker symbol', () => {
+  seedStore(null);
+  render(<ActorTemplateLibrary />);
+  const updateActorTemplate = useStore.getState().updateActorTemplate;
+
+  fireEvent.click(screen.getByLabelText('Assign a marker symbol (inherited by scene actors)'));
+  fireEvent.click(screen.getByRole('button', { name: 'Star' }));
+  expect(updateActorTemplate).toHaveBeenLastCalledWith('t1', expect.objectContaining({ symbol: 'star' }));
+  // Choosing closes the popover.
+  expect(screen.queryByRole('group', { name: 'Marker symbols' })).not.toBeInTheDocument();
+});

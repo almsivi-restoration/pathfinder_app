@@ -1,7 +1,7 @@
 ---
 description: "Blueprint: testing conventions for Game Master's Workbench — synthetic fixtures only, backend isolation via tmp_path, and the jsdom/zustand seeding pattern. Load when writing or editing tests."
 name: "bp-test-conventions"
-version: "1.0.0"
+version: "1.1.0"
 applyTo: "backend/tests/**, frontend/src/**/*.test.*"
 ---
 
@@ -45,6 +45,18 @@ Holotype: [conftest.py](../../backend/tests/conftest.py).
   replace the fetch action in the store state instead (precedent:
   ActorViewModal/ActorTemplateLibrary tests).
 - Test files live next to the component: `Component.test.jsx`.
+- **Electron main process:** test `public/electron.js` under
+  `@jest-environment node` by loading it with a fake `electron` module
+  (fake `BrowserWindow`, `ipcMain`, `app`, `Menu`) and driving its IPC
+  handlers and menu items directly. Never run the `ready` handler in a
+  packaged-mode test — it spawns the backend. Holotype:
+  [electronVenueWindow.test.js](../../frontend/src/electronVenueWindow.test.js).
+- **Stylesheet contracts:** jsdom applies no CSS, so a rule about which
+  selectors a sheet must own is tested structurally — read the `.css`
+  files under `@jest-environment node` and assert on their selectors.
+  Keep a deliberately broken input beside the check so its failing branch
+  stays exercised. Holotype:
+  [themeSelectorContract.test.js](../../frontend/src/themeSelectorContract.test.js).
 
 ## When this doesn't fit
 

@@ -176,3 +176,25 @@ describe('health bar impact effects', () => {
     expect(container.querySelector('.health-bar-ghost')).not.toBeInTheDocument();
   });
 });
+
+test('an assigned marker symbol replaces the dot with the inked base in the marker color', () => {
+  const actor = { ...baseActor, color: '#8e44ad', symbol: 'triangle' };
+  const { container } = render(
+    <PlayerActorRow actor={actor} position={1} isCurrent={false} rulesetConfig={rulesetConfig} />
+  );
+
+  const marker = screen.getByRole('img', { name: 'Triangle marker' });
+  expect(marker.querySelector('.marker-base-disc')).not.toBeNull();
+  expect(marker.querySelector('g')).toHaveAttribute('stroke', '#8e44ad');
+  expect(container.querySelector('.actor-color-dot')).not.toBeInTheDocument();
+});
+
+test('an unknown marker symbol falls back to the color dot', () => {
+  const actor = { ...baseActor, color: '#8e44ad', symbol: 'from-a-newer-build' };
+  const { container } = render(
+    <PlayerActorRow actor={actor} position={1} isCurrent={false} rulesetConfig={rulesetConfig} />
+  );
+
+  expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  expect(container.querySelector('.actor-color-dot')).toHaveStyle({ backgroundColor: '#8e44ad' });
+});

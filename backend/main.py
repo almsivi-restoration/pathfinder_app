@@ -15,7 +15,7 @@ from uuid import uuid4
 
 from bestiary import BestiaryLibrary
 from harrowing import HarrowingClient
-from models import Actor, Campaign, Scene, RollRequest, RollResult, Effect, InitiativeOrderRequest, ReferenceImportRequest, ChronicleEntryRequest, HarrowingConfigRequest, HarrowingChatRequest
+from models import Actor, Campaign, Scene, RollRequest, RollResult, Effect, InitiativeOrderRequest, ReferenceImportRequest, ChronicleEntryRequest, HarrowingConfigRequest, HarrowingChatRequest, Venue, VenueCreateRequest
 from name_generator import generate_names, list_categories
 from reference_library import ReferenceLibrary
 from sheet_importer import SheetImporter
@@ -316,6 +316,88 @@ def remove_chronicle_entry(entry_id: str):
     """Remove a chronicle entry from the current campaign."""
     if not state_manager.remove_chronicle_entry(entry_id):
         raise HTTPException(status_code=404, detail="Chronicle entry not found")
+    return {"status": "removed"}
+
+
+# ==================== Venue Routes ====================
+
+def _read_venue_or_404(venue_id: str) -> Venue:
+    try:
+        venue = state_manager.get_venue(venue_id)
+    except (OSError, ValueError):
+        raise HTTPException(status_code=400, detail="The venue file is unreadable")
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+    return venue
+
+
+@app.get("/api/venues")
+def list_venues():
+    """List the current campaign's venues (summaries) and which one is on the Venue Screen."""
+    if not state_manager.current_campaign:
+        raise HTTPException(status_code=404, detail="No campaign loaded")
+    return {
+        "venues": [
+            venue.model_dump(include={"id", "name", "width", "height", "created_at", "updated_at"})
+            for venue in state_manager.list_venues()
+        ],
+        "shown_venue_id": state_manager.shown_venue_id,
+    }
+
+
+@app.post("/api/venue/new")
+def create_venue(request: VenueCreateRequest):
+    """Create an empty venue on the current campaign."""
+    if not request.name.strip():
+        raise HTTPException(status_code=400, detail="Name is required")
+    venue = state_manager.create_venue(request.name.strip(), request.width, request.height)
+    if not venue:
+        raise HTTPException(status_code=400, detail="No campaign loaded")
+    return venue.model_dump()
+
+
+@app.get("/api/venue/shown")
+def get_shown_venue():
+    """The Venue Screen's poll target: the shown venue's player-safe copy, or null."""
+    return {"venue": state_manager.shown_venue_view()}
+
+
+@app.post("/api/venue/show")
+def show_venue(venue_id: str):
+    """Put a venue on the Venue Screen."""
+    venue = _read_venue_or_404(venue_id)
+    state_manager.show_venue(venue.id)
+    return {"shown_venue_id": venue.id}
+
+
+@app.post("/api/venue/hide")
+def hide_venue():
+    """Clear the Venue Screen."""
+    state_manager.hide_venue()
+    return {"shown_venue_id": None}
+
+
+@app.get("/api/venue/{venue_id}")
+def get_venue(venue_id: str):
+    """Get one venue with its full GM-side contents."""
+    return _read_venue_or_404(venue_id).model_dump()
+
+
+@app.put("/api/venue/{venue_id}")
+def update_venue(venue_id: str, venue: Venue):
+    """Save a venue's contents."""
+    if not venue.name.strip():
+        raise HTTPException(status_code=400, detail="Name is required")
+    _read_venue_or_404(venue_id)
+    updated = state_manager.update_venue(venue_id, venue.model_copy(update={"name": venue.name.strip()}))
+    return updated.model_dump()
+
+
+@app.delete("/api/venue/{venue_id}")
+def delete_venue(venue_id: str):
+    """Delete one venue."""
+    if not state_manager.delete_venue(venue_id):
+        raise HTTPException(status_code=404, detail="Venue not found")
     return {"status": "removed"}
 
 

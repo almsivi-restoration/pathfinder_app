@@ -12,10 +12,19 @@ actor, initiative, or persistence ownership.
 
 - Create, load, rename, save, and delete campaigns and their saved scenes.
 - Export a campaign to a single portable file and import it back, on this machine or another.
+  The file carries the campaign's saved scenes, templates, Chronicle, and venues.
 - Create and save scenes with PC and NPC actors.
 - Clone any scene actor in one click, and assign marker colors (fixed-size swatch, native
   picker opens on click) that appear on the player view. Colors assigned to a campaign template
   are inherited by every actor created from it.
+- Give an actor a marker symbol beside its color — twelve simple marks (dot, ring, cross, star,
+  crescent, …) chosen to be easy to draw on the matching physical base. The symbol shows on its
+  base, in the marker color, on the player view, the initiative order, and the actor card, and
+  templates pass it on like color.
+- Build grid maps — **venues** — through **GM Tools > Venues** (Ctrl+M): start from a mat-sized
+  preset, drag out rooms, paint terrain, draw walls and doors, and stamp features. Show a venue
+  to the players on the **Venue Screen** second-monitor window, and turn it into a numbered
+  **Mat Guide** for drawing it on the table's one-inch grid mat. See Venues below.
 - Open a read-only actor card with the **View** button: sheet values grouped by section, empty
   fields omitted, effects and marker color up top. Available for scene actors and campaign
   templates alike.
@@ -166,10 +175,11 @@ persisted scenes after confirmation; it cannot be undone.
 
 Campaign export and import are available from the campaign selector. **Export** beside a saved
 campaign writes `<name>.gmw-campaign.json` — the campaign, its actor templates, Chronicle
-entries, notes, and saved scenes in one file. **Import** reads such a file back as a new
+entries, notes, saved scenes, and venues in one file. **Import** reads such a file back as a new
 campaign; it never overwrites, so a taken name becomes `<name> (imported)`. Export includes
 only saved data, so save before exporting. Files that are not campaign exports, come from a
-newer app version, or use an unknown ruleset are rejected without creating anything.
+newer app version, or use an unknown ruleset are rejected without creating anything. Exports
+from before venues existed still import.
 
 ## Local References And Encyclopedia
 
@@ -215,6 +225,40 @@ markdown formatting; a formatting guide sits on the right page while reading, an
 replaces it while writing. The Dissidia 012 theme gives its pages a cool silver-blue texture
 instead of the Morrowind parchment; the Pokémon theme turns the book into a Game Boy screen.
 Entries persist with the campaign.
+
+## Venues
+
+**GM Tools > Venues** (Ctrl+M) is the campaign's map library and editor. A venue is a square
+grid: the **New venue** form offers sizes that match the table mat (whole mat 48×34 or 34×48, half mat
+34×24, dungeon 24×24, single room 12×12) or a custom size up to 100×100.
+
+The editor's tools each have a one-key shortcut:
+
+| Tool | Key | Use |
+|---|---|---|
+| Room | R | Drag a rectangle; the chosen terrain fills it and walls appear around it. |
+| Paint | B | Drag to paint the chosen terrain (flagstones, wood, cave, water, chasm, grass, …). |
+| Erase | E | Drag to clear cells back to empty space. |
+| Wall / Door / Secret | W / D / S | Click or drag along grid lines. |
+| Stamp | F | Place stairs, pillars, chests, trees, traps, labels, and more. |
+| Select | V | Move a stamp; `[` and `]` rotate it, Delete removes it. |
+
+Ctrl+Z / Ctrl+Y undo and redo, and Ctrl+S (or **Save**) saves. **Player preview** shows the
+venue exactly as players will see it.
+
+**Show players** puts the venue on the **Venue Screen** — open it with **View > Open Venue
+Screen** or from the Venues page and drag it to the second monitor. Players never see the
+venue's GM notes, stamps marked GM-only, or secret doors, which appear to them as plain walls;
+the backend strips these before the Venue Screen receives the venue.
+
+**Mat Guide** turns the venue into instructions for the physical one-inch grid mat (34×48 by
+default; the size is adjustable). It picks the orientation that fits best, splits a venue
+larger than the mat into sections, and lists numbered drawing steps with grid coordinates such
+as H14 and a color key for four markers — black, red, green, and blue. **Print** prints the
+guide.
+
+Each venue is saved in its own file under the campaign folder (`venues/<id>.json`) and travels
+with the campaign's export.
 
 ## Themes
 
@@ -306,7 +350,7 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
 - `GET /api/campaign/current`
 - `POST /api/campaign/save`
 - `POST /api/campaign/rename` accepts `name` and `new_name` query parameters.
-- `GET /api/campaign/export?name=` returns a portable campaign bundle (campaign + saved scenes).
+- `GET /api/campaign/export?name=` returns a portable campaign bundle (campaign, saved scenes, and venues; bundle `version` 2 — version 1 bundles still import).
 - `POST /api/campaign/import` accepts that bundle as the JSON body and saves it as a new campaign.
 - `DELETE /api/campaign/{campaign_name}`
 
@@ -336,6 +380,16 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
 - `PUT /api/campaign/chronicle/{entry_id}` updates an entry.
 - `DELETE /api/campaign/chronicle/{entry_id}` removes an entry.
 
+### Venues
+
+- `GET /api/venues` lists the active campaign's venues.
+- `POST /api/venue/new` creates a venue (`name`, `width`, `height`).
+- `GET /api/venue/{venue_id}`, `PUT /api/venue/{venue_id}` (save), and
+  `DELETE /api/venue/{venue_id}`.
+- `POST /api/venue/show?venue_id=` and `POST /api/venue/hide` choose what the Venue Screen shows.
+- `GET /api/venue/shown` returns `{"venue": ...}` — the shown venue's player-safe copy (no notes,
+  no GM-only stamps, secret doors as walls), or `null` when no venue is shown.
+
 ### The Harrowing
 
 - `GET /api/harrowing/config` and `PUT /api/harrowing/config` read and update the endpoint settings.
@@ -348,12 +402,14 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
 - **File > Restart App** relaunches Electron.
 - **File > Exit** closes the application.
 - **View > Open Player View** opens the player-facing window.
+- **View > Open Venue Screen** opens the player-facing venue window.
 - **View > Zoom In / Zoom Out / Reset Zoom** (Ctrl+Plus / Ctrl+- / Ctrl+0) scale the focused
   window; Ctrl+scroll wheel does the same. Zoom is per-window and session-only.
 - **View > Theme** switches between the built-in Morrowind, Dissidia 012, and Pokémon (Gen I–III)
   themes and local themes, and can open or rescan the themes directory.
 - **GM Tools > Encyclopedia** (Ctrl+E) opens the active ruleset's local reference search.
 - **GM Tools > Bestiary** (Ctrl+B) opens the bestiary search.
+- **GM Tools > Venues** (Ctrl+M) opens the venue library and editor.
 - **GM Tools > Chronicle** (Ctrl+J) opens the campaign journal.
 - **GM Tools > Name Generator** (Ctrl+N) opens the name generator.
 - **GM Tools > The Harrowing** (Ctrl+P) opens the local-model chat window.

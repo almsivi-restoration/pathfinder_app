@@ -1,0 +1,60 @@
+.venues-page {
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+.venues-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.venues-header h1 {
+  margin: 0;
+}
+
+.venues-header-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.venues-header p {
+  margin: 0.25rem 0 0;
+  opacity: 0.75;
+}
+
+.venues-body {
+  display: grid;
+  grid-template-columns: 236px minmax(0, 1fr);
+  gap: 1rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.venues-placeholder {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 2rem;
+  text-align: center;
+  color: var(--mw-text-dim);
+  background: var(--mw-well);
+  border: 1px solid var(--mw-frame-lo);
+}
+
+.venues-placeholder p {
+  max-width: 34rem;
+  margin: 0.25rem 0;
+}
+
+.venues-empty {
+  color: var(--mw-text-dim);
+  font-style: italic;
+}

@@ -1,39 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStore } from '../store';
 import { getSheetValue, setSheetValue } from '../sheet';
+import ColorSwatch from './ColorSwatch';
+import SymbolPicker from './SymbolPicker';
 import '../styles/ActorRow.css';
-
-// See ActorTemplateLibrary: bare <input type="color"> ignores CSS sizing, so
-// render a fixed-size swatch proxying a hidden native input.
-function ColorSwatch({ color, onChange, onClear, title }) {
-  const inputRef = useRef(null);
-  return (
-    <span className="color-swatch-wrap">
-      <button
-        type="button"
-        className={`color-swatch ${color ? 'assigned' : ''}`}
-        style={color ? { backgroundColor: color } : undefined}
-        onClick={() => inputRef.current?.click()}
-        title={title}
-        aria-label={title}
-      />
-      <input
-        ref={inputRef}
-        type="color"
-        className="color-swatch-input"
-        value={color || '#6b5f4a'}
-        onChange={(event) => onChange(event.target.value)}
-        tabIndex={-1}
-        aria-hidden="true"
-      />
-      {color && (
-        <button type="button" className="btn-small" onClick={onClear} title="Clear marker color">
-          ×
-        </button>
-      )}
-    </span>
-  );
-}
 
 function ActorRow({ actor, summaryFields, isCurrent = false }) {
   const removeActor = useStore((state) => state.removeActor);
@@ -71,6 +41,10 @@ function ActorRow({ actor, summaryFields, isCurrent = false }) {
 
   const handleColorClear = async () => {
     await updateActor(actor.id, { ...actor, color: null });
+  };
+
+  const handleSymbolChange = async (symbol) => {
+    await updateActor(actor.id, { ...actor, symbol });
   };
 
   const handleResourceChange = async () => {
@@ -136,6 +110,11 @@ function ActorRow({ actor, summaryFields, isCurrent = false }) {
           onChange={(color) => handleColorChange(color)}
           onClear={handleColorClear}
           title={actor.color ? `Marker color ${actor.color}` : 'Assign a marker color (shown on the player view)'}
+        />
+        <SymbolPicker
+          symbol={actor.symbol}
+          color={actor.color}
+          onChange={handleSymbolChange}
         />
         <button className="btn-small" onClick={() => setViewingActorId(actor.id)} title="View actor details">
           View

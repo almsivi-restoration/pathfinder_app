@@ -1,7 +1,7 @@
 ---
 description: "Canonical domain vocabulary, naming, casing, and formatting conventions for Game Master's Workbench. The singular voice of the codebase — ALWAYS load this instruction."
 name: "gmw-lexicon"
-version: "1.2.0"
+version: "1.3.0"
 applyTo: "**"
 ---
 
@@ -27,19 +27,23 @@ controlling behavior boundary.
 
 | Term | Meaning | Notes |
 |---|---|---|
-| **Campaign** | Top-level container. Owns the ruleset, scene list, actor templates, notes. | Only entity that persists a ruleset. |
+| **Campaign** | Top-level container. Owns the ruleset, scene list, actor templates, notes, venues. | Only entity that persists a ruleset. |
 | **Scene** | An encounter workspace: actors, initiative order, round/turn state. | Belongs to a Campaign. |
-| **Actor** | A creature/character in a Scene. Ruleset-neutral identity (name, player_name, is_pc, color), encounter state (initiative_roll, effects, notes), and arbitrary `sheet` data. | Templates are Actors stored on the Campaign. |
+| **Actor** | A creature/character in a Scene. Ruleset-neutral identity (name, player_name, is_pc, color, symbol), encounter state (initiative_roll, effects, notes), and arbitrary `sheet` data. | Templates are Actors stored on the Campaign. |
+| **Marker Symbol** | A simple, hand-drawable mark (`dot`, `cross`, `star`, …) identifying an Actor's physical base, chosen beside its color. | Catalog in `frontend/src/markerSymbols.js`; `Actor.symbol` stores the id, optional. Always drawn on its base disc (`MARKER_BASES`), which is content, not a theme surface. |
 | **Sheet Definition** | The ruleset-supplied schema: fields, summary, player_resource metadata. Served by `GET /api/rules/current`. | Declarative; built in `backend/rules/common.py`. |
 | **Sheet Data** | An Actor's `sheet` dict — values at dotted paths (`hp.current`, `defenses.ac`). | Read/write via `get_sheet_value`/`set_sheet_value` helpers. |
-| **Actor Template** | A pre-built Actor stored on the Campaign, instantiated into Scenes. | Carries color and full sheet; instantiate copies wholesale. |
+| **Actor Template** | A pre-built Actor stored on the Campaign, instantiated into Scenes. | Carries color, symbol, and full sheet; instantiate copies wholesale. |
 | **Initiative** | Turn order within a Scene: `initiative_order` (actor IDs), `current_round`, `current_turn_index`. | Rolls are GM-entered physical-die values + bonus. |
 | **Effect** | A timed condition on an Actor (`name`, `duration_rounds`, `description`). | |
 | **Ruleset** | A game edition registered in `backend/rules/__init__.py` (`RULESETS` dict). | Currently `1e`, `2e`, `numenera`. |
 | **Bestiary Entry** | A monster record in the per-ruleset bestiary sqlite index, imported from the user-supplied `bestiary.csv`. | Mapped to Actors via the ruleset's `bestiary_mapper`. |
 | **Reference Library** | Per-ruleset collection of user-supplied reference PDFs, indexed for search. | Routes under `/api/references/current/*`. |
 | **Source Manifest** | JSON manifest describing a ruleset's reference sources. | `manifests/<ruleset>.json`. |
-| **Campaign Export** | A single portable JSON bundle (`format: "gm-workbench-campaign"`, integer `version`) holding a saved Campaign and its saved Scenes. | `GET /api/campaign/export`, `POST /api/campaign/import`; import never overwrites — a taken name gets an ` (imported)` suffix. |
+| **Campaign Export** | A single portable JSON bundle (`format: "gm-workbench-campaign"`, integer `version`) holding a saved Campaign, its saved Scenes, and its Venues. | `GET /api/campaign/export`, `POST /api/campaign/import`; import never overwrites — a taken name gets an ` (imported)` suffix. Version 2 added venues; version 1 bundles still import. |
+| **Venue** | A square-grid map belonging to a Campaign: terrain cells, wall/door edges, and stamped features. Not "map" or "location". | One file per venue at `campaigns/<name>/venues/<venue_id>.json`; catalog in `frontend/src/venueCatalog.jsx`. Notes, `gm_only` features, and secret doors never reach players. |
+| **Venue Screen** | The pop-out second-monitor window showing players the shown Venue. | Reads only `GET /api/venue/shown` (the player-filtered copy); which venue is shown is in-memory session state. |
+| **Mat Guide** | A step-by-step drawing guide for copying a Venue onto the physical one-inch grid mat, in the four marker colors. | Default mat 34×48; splits venues larger than the mat into sections. |
 | **Local Theme** | A user-installed UI skin: a folder under the themes directory with a `theme.json` manifest and a `theme.css` stylesheet overriding `--mw-*` tokens. | Built-in `morrowind` theme always available (the base sheet); `dissidia` and `pokemon` ship as vendored built-ins layered on it; selection persists via `theme-settings.json`. |
 
 ## Shared sheet contract keys
@@ -61,15 +65,18 @@ cross-ruleset contract and are not negotiable within a sheet definition.
 - **API routes:** `/api/<domain>/<verb-or-resource>` — e.g.
   `/api/scene/load`, `/api/actor/{actor_id}`, `/api/rules/current`.
   Domains: `campaign`, `scene`, `actor`, `initiative`, `references`,
-  `bestiary`, `rules`, `names`. Plural only for list endpoints
-  (`/api/scenes`, `/api/rulesets`).
+  `bestiary`, `rules`, `names`, `venue`. Plural only for list endpoints
+  (`/api/scenes`, `/api/rulesets`, `/api/venues`).
 - **React:** PascalCase components, one component per file, file named
   after the component (`ActorRow.jsx`). camelCase functions, variables,
   and zustand store keys. 2-space indent in JSX/JS.
 - **CSS:** one file per component in `frontend/src/styles/`, named after
   the component (`ActorRow.css`). Theme tokens use the `--mw-` prefix and
   are defined only in `theme.css` — components reference tokens, never
-  hardcode palette colors.
+  hardcode palette colors. Exception: map art (venue terrain, inks, mat
+  marker colors) and the marker-symbol bases are content and live as
+  constants in `venueCatalog.jsx` and `markerSymbols.js`, so a venue or a
+  marker looks the same under every theme and on the mat.
 - **State:** all server state flows through the zustand store
   (`frontend/src/store.js`); components never call axios directly.
 
@@ -78,6 +85,19 @@ cross-ruleset contract and are not negotiable within a sheet definition.
 - **Button classes:** `.btn` and `.btn-small` are self-contained.
   Variant classes (e.g. `.btn-edit`) only override accent color — never
   redefine background. Verify the base class is actually in the JSX.
+  Toolbar and segmented buttons compose on `.btn` too, so every skin's
+  button restyle reaches them.
+- **Glyph icons:** draw toolbar and button glyphs (zoom −/+, rotate, and
+  the like) as inline SVG stroked with `currentColor`. Theme display faces
+  (the Pokémon pixel font) lack symbols such as U+2212 and render them as
+  a hairline.
+- **Cues on content:** a theme-colored highlight drawn on content that
+  does not change with the theme (the venue map's paper) rides on a casing
+  in the content's own ink; the accent alone washes out under a pale
+  theme.
+- **Print rules outrank skins:** a component's `@media print` rules are
+  scoped (`body.mat-guide-open …`) so the base theme sheet and the skins,
+  which load later, cannot restyle the printed page.
 - **Grid/flex inputs:** set `min-width: 0` and
   `width: 100%; box-sizing: border-box` on inputs inside grid/flex
   fields, or the column overflows and clips.

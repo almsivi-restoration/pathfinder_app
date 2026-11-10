@@ -1,7 +1,7 @@
 ---
 description: "Blueprint: how state changes flow from UI to disk in Game Master's Workbench — store action, API route, StateManager, persisted JSON. Load when adding any feature that reads or writes persistent state."
 name: "bp-state-mutation-flow"
-version: "1.1.0"
+version: "1.2.0"
 applyTo: "**"
 ---
 
@@ -20,7 +20,8 @@ React component
   → zustand store action (store.js)        # axios call lives HERE
     → FastAPI route (main.py)              # validate, delegate
       → StateManager / domain library      # business logic + persistence
-        → JSON on disk (campaigns/<name>/campaign.json, scenes)
+        → JSON on disk (campaigns/<name>/campaign.json, scenes,
+                        venues/<venue_id>.json)
 ```
 
 Read path is the reverse: component subscribes to the store; the store
@@ -48,6 +49,17 @@ fetches via axios and `set()`s the slice.
 - **Save is explicit, not implicit.** Mutations update in-memory state
   and mark dirty (`isCampaignDirty`/`isSceneDirty`); persistence happens
   through the save routes. Don't sneak writes into read routes.
+- **Venues are one file each; the folder is the index.** A venue lives at
+  `campaigns/<name>/venues/<venue_id>.json` and is never listed in
+  `campaign.json`, so venue edits never rewrite the campaign. The
+  VenueEditor keeps the draft and its undo history locally
+  (`venueEditorDirty` in the store); `PUT /api/venue/{id}` is the save.
+- **Second screens read a server-filtered copy.** The Venue Screen polls
+  `GET /api/venue/shown` (2 s) for `player_venue_view`, never the GM's
+  venue: hidden content is stripped before it leaves the server. Which
+  venue is shown (`shown_venue_id`) is in-memory session state — never
+  persisted, cleared when the campaign changes. The Mat Guide is
+  GM-facing and draws the unsaved draft.
 
 ## When this doesn't fit
 
@@ -60,3 +72,6 @@ The forbidden move is a second, parallel write path to the same state.
 
 - 1.1.0: added the bounded-request contract (axios default timeout) after the
   v0.22.0 freeze fix; a hung backend previously froze the UI silently.
+- 1.2.0: venues — per-file persistence with the folder as the index, the
+  editor-local draft with an explicit PUT save, and the server-filtered
+  second-screen read (`player_venue_view`, in-memory `shown_venue_id`).

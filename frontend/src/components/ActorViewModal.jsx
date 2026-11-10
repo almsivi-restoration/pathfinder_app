@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { useStore } from '../store';
 import { getSheetValue } from '../sheet';
+import { getMarkerSymbol } from '../markerSymbols';
+import MarkerSymbol from './MarkerSymbol';
 import '../styles/ActorViewModal.css';
 
 function formatValue(value) {
@@ -96,7 +98,9 @@ function ActorViewModal() {
       <div className="actor-view-modal" onClick={(e) => e.stopPropagation()}>
         <div className="actor-view-header">
           <h2>
-            {actor.color && <span className="actor-color-dot" style={{ backgroundColor: actor.color }} />}
+            {getMarkerSymbol(actor.symbol) ? (
+              <MarkerSymbol symbol={actor.symbol} color={actor.color} size={24} className="actor-marker" />
+            ) : actor.color && <span className="actor-color-dot" style={{ backgroundColor: actor.color }} />}
             {actor.name}
             <span className="actor-view-type">{actor.is_pc ? 'PC' : 'NPC'}{isTemplate ? ' · Template' : ''}</span>
           </h2>

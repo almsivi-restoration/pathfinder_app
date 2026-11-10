@@ -4,6 +4,7 @@ Handles CRUD operations and persistence.
 """
 
 import json
+import logging
 import os
 import re
 import shutil
@@ -11,15 +12,41 @@ import tempfile
 from typing import Dict, List, Optional
 from pathlib import Path
 from datetime import datetime
-from models import Campaign, Scene, Actor, ChronicleEntry
+from models import Campaign, Scene, Actor, ChronicleEntry, Venue
 from rules import get_ruleset
 from rules.common import get_sheet_value
 import uuid
 
 
 CAMPAIGN_EXPORT_FORMAT = "gm-workbench-campaign"
-CAMPAIGN_EXPORT_VERSION = 1
+CAMPAIGN_EXPORT_VERSION = 2  # 2 added venues; version 1 bundles still import
 _SCENE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
+_VENUE_ID_PATTERN = _SCENE_ID_PATTERN
+# Edge kinds drawn as something else on the Venue Screen, so players cannot spot them.
+_PLAYER_EDGE_DISGUISES = {"secret_door": "wall"}
+
+logger = logging.getLogger(__name__)
+
+
+def player_venue_view(venue: Venue) -> dict:
+    """Return the players' copy of a venue: no GM notes, no GM-only features, and secret
+    doors drawn as plain walls. Stripping happens here so hidden content never leaves the server."""
+    return {
+        "id": venue.id,
+        "name": venue.name,
+        "grid": venue.grid,
+        "width": venue.width,
+        "height": venue.height,
+        "cells": dict(venue.cells),
+        "edges": [
+            {**edge.model_dump(), "kind": _PLAYER_EDGE_DISGUISES.get(edge.kind, edge.kind)}
+            for edge in venue.edges
+        ],
+        "features": [
+            feature.model_dump() for feature in venue.features if not feature.gm_only
+        ],
+        "updated_at": venue.updated_at.isoformat(),
+    }
 
 
 def _validate_campaign_name(name: str) -> str:
@@ -48,6 +75,7 @@ class StateManager:
         self.current_scene: Optional[Scene] = None
         self.scenes: Dict[str, Scene] = {}
         self.campaigns: Dict[str, Campaign] = {}
+        self.shown_venue_id: Optional[str] = None  # venue on the Venue Screen; in-memory only
     
     # ==================== Campaign Methods ====================
     
@@ -58,6 +86,7 @@ class StateManager:
         campaign = Campaign(name=name, ruleset=ruleset)
         self.campaigns[campaign.name] = campaign
         self.current_campaign = campaign
+        self.shown_venue_id = None
         return campaign
     
     def load_campaign(self, campaign_name: str) -> Optional[Campaign]:
@@ -74,6 +103,7 @@ class StateManager:
         self.current_scene = None
         self.scenes = {}
         self.campaigns[campaign_name] = campaign
+        self.shown_venue_id = None
         return campaign
     
     def save_campaign(self, campaign: Optional[Campaign] = None) -> bool:
@@ -159,12 +189,18 @@ class StateManager:
                 with open(scene_path, "r") as scene_file:
                     scenes.append(Scene(**json.load(scene_file)))
         campaign.scenes = [scene.id for scene in scenes]
+        venues = []
+        for venue_path in sorted((campaign_dir / "venues").glob("*.json")):
+            if _VENUE_ID_PATTERN.match(venue_path.stem):
+                with open(venue_path, "r") as venue_file:
+                    venues.append(Venue(**json.load(venue_file)))
         return {
             "format": CAMPAIGN_EXPORT_FORMAT,
             "version": CAMPAIGN_EXPORT_VERSION,
             "exported_at": datetime.now().isoformat(),
             "campaign": campaign.model_dump(mode="json"),
             "scenes": [scene.model_dump(mode="json") for scene in scenes],
+            "venues": [venue.model_dump(mode="json") for venue in venues],
         }
 
     def import_campaign(self, bundle: dict) -> Campaign:
@@ -179,6 +215,7 @@ class StateManager:
         try:
             campaign = Campaign(**bundle["campaign"])
             scenes = [Scene(**scene) for scene in bundle.get("scenes", [])]
+            venues = [Venue(**venue) for venue in bundle.get("venues", [])]
         except (KeyError, TypeError, ValueError):
             raise ValueError("The campaign export is damaged or incomplete")
         if not get_ruleset(campaign.ruleset):
@@ -186,6 +223,9 @@ class StateManager:
         scene_ids = [scene.id for scene in scenes]
         if len(set(scene_ids)) != len(scene_ids) or not all(_SCENE_ID_PATTERN.match(i) for i in scene_ids):
             raise ValueError("The campaign export has invalid scene identifiers")
+        venue_ids = [venue.id for venue in venues]
+        if len(set(venue_ids)) != len(venue_ids) or not all(_VENUE_ID_PATTERN.match(i) for i in venue_ids):
+            raise ValueError("The campaign export has invalid venue identifiers")
 
         base_name = _validate_campaign_name(campaign.name)
         name = base_name
@@ -202,6 +242,10 @@ class StateManager:
             for scene in scenes:
                 with open(staging_dir / "scenes" / f"{scene.id}.json", "w") as scene_file:
                     json.dump(scene.model_dump(), scene_file, indent=2, default=str)
+            (staging_dir / "venues").mkdir()
+            for venue in venues:
+                with open(staging_dir / "venues" / f"{venue.id}.json", "w") as venue_file:
+                    json.dump(venue.model_dump(), venue_file, indent=2, default=str)
             with open(staging_dir / "campaign.json", "w") as campaign_file:
                 json.dump(campaign.model_dump(), campaign_file, indent=2, default=str)
             staging_dir.rename(self.campaigns_dir / name)
@@ -222,6 +266,7 @@ class StateManager:
             self.current_campaign = None
             self.current_scene = None
             self.scenes = {}
+            self.shown_venue_id = None
         return True
     
     # ==================== Scene Methods ====================
@@ -478,6 +523,108 @@ class StateManager:
         if removed:
             self.save_campaign()
         return removed
+
+    # ==================== Venue Methods ====================
+    # Each venue is its own file under campaigns/<name>/venues/; the folder is the index, so
+    # venue edits never rewrite campaign.json (unlike scenes, which campaign.scenes lists).
+
+    def _venue_path(self, venue_id: str) -> Optional[Path]:
+        """Return a venue file path in the current campaign, or None for no campaign / unsafe id."""
+        if not self.current_campaign or not _VENUE_ID_PATTERN.match(venue_id):
+            return None
+        return self.campaigns_dir / self.current_campaign.name / "venues" / f"{venue_id}.json"
+
+    def _write_venue(self, venue: Venue) -> None:
+        """Atomically replace a venue file so a crash mid-write never leaves a torn map."""
+        venue_path = self._venue_path(venue.id)
+        venue_path.parent.mkdir(parents=True, exist_ok=True)
+        temporary_path = None
+        try:
+            with tempfile.NamedTemporaryFile(mode="w", dir=venue_path.parent, suffix=".tmp", delete=False) as venue_file:
+                temporary_path = Path(venue_file.name)
+                json.dump(venue.model_dump(), venue_file, indent=2, default=str)
+            os.replace(temporary_path, venue_path)
+        except OSError:
+            if temporary_path:
+                temporary_path.unlink(missing_ok=True)
+            raise
+
+    def list_venues(self) -> List[Venue]:
+        """Return the current campaign's venues, sorted by name; unreadable files are skipped and logged."""
+        if not self.current_campaign:
+            return []
+        venues_dir = self.campaigns_dir / self.current_campaign.name / "venues"
+        venues = []
+        for venue_path in venues_dir.glob("*.json"):
+            if not _VENUE_ID_PATTERN.match(venue_path.stem):
+                continue
+            try:
+                with open(venue_path, "r") as venue_file:
+                    venues.append(Venue(**json.load(venue_file)))
+            except (OSError, ValueError) as error:
+                logger.warning("Skipping unreadable venue %s: %s", venue_path, error)
+        return sorted(venues, key=lambda venue: (venue.name.lower(), venue.created_at))
+
+    def create_venue(self, name: str, width: int, height: int) -> Optional[Venue]:
+        """Create and persist an empty venue on the current campaign."""
+        if not self.current_campaign:
+            return None
+        venue = Venue(id=str(uuid.uuid4()), name=name, width=width, height=height)
+        self._write_venue(venue)
+        return venue
+
+    def get_venue(self, venue_id: str) -> Optional[Venue]:
+        """Read one venue of the current campaign from disk."""
+        venue_path = self._venue_path(venue_id)
+        if not venue_path or not venue_path.is_file():
+            return None
+        with open(venue_path, "r") as venue_file:
+            return Venue(**json.load(venue_file))
+
+    def update_venue(self, venue_id: str, venue: Venue) -> Optional[Venue]:
+        """Replace a saved venue's contents, keeping its id and creation time."""
+        existing = self.get_venue(venue_id)
+        if not existing:
+            return None
+        updated = venue.model_copy(update={
+            "id": venue_id,
+            "created_at": existing.created_at,
+            "updated_at": datetime.now(),
+        })
+        self._write_venue(updated)
+        return updated
+
+    def delete_venue(self, venue_id: str) -> bool:
+        """Delete one venue; it also leaves the Venue Screen if it was shown."""
+        venue_path = self._venue_path(venue_id)
+        if not venue_path or not venue_path.is_file():
+            return False
+        venue_path.unlink()
+        if self.shown_venue_id == venue_id:
+            self.shown_venue_id = None
+        return True
+
+    def show_venue(self, venue_id: str) -> Optional[Venue]:
+        """Put a venue on the Venue Screen."""
+        venue = self.get_venue(venue_id)
+        if venue:
+            self.shown_venue_id = venue_id
+        return venue
+
+    def hide_venue(self) -> None:
+        """Clear the Venue Screen."""
+        self.shown_venue_id = None
+
+    def shown_venue_view(self) -> Optional[dict]:
+        """Return the player-safe projection of the shown venue, read fresh so saves appear live."""
+        if not self.shown_venue_id:
+            return None
+        try:
+            venue = self.get_venue(self.shown_venue_id)
+        except (OSError, ValueError) as error:
+            logger.warning("Shown venue %s is unreadable: %s", self.shown_venue_id, error)
+            return None
+        return player_venue_view(venue) if venue else None
 
     # ==================== Initiative Methods ====================
     

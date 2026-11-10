@@ -1,0 +1,49 @@
+.venue-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  /* Transparent: backdrop comes from body (App.css). */
+  background: transparent;
+}
+
+.venue-screen-header {
+  padding: 8px 20px;
+  background: linear-gradient(180deg, var(--mw-wood-light), var(--mw-wood-dark));
+  border-bottom: 2px solid var(--mw-frame);
+  box-shadow: inset 0 -1px 0 var(--mw-frame-dark);
+}
+
+/* The venue name is GM-authored and unbounded: one line, truncated. */
+.venue-screen-header h1 {
+  margin: 0;
+  font-size: 24px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The map scales to fill whatever the window leaves it. */
+.venue-screen-map {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.venue-screen-map .venue-map {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: calc(100% - 24px);
+  height: calc(100% - 24px);
+}
+
+.venue-screen-waiting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  font-size: 24px;
+  color: var(--mw-parchment-text);
+  font-style: italic;
+}

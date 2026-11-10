@@ -1,0 +1,30 @@
+.venue-map {
+  display: block;
+  flex-shrink: 0;
+  user-select: none;
+  touch-action: none;
+}
+
+/* The map's paper is the same under every theme, so a highlight drawn on it
+   cannot lean on the theme accent alone: Morrowind's gold on the cream paper
+   is about 1.5:1, and less on the tan void. Each accent stroke rides on a
+   wider casing in the map's own ink. */
+.venue-map-casing {
+  stroke-width: 6;
+  stroke-opacity: 0.8;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.venue-map-selection {
+  stroke: var(--mw-turn-accent);
+  stroke-width: 3;
+  pointer-events: none;
+}
+
+.venue-swatch {
+  display: block;
+  flex-shrink: 0;
+  border: 1px solid var(--mw-border-dark);
+  border-radius: 3px;
+}

@@ -48,6 +48,44 @@ def test_actor_color_roundtrips_and_legacy_actors_default_to_none(client):
     assert res.json()["color"] is None
 
 
+def test_actor_symbol_roundtrips_through_scene_template_and_export(client):
+    client.post("/api/campaign/new", params={"name": "Symbols", "ruleset": "1e"})
+    client.post("/api/scene/new", params={"name": "Grid"})
+
+    # Pre-symbol payloads load as None.
+    res = client.post("/api/actor/add", json=actor_payload())
+    assert res.json()["symbol"] is None
+    actor = res.json()
+
+    actor["symbol"] = "triangle"
+    actor["color"] = "#c0392b"
+    res = client.put(f"/api/actor/{actor['id']}", json=actor)
+    assert res.json()["symbol"] == "triangle"
+
+    # A template carries the symbol and its scene instances inherit it.
+    template = client.post("/api/campaign/actor-template/add", json={**actor, "id": ""}).json()
+    assert template["symbol"] == "triangle"
+    instance = client.post(f"/api/scene/actor/from-template/{template['id']}").json()
+    assert instance["symbol"] == "triangle"
+    assert instance["color"] == "#c0392b"
+
+    # An oversize value is rejected; clearing returns to None.
+    oversize = {**instance, "symbol": "x" * 33}
+    assert client.put(f"/api/actor/{instance['id']}", json=oversize).status_code == 422
+    cleared = {**instance, "symbol": None}
+    assert client.put(f"/api/actor/{instance['id']}", json=cleared).json()["symbol"] is None
+
+    # Export/import preserves it on scene actors.
+    client.post("/api/scene/save")
+    client.post("/api/campaign/save")
+    bundle = client.get("/api/campaign/export", params={"name": "Symbols"}).json()
+    assert [a["symbol"] for a in bundle["scenes"][0]["actors"]] == ["triangle", None]
+    imported = client.post("/api/campaign/import", json=bundle).json()
+    client.post("/api/campaign/load", params={"name": imported["name"]})
+    scenes = client.get("/api/scenes").json()["scenes"]
+    assert [a["symbol"] for a in scenes[0]["actors"]] == ["triangle", None]
+
+
 def test_health_check(client):
     res = client.get("/health")
     assert res.status_code == 200
@@ -110,7 +148,8 @@ def test_export_import_campaign_roundtrips_scenes_templates_and_chronicle(client
     assert response.status_code == 200
     bundle = response.json()
     assert bundle["format"] == "gm-workbench-campaign"
-    assert bundle["version"] == 1
+    assert bundle["version"] == 2
+    assert bundle["venues"] == []
     assert [s["id"] for s in bundle["scenes"]] == [scene["id"]]
 
     response = client.post("/api/campaign/import", json=bundle)

@@ -1,0 +1,289 @@
+.venue-editor {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  gap: 0.5rem;
+}
+
+.venue-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.4rem 0.5rem;
+  background: linear-gradient(180deg, var(--mw-panel-hi), var(--mw-panel));
+  border: 1px solid var(--mw-frame-lo);
+  box-shadow: 0 0 0 1px var(--mw-frame-dark);
+}
+
+.venue-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.venue-toolbar-end {
+  margin-left: auto;
+  gap: 0.75rem;
+}
+
+/* Composed on .btn so every theme's button restyle reaches the toolbar:
+   this class sets only layout and the active accent, never the surface. */
+.btn.venue-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 30px;
+  padding: 3px 9px;
+}
+
+.btn.venue-tool.active {
+  border-color: var(--mw-turn-accent);
+  color: var(--mw-turn-accent);
+  box-shadow: 0 0 0 1px var(--mw-turn-accent), 0 0 6px var(--mw-turn-glow);
+}
+
+.venue-tool-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.venue-preview-toggle,
+.venue-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--mw-text);
+  cursor: pointer;
+}
+
+.venue-editor-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 272px;
+  gap: 0.75rem;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Auto margins center the map while still letting a large map scroll from its top-left. */
+.venue-canvas {
+  display: flex;
+  overflow: auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 12px;
+  box-sizing: border-box;
+  background: var(--mw-well);
+  border: 1px solid var(--mw-frame-lo);
+  box-shadow: inset 0 0 12px var(--mw-shadow);
+}
+
+.venue-canvas > .venue-map {
+  margin: auto;
+  box-shadow: 0 4px 18px var(--mw-shadow);
+}
+
+.venue-canvas[data-tool='room'] .venue-map,
+.venue-canvas[data-tool='paint'] .venue-map,
+.venue-canvas[data-tool='erase'] .venue-map,
+.venue-canvas[data-tool='stamp'] .venue-map {
+  cursor: crosshair;
+}
+
+.venue-canvas[data-tool='wall'] .venue-map,
+.venue-canvas[data-tool='door'] .venue-map,
+.venue-canvas[data-tool='secret'] .venue-map {
+  cursor: cell;
+}
+
+.venue-canvas.previewing .venue-map {
+  cursor: default;
+}
+
+/* Hover cues sit on the map's fixed paper: accent over an ink casing (VenueMap.css). */
+.venue-hover-cell-casing {
+  stroke-width: 4.5;
+  stroke-opacity: 0.6;
+}
+
+.venue-hover-cell {
+  fill: var(--mw-turn-tint);
+  stroke: var(--mw-turn-accent);
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.venue-hover-edge-casing {
+  stroke-width: 11;
+  stroke-opacity: 0.7;
+}
+
+.venue-hover-edge {
+  stroke: var(--mw-turn-accent);
+  stroke-width: 7;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.venue-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.venue-sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.6rem;
+  background: var(--mw-panel);
+  border: 1px solid var(--mw-frame-lo);
+  box-shadow: 0 0 0 1px var(--mw-frame-dark);
+}
+
+.venue-sidebar-section h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.venue-palette {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.venue-palette-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 3px 5px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background: var(--mw-panel-lo);
+  color: var(--mw-text);
+  font-family: var(--mw-font-body);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.venue-palette-item span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.venue-palette-item:hover:not(:disabled) {
+  border-color: var(--mw-frame-lo);
+  color: var(--mw-text-bright);
+}
+
+.venue-palette-item.active {
+  border-color: var(--mw-turn-accent);
+  background: var(--mw-turn-tint);
+  color: var(--mw-text-bright);
+}
+
+.venue-palette-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.venue-field {
+  display: flex;
+  flex-direction: column;
+  /* App.css gives every <label> align-items: center; in a column that centers the caption. */
+  align-items: stretch;
+  gap: 0.2rem;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--mw-text-dim);
+}
+
+.venue-field input[type='text'],
+.venue-field textarea {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.venue-field textarea {
+  resize: vertical;
+}
+
+.venue-size-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.venue-size-row input[type='number'] {
+  flex: 1 1 0;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.venue-size-row .btn-small {
+  flex-shrink: 0;
+}
+
+.venue-inspector-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.venue-icon-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.venue-icon-button .venue-tool-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.venue-status {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+  padding: 0.25rem 0.5rem;
+  font-size: 13px;
+  color: var(--mw-text-dim);
+  /* Its own surface, like the toolbar: bare text is lost on a busy backdrop. */
+  background: linear-gradient(180deg, var(--mw-panel), var(--mw-panel-lo));
+  border: 1px solid var(--mw-frame-lo);
+  box-shadow: 0 0 0 1px var(--mw-frame-dark);
+}
+
+.venue-status-cell {
+  flex: 0 0 3.5rem;
+  font-family: var(--mw-font-display);
+  font-size: 15px;
+  color: var(--mw-text-bright);
+}
+
+.venue-status-hint {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.venue-status-size {
+  flex-shrink: 0;
+}

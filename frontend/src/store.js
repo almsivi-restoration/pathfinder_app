@@ -15,6 +15,14 @@ axios.defaults.timeout = REQUEST_TIMEOUT_MS;
 
 const getErrorMessage = (error) => error.response?.data?.detail || error.message || 'The request failed.';
 
+const venueSummary = ({ id, name, width, height, created_at, updated_at }) => ({
+  id, name, width, height, created_at, updated_at,
+});
+// Same order as the backend list: name (case-insensitive), then creation time.
+const sortVenues = (venues) => [...venues].sort((a, b) => (
+  a.name.toLowerCase().localeCompare(b.name.toLowerCase()) || String(a.created_at).localeCompare(String(b.created_at))
+));
+
 export const useStore = create((set, get) => ({
   // Campaign state
   campaigns: [],
@@ -29,6 +37,12 @@ export const useStore = create((set, get) => ({
   bestiaryResults: [],
   chronicleEntries: [],
   campaignScenes: [],
+  venues: [],
+  shownVenueId: null,
+  // The Venue Screen window's player-safe copy of the shown venue (only that window polls it).
+  shownVenue: null,
+  // Set by the venue editor so navigation elsewhere can ask before discarding unsaved edits.
+  venueEditorDirty: false,
 
   // Scene state
   currentScene: null,
@@ -178,6 +192,9 @@ export const useStore = create((set, get) => ({
         initiativeOrder: [],
         campaignScenes: [],
         chronicleEntries: [],
+        venues: [],
+        shownVenueId: null,
+        venueEditorDirty: false,
         isCampaignDirty: false,
         isSceneDirty: false,
       });
@@ -435,6 +452,116 @@ export const useStore = create((set, get) => ({
       console.error('Failed to delete chronicle entry:', error);
       set({ operationError: getErrorMessage(error) });
       return false;
+    }
+  },
+
+  // Venue actions. The list holds summaries; the editor holds the full venue it is working on.
+  setVenueEditorDirty: (dirty) => set({ venueEditorDirty: dirty }),
+
+  fetchVenues: async () => {
+    try {
+      const res = await axios.get(`${API_URL}/venues`);
+      set({ venues: res.data.venues, shownVenueId: res.data.shown_venue_id });
+      return res.data.venues;
+    } catch (error) {
+      if (error.response?.status !== 404) {
+        console.error('Failed to fetch venues:', error);
+        set({ operationError: getErrorMessage(error) });
+      }
+      return [];
+    }
+  },
+
+  createVenue: async ({ name, width, height }) => {
+    try {
+      const res = await axios.post(`${API_URL}/venue/new`, { name, width, height });
+      set({ venues: sortVenues([...get().venues, venueSummary(res.data)]), operationError: null });
+      return res.data;
+    } catch (error) {
+      console.error('Failed to create venue:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
+    }
+  },
+
+  fetchVenue: async (venueId) => {
+    try {
+      const res = await axios.get(`${API_URL}/venue/${encodeURIComponent(venueId)}`);
+      return res.data;
+    } catch (error) {
+      console.error('Failed to load venue:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
+    }
+  },
+
+  saveVenue: async (venue) => {
+    try {
+      const res = await axios.put(`${API_URL}/venue/${encodeURIComponent(venue.id)}`, venue);
+      set({
+        venues: sortVenues(get().venues.map((entry) => (entry.id === venue.id ? venueSummary(res.data) : entry))),
+        operationError: null,
+      });
+      return res.data;
+    } catch (error) {
+      console.error('Failed to save venue:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
+    }
+  },
+
+  deleteVenue: async (venueId) => {
+    try {
+      await axios.delete(`${API_URL}/venue/${encodeURIComponent(venueId)}`);
+      const { venues, shownVenueId } = get();
+      set({
+        venues: venues.filter((entry) => entry.id !== venueId),
+        shownVenueId: shownVenueId === venueId ? null : shownVenueId,
+      });
+      return true;
+    } catch (error) {
+      console.error('Failed to delete venue:', error);
+      set({ operationError: getErrorMessage(error) });
+      return false;
+    }
+  },
+
+  // The Venue Screen shows the venue's last saved copy, never unsaved editor state.
+  showVenue: async (venueId) => {
+    try {
+      const res = await axios.post(`${API_URL}/venue/show`, null, { params: { venue_id: venueId } });
+      set({ shownVenueId: res.data.shown_venue_id, operationError: null });
+      return true;
+    } catch (error) {
+      console.error('Failed to show venue:', error);
+      set({ operationError: getErrorMessage(error) });
+      return false;
+    }
+  },
+
+  hideVenue: async () => {
+    try {
+      await axios.post(`${API_URL}/venue/hide`);
+      set({ shownVenueId: null, operationError: null });
+      return true;
+    } catch (error) {
+      console.error('Failed to hide venue:', error);
+      set({ operationError: getErrorMessage(error) });
+      return false;
+    }
+  },
+
+  // The Venue Screen's poll. An unchanged answer keeps the same object so the map does not
+  // redraw every tick; a failed poll keeps the last picture rather than blanking the screen.
+  fetchShownVenue: async () => {
+    try {
+      const res = await axios.get(`${API_URL}/venue/shown`);
+      const next = res.data.venue || null;
+      if (JSON.stringify(next) !== JSON.stringify(get().shownVenue)) set({ shownVenue: next });
+      return next;
+    } catch (error) {
+      console.error('Failed to fetch the shown venue:', error);
+      return get().shownVenue;
     }
   },
 
@@ -811,6 +938,9 @@ export const useStore = create((set, get) => ({
     referenceDocuments: [],
     referenceResults: [],
     campaignScenes: [],
+    venues: [],
+    shownVenueId: null,
+    venueEditorDirty: false,
     currentScene: null,
     actors: [],
     initiativeOrder: [],

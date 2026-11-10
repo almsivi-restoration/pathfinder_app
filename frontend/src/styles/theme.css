@@ -156,7 +156,8 @@
 .actor-view-modal,
 .reference-sources,
 .reference-search,
-.bestiary-picker {
+.bestiary-picker,
+.mat-guide {
   border: 14px solid var(--mw-frame);
   border-image: url('../assets/textures/frame-stone.png') 50 / 14px round;
   box-shadow:

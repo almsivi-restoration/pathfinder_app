@@ -1,7 +1,7 @@
 ---
 description: "Blueprint index and maintenance mechanism for Game Master's Workbench — the catalog of architectural patterns, when to consult them, and how to add or revise them. ALWAYS load this instruction."
 name: "gmw-blueprint-index"
-version: "1.1.0"
+version: "1.2.0"
 applyTo: "**"
 ---
 
@@ -24,6 +24,7 @@ solves.
 | State mutation flow | [state-mutation-flow.md](../blueprints/state-mutation-flow.md) | `**` | The single path from UI action to persisted JSON |
 | Test conventions | [test-conventions.md](../blueprints/test-conventions.md) | tests | Synthetic fixtures only, backend isolation, jsdom/zustand seeding |
 | UI theme generation | [ui-theme-generation.md](../blueprints/ui-theme-generation.md) | `frontend/src/**`, themes, `artifacts/local/**_ui/**` | Reference-derived skins, texture generation, cover-crop/origin traps, rendered-pixel verification |
+| Content catalog | [content-catalog.md](../blueprints/content-catalog.md) | marker symbols, venue catalog and its renderers | Append-only persisted ids, opaque backend storage, unknown-id fallbacks, mat translation, server-side GM-only stripping |
 
 The lexicon ([lexicon.instructions.md](lexicon.instructions.md)) is the
 companion piece: canonical vocabulary, naming, casing, and pinned
