@@ -721,6 +721,14 @@ select option {
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
+/* Checkboxes: the base sheet's `color-scheme: dark` draws an unchecked box as
+   a solid dark square, which on these light panels reads as checked (and the
+   checked box, pale with a faint tick, as unchecked). Light native boxes here;
+   the rest of the native chrome keeps the base scheme. */
+input[type='checkbox'] {
+  color-scheme: light;
+}
+
 /* The search fields were left on the base's dark well. */
 input[type='search'] {
   background-color: #ffffff;

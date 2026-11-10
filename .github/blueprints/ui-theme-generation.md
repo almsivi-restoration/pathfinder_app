@@ -166,6 +166,13 @@ the review. Add a new surface to that test's lists in the same change.
   is dark (Bestiary's search/detail columns, its source row, the page-level
   `h2`s). A light or busy backdrop exposes every one of them; walk every
   screen in the capture harness, not just the ones you styled.
+- **A light skin must restate the scheme of the native controls it shows.**
+  The base sets `color-scheme: dark`, so an unchecked checkbox is a solid
+  dark square. On a light panel that reads as checked, and the checked box
+  (pale, faint tick) as unchecked — Dissidia shipped that way, and the venue
+  editor's "GM only — hidden from players" box made it matter. Pokémon sets
+  `color-scheme: light` in `:root`; Dissidia sets it on
+  `input[type='checkbox']` alone. Capture a checkbox in both states.
 - **Inline colors defeat tokens.** A component that paints a palette value
   inline (the player HP bar's green/yellow/red once did) cannot be skinned
   without `!important`. Move the value to a `--mw-*` token and select it
@@ -344,3 +351,4 @@ means, not a requirement.
   under Pokémon — both from selectors no skin had been told about. A
   window framed in the base or a skin must keep its print rules scoped
   above the skins: framing `.mat-guide` printed the frame until they were.
+  Dissidia's checkboxes read inverted under the inherited dark scheme.
