@@ -58,6 +58,54 @@
   font-size: 1rem;
 }
 
+.help-guide {
+  line-height: 1.55;
+}
+
+.help-section {
+  padding: 1rem 0;
+}
+
+.help-section + .help-section {
+  border-top: 1px solid var(--mw-border-dark);
+}
+
+.help-section h3 {
+  margin: 0 0 0.5rem;
+  color: var(--mw-text-bright);
+  font-size: 1.1rem;
+}
+
+.help-section p {
+  margin: 0.5rem 0 0;
+}
+
+.help-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 0.4rem 1rem;
+  margin: 0.75rem 0 0;
+}
+
+.help-shortcuts > div {
+  display: grid;
+  grid-template-columns: minmax(0, 7rem) minmax(0, 1fr);
+  gap: 0.5rem;
+}
+
+.help-shortcuts dt {
+  color: var(--mw-text-bright);
+  font-weight: 600;
+}
+
+.help-shortcuts kbd {
+  font: inherit;
+}
+
+.help-shortcuts dd {
+  margin: 0;
+}
+
 .about-body:focus-visible {
   outline: 2px solid var(--mw-gold);
   outline-offset: -2px;

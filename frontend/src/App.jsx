@@ -31,7 +31,7 @@ function App() {
   const [showQuickRoll, setShowQuickRoll] = useState(false);
   const [showSheetImporter, setShowSheetImporter] = useState(false);
   const [showHarrowing, setShowHarrowing] = useState(false);
-  const [aboutDetails, setAboutDetails] = useState(null);
+  const [infoDialog, setInfoDialog] = useState(null);
   const viewRef = useRef(view);
   viewRef.current = view;
 
@@ -85,7 +85,16 @@ function App() {
 
   useEffect(() => {
     if (!window.electron?.onOpenAbout) return undefined;
-    return window.electron.onOpenAbout(setAboutDetails);
+    return window.electron.onOpenAbout((details) => setInfoDialog({ details }));
+  }, []);
+
+  useEffect(() => {
+    if (!window.electron?.onOpenHelp) return undefined;
+    return window.electron.onOpenHelp((details) => setInfoDialog({
+      details,
+      title: 'How to Use',
+      bodyLabel: 'Usage guide',
+    }));
   }, []);
 
   // Determine view based on URL or state
@@ -118,7 +127,7 @@ function App() {
       {showQuickRoll && <QuickRoll onClose={() => setShowQuickRoll(false)} />}
       {showSheetImporter && <SheetImporter onClose={() => setShowSheetImporter(false)} />}
       {showHarrowing && <Harrowing onClose={() => setShowHarrowing(false)} />}
-      {aboutDetails && <AboutDialog details={aboutDetails} onClose={() => setAboutDetails(null)} />}
+      {infoDialog && <AboutDialog {...infoDialog} onClose={() => setInfoDialog(null)} />}
     </div>
   );
 }

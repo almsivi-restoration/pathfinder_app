@@ -47,6 +47,9 @@ actor, initiative, or persistence ownership.
   Reset Zoom (Ctrl+Plus / Ctrl+- / Ctrl+0). Zoom is per-window and resets on relaunch.
 - **Help > About** opens a themed, viewport-bounded dialog on the GM window. Its details scroll
   independently, keeping the version and Close button visible; Escape also closes it.
+- **Help > How to Use** (F1) uses the same scrollable layout on the GM window, keeping the full
+  guide accessible on smaller screens without clipping its title or Close button. Topic headings,
+  short paragraphs, and shortcut lists make it easy to scan.
 - Render actor sheets from the active ruleset definition, including scalar fields, notes, and
 	repeatable records such as weapons, skills, armor, gear, and spells. NPCs created from the
 	bestiary use a ruleset-defined monster sheet that shares the tracker's summary contract.

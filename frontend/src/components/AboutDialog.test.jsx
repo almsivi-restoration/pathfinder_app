@@ -16,10 +16,32 @@ test('shows every paragraph, the actual version, and an untruncated data directo
   expect(screen.getByText(details.dataDirectory)).toBeInTheDocument();
 });
 
-test('focus stays in the dialog and the scrollable details are keyboard reachable', () => {
-  render(<AboutDialog details={details} onClose={jest.fn()} />);
+test('formats the usage guide with section headings, short paragraphs, and semantic shortcuts', () => {
+  const guide = {
+    version: '1.2.3-test',
+    sections: [
+      { title: 'Campaigns', paragraphs: ['Create a campaign.', 'Save your scenes.'] },
+      { title: 'Keyboard shortcuts', shortcuts: [{ keys: 'Ctrl+B', action: 'Bestiary' }] },
+    ],
+    dataDirectory: '/data',
+  };
+  render(<AboutDialog details={guide} title="How to Use" bodyLabel="Usage guide" onClose={jest.fn()} />);
+  expect(screen.getByRole('heading', { level: 3, name: 'Campaigns' })).toBeInTheDocument();
+  expect(screen.getByText('Create a campaign.').tagName).toBe('P');
+  expect(screen.getByText('Save your scenes.').tagName).toBe('P');
+  expect(screen.getByRole('heading', { level: 3, name: 'Keyboard shortcuts' })).toBeInTheDocument();
+  expect(screen.getByText('Ctrl+B').tagName).toBe('KBD');
+  expect(screen.getByText('Bestiary').tagName).toBe('DD');
+  expect(screen.getByText('/data')).toBeInTheDocument();
+});
+
+test.each([
+  {},
+  { title: 'How to Use', bodyLabel: 'Usage guide' },
+])('focus stays in the dialog and the scrollable details are keyboard reachable: %j', (props) => {
+  render(<AboutDialog {...props} details={details} onClose={jest.fn()} />);
   const close = screen.getByRole('button', { name: 'Close' });
-  const body = screen.getByRole('region', { name: 'About details' });
+  const body = screen.getByRole('region', { name: props.bodyLabel || 'About details' });
   expect(close).toHaveFocus();
   fireEvent.keyDown(close, { key: 'Tab' });
   expect(body).toHaveFocus();
@@ -27,9 +49,12 @@ test('focus stays in the dialog and the scrollable details are keyboard reachabl
   expect(close).toHaveFocus();
 });
 
-test('Close, Escape, and the backdrop dismiss; content clicks do not', () => {
+test.each([
+  {},
+  { title: 'How to Use', bodyLabel: 'Usage guide' },
+])('Close, Escape, and the backdrop dismiss; content clicks do not: %j', (props) => {
   const onClose = jest.fn();
-  render(<AboutDialog details={details} onClose={onClose} />);
+  render(<AboutDialog {...props} details={details} onClose={onClose} />);
   fireEvent.click(screen.getByText('A tabletop GM companion.'));
   expect(onClose).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'Close' }));
@@ -38,11 +63,14 @@ test('Close, Escape, and the backdrop dismiss; content clicks do not', () => {
   expect(onClose).toHaveBeenCalledTimes(3);
 });
 
-test('closing restores the previous keyboard focus', () => {
+test.each([
+  {},
+  { title: 'How to Use', bodyLabel: 'Usage guide' },
+])('closing restores the previous keyboard focus: %j', (props) => {
   const trigger = document.createElement('button');
   document.body.appendChild(trigger);
   trigger.focus();
-  const { unmount } = render(<AboutDialog details={details} onClose={jest.fn()} />);
+  const { unmount } = render(<AboutDialog {...props} details={details} onClose={jest.fn()} />);
   unmount();
   expect(trigger).toHaveFocus();
   trigger.remove();

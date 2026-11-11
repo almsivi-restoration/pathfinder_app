@@ -72,6 +72,11 @@ contextBridge.exposeInMainWorld('electron', {
     ipcRenderer.on('open-harrowing', listener);
     return () => ipcRenderer.removeListener('open-harrowing', listener);
   },
+  onOpenHelp: (callback) => {
+    const listener = (_event, details) => callback(details);
+    ipcRenderer.on('open-help', listener);
+    return () => ipcRenderer.removeListener('open-help', listener);
+  },
   onOpenAbout: (callback) => {
     const listener = (_event, details) => callback(details);
     ipcRenderer.on('open-about', listener);

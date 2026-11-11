@@ -43,6 +43,7 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 - **Persistence:** Save/load campaigns, scenes, and venues as JSON files
 - **Packaged Desktop App:** Installable AppImage and deb builds with auto-update (AppImage) and an apt-managed deb
 - **About:** Help > About opens on the GM window in a themed dialog bounded to the viewport, with independently scrollable details, a fixed Close button, Escape dismissal, and keyboard focus containment/restoration. Version comes from Electron's `app.getVersion()`
+- **How to Use:** Help > How to Use (F1) shares the About dialog's viewport-bounded layout and keyboard behavior. The full guide uses topic headings, short paragraphs, and shortcut lists, and scrolls independently of the title and Close button, including on small screens; it always opens on the GM window.
 
 ## Project Structure
 
@@ -94,7 +95,7 @@ pathfinder_app/
 │   │   ├── assets/textures/    # Generated Morrowind textures (ash backdrop, banner, parchment, carved 9-slice frame)
 │   │   ├── components/
 │   │   │   ├── GMDashboard.jsx
-│   │   │   ├── AboutDialog.jsx   # Scrollable, viewport-bounded Help > About dialog
+│   │   │   ├── AboutDialog.jsx   # Shared scrollable layout for About and How to Use
 │   │   │   ├── ActorList.jsx / ActorRow.jsx / ActorForm.jsx
 │   │   │   ├── ActorEditModal.jsx / ActorViewModal.jsx / ActorStatFields.jsx
 │   │   │   ├── ActorTemplateLibrary.jsx
@@ -121,7 +122,7 @@ pathfinder_app/
 │   │   └── styles/
 │   │       ├── theme.css       # Morrowind theme tokens (built-in default; local themes
 │   │       │                   # override these --mw-* variables)
-│   │       ├── AboutDialog.css # Viewport-bounded Help > About dialog
+│   │       ├── AboutDialog.css # Viewport-bounded About / How to Use layout
 │   │       └── *.css           # Per-component styles
 │   └── package.json
 │

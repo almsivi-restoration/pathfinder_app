@@ -2,7 +2,12 @@ import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import '../styles/AboutDialog.css';
 
-export default function AboutDialog({ details, onClose }) {
+export default function AboutDialog({
+  details,
+  onClose,
+  title = "About Game Master's Workbench",
+  bodyLabel = 'About details',
+}) {
   const dialogRef = useRef(null);
   const closeRef = useRef(null);
 
@@ -42,11 +47,30 @@ export default function AboutDialog({ details, onClose }) {
         onKeyDown={handleKeyDown}
       >
         <header className="about-header">
-          <h2 id="about-title">About Game Master's Workbench</h2>
+          <h2 id="about-title">{title}</h2>
           <p>Version {details.version}</p>
         </header>
-        <div className="about-body" role="region" aria-label="About details" tabIndex={0}>
-          {details.description.split('\n\n').map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+        <div className="about-body" role="region" aria-label={bodyLabel} tabIndex={0}>
+          {details.sections ? (
+            <div className="help-guide">
+              {details.sections.map((section) => (
+                <section className="help-section" key={section.title}>
+                  <h3>{section.title}</h3>
+                  {section.paragraphs?.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+                  {section.shortcuts && (
+                    <dl className="help-shortcuts">
+                      {section.shortcuts.map((shortcut) => (
+                        <div key={shortcut.keys}>
+                          <dt><kbd>{shortcut.keys}</kbd></dt>
+                          <dd>{shortcut.action}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+                </section>
+              ))}
+            </div>
+          ) : details.description.split('\n\n').map((paragraph, index) => <p key={index}>{paragraph}</p>)}
           <h3>Data directory</h3>
           <p>{details.dataDirectory}</p>
         </div>

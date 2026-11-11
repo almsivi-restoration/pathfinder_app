@@ -217,7 +217,49 @@ test('About opens on the GM window with the actual app version and complete cont
   expect(gmWindow.deliveries[0].args[0].description).toContain('Reference PDFs and bestiary CSVs are user-supplied');
 });
 
-test('the About preload subscription forwards details and removes its listener', () => {
+test('How to Use and F1 send the complete guide to the GM window, not a player screen', async () => {
+  const state = loadMain({ dev: true });
+  await state.appHandlers.ready();
+  const gmWindow = state.windows[0];
+  await state.ipc['open-venue-window']();
+  const venueWindow = state.windows[state.windows.length - 1];
+  state.focused = venueWindow;
+  const help = state.menu.find((entry) => entry.label === 'Help').submenu;
+  const item = help.find((entry) => entry.label === 'How to Use');
+  expect(item.accelerator).toBe('F1');
+  item.click();
+  expect(venueWindow.sent).toEqual([]);
+  expect(gmWindow.focusCount).toBe(1);
+  expect(gmWindow.deliveries).toEqual([{
+    channel: 'open-help',
+    args: [{
+      version: '0.0.0-test',
+      sections: expect.any(Array),
+      dataDirectory: path.join(userData, 'data'),
+    }],
+  }]);
+  const guide = gmWindow.deliveries[0].args[0].sections;
+  expect(guide.map((section) => section.title)).toEqual([
+    'Campaigns', 'Workflow', 'Zoom', 'Actors', 'Venues', 'Bestiary',
+    'Encyclopedia', 'Name Generator', 'Chronicle', 'Quick Roll',
+    'Import Character Sheet', 'The Harrowing', 'Themes', 'Keyboard shortcuts',
+  ]);
+  guide.flatMap((section) => section.paragraphs || []).forEach((paragraph) => {
+    expect(paragraph.length).toBeLessThanOrEqual(400);
+  });
+  expect(guide.find((section) => section.title === 'Venues').shortcuts.map((shortcut) => shortcut.keys))
+    .toEqual(['R', 'B', 'E', 'W', 'D', 'S', 'F', 'V', 'Ctrl+Z', 'Ctrl+Y', 'Ctrl+S']);
+  expect(guide.find((section) => section.title === 'Keyboard shortcuts').shortcuts.map((shortcut) => shortcut.keys))
+    .toEqual([
+      'F1', 'Ctrl+B', 'Ctrl+D', 'Ctrl+E', 'Ctrl+I', 'Ctrl+J', 'Ctrl+M', 'Ctrl+N',
+      'Ctrl+P', 'Ctrl+Plus', 'Ctrl+-', 'Ctrl+0', 'Ctrl+R', 'Ctrl+Q', 'Ctrl+Shift+I',
+    ]);
+});
+
+test.each([
+  ['onOpenAbout', 'open-about'],
+  ['onOpenHelp', 'open-help'],
+])('the %s preload subscription forwards details and removes its listener', (method, expectedChannel) => {
   let bridge;
   const ipcRenderer = { on: jest.fn(), removeListener: jest.fn() };
   vm.runInNewContext(fs.readFileSync(path.join(path.dirname(mainPath), 'preload.js'), 'utf8'), {
@@ -229,10 +271,10 @@ test('the About preload subscription forwards details and removes its listener',
     process: { env: {} },
   });
   const callback = jest.fn();
-  const unsubscribe = bridge.onOpenAbout(callback);
+  const unsubscribe = bridge[method](callback);
   const [channel, listener] = ipcRenderer.on.mock.calls[0];
   const details = { version: '0.0.0-test', description: 'About', dataDirectory: '/data' };
-  expect(channel).toBe('open-about');
+  expect(channel).toBe(expectedChannel);
   listener({}, details);
   expect(callback).toHaveBeenCalledWith(details);
   unsubscribe();

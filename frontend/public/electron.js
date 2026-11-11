@@ -532,31 +532,140 @@ ipcMain.handle('open-themes-folder', () => {
 });
 
 function showHelp() {
-  const window = BrowserWindow.getFocusedWindow() || mainWindow;
-  if (!window) return;
-  dialog.showMessageBox(window, {
-    type: 'info',
-    title: 'Help',
-    message: "Game Master's Workbench",
-    detail:
-      `Version ${app.getVersion()}\n\n` +
-      'Campaigns: Rename beside a saved campaign opens an editable name. Save or Enter applies it; Cancel or Escape discards it. Scenes, actor templates, and Chronicle entries are preserved. Invalid or duplicate names are rejected. Delete removes the campaign and its saved scenes after confirmation. Export saves a campaign with its saved scenes, templates, venues, and Chronicle to one .gmw-campaign.json file; Import reads one back as a new campaign and never overwrites an existing one.\n\n' +
-      'Workflow: create or load a campaign, open a scene, add actors, then run initiative from the GM Dashboard. Open a second, player-safe view with View > Open Player View. GM Tools and their shortcuts always open on the GM window, even while the Player View or Venue Screen has focus. The player view banner shows the scene name, and the actor whose turn it is stands out on both screens (an accent outline and tint plus a Current Turn tag for players, an accent bar and marker for the GM); the active actor always leads the player order, and PCs show their exact HP inside their health bar. Health bars react to what happens at the table: big hits shake the bar and drain a ghost of the lost chunk, small hits flash, and healing glows.\n\n' +
-      'Zoom: Ctrl+scroll wheel scales any window (GM, Player View, or Venue Screen), or use View > Zoom In / Zoom Out / Reset Zoom. Zoom is per-window and resets when the app restarts.\n\n' +
-      'Actors: the Clone button duplicates any actor in the scene (handy for groups of identical monsters). The color swatch assigns a marker color, shown as a dot and accent border on the player view to match your physical grid; the symbol picker beside it adds a simple mark (dot, cross, star, and so on) you can draw on the matching physical base, shown on the player view, the initiative tracker, and the actor view. Save frequently used actors as campaign templates and reuse them in any scene.\n\n' +
-      'Venues: GM Tools > Venues (Ctrl+M) builds grid maps for the campaign. Start from a mat-sized preset, drag out rooms, paint terrain, draw walls, doors, and secret doors along grid lines, and stamp features such as stairs, chests, and trees (keys: R room, B paint, E erase, W wall, D door, S secret door, F stamp, V select; Ctrl+Z undo, Ctrl+Y redo, Ctrl+S save). Venues are saved with the campaign and included in its export. Show players sends a venue to the Venue Screen (View > Open Venue Screen), a second-monitor window that never shows GM notes, GM-only features, or secret doors (they appear as plain walls). Mat Guide turns a venue into numbered drawing steps with grid coordinates and a four-marker color key for copying it onto a one-inch table mat (32×46 usable squares by default, excluding the border, adjustable), splitting large venues into sections; Print sends the guide to a printer.\n\n' +
-      'Bestiary: GM Tools > Bestiary (Ctrl+B) searches a monster CSV you supply. Drop a file named bestiary.csv into the ruleset sources directory (alongside your reference PDFs), Import it, then view entries, create NPCs directly from them, or save them as campaign templates.\n\n' +
-      'Encyclopedia: GM Tools > Encyclopedia (Ctrl+E) searches rulebook PDFs you supply. Drop PDFs for a ruleset into its source directory, then Index them there.\n\n' +
-      'Name Generator: GM Tools > Name Generator (Ctrl+N) generates fantasy names for characters, places, items, factions, and events.\n\n' +
-      'Chronicle: GM Tools > Chronicle (Ctrl+J) is the campaign journal — markdown-formatted entries for session recaps and anything else worth recording, with a formatting guide on the right page. The Dissidia theme uses cool silver-blue pages instead of Morrowind parchment; the Pokémon theme turns the book into a Game Boy screen.\n\n' +
-      'Quick Roll: GM Tools > Quick Roll (Ctrl+D) rolls checks for any actor in the open scene using the skill, save, or ability modifier from their sheet, or any custom die and modifier, with a running history of results.\n\n' +
-      'Import Character Sheet: GM Tools > Import Character Sheet (Ctrl+I) reads a scanned Pathfinder 1e sheet (PDF) with OCR — abilities, HP, initiative, AC (touch and flat-footed), speed, BAB/CMB/CMD, saves, and the printed skill rows — and shows the extracted values for your review before saving. No scene needs to be open: with only a campaign loaded, the actor is saved as a campaign template you can drop into any scene. OCR uses PaddleOCR, which is not bundled — if the dialog reports the engine missing, it shows the exact commands to create the dedicated OCR environment.\n\n' +
-      'The Harrowing: GM Tools > The Harrowing (Ctrl+P) is a chat window to a local language model you run yourself — spin up story beats, NPC background, and plot hooks at the table. No model ships with the app: start your own server (for example Ollama, with `ollama serve`), open Settings in the dialog, and point the app at its endpoint and model name. Enable "Ground in my rulebooks" to have it answer using passages from your indexed reference PDFs.\n\n' +
-      'Themes: View > Theme switches between the built-in Morrowind, Dissidia 012, and Pokémon (Gen I–III) themes and any local themes installed in the app themes directory. The Pokémon theme styles the player view as a Game Boy Advance battle screen (HP boxes, draining HP bars). Use Open Themes Folder to add a folder containing theme.json and theme.css, then Reload Themes.\n\n' +
-      'Data lives under:\n' +
-      path.join(app.getPath('userData'), 'data') +
-      '\n\nKeyboard: Ctrl+B bestiary · Ctrl+D quick roll · Ctrl+E encyclopedia · Ctrl+I import sheet · Ctrl+J chronicle · Ctrl+M venues · Ctrl+N name generator · Ctrl+P the harrowing · Ctrl+Plus/Ctrl+-/Ctrl+0 zoom · Ctrl+R restart · Ctrl+Q quit · Ctrl+Shift+I developer tools.',
-    buttons: ['Close'],
+  sendToGmWindow('open-help', {
+    version: app.getVersion(),
+    sections: [
+      {
+        title: 'Campaigns',
+        paragraphs: [
+          'Use Rename beside a saved campaign to edit its name. Save or Enter applies the change; Cancel or Escape discards it. Scenes, actor templates, and Chronicle entries are preserved. Invalid or duplicate names are rejected.',
+          'Delete removes the campaign and its saved scenes after confirmation.',
+          'Export saves the campaign, its saved scenes, templates, venues, and Chronicle to one .gmw-campaign.json file. Import reads it back as a new campaign and never overwrites an existing one.',
+        ],
+      },
+      {
+        title: 'Workflow',
+        paragraphs: [
+          'Create or load a campaign, open a scene, add actors, then run initiative from the GM Dashboard.',
+          'Open a second, player-safe view with View > Open Player View. GM Tools and their shortcuts always open on the GM window, even when the Player View or Venue Screen has focus.',
+          'The player view banner shows the scene name. The current actor stands out on both screens: players see an accent outline, tint, and Current Turn tag; the GM sees an accent bar and marker. The active actor always leads the player order, and PCs show their exact HP inside their health bar.',
+          'Health bars react to the table: big hits shake the bar and drain a ghost of the lost chunk, small hits flash, and healing glows.',
+        ],
+      },
+      {
+        title: 'Zoom',
+        paragraphs: [
+          'Ctrl+scroll wheel scales any window (GM, Player View, or Venue Screen). You can also use View > Zoom In, Zoom Out, or Reset Zoom. Zoom is per-window and resets when the app restarts.',
+        ],
+      },
+      {
+        title: 'Actors',
+        paragraphs: [
+          'Clone duplicates an actor in the scene, which is handy for groups of identical monsters.',
+          'The color swatch assigns a marker color, shown as a dot and accent border on the player view to match your physical grid. The symbol picker adds a simple mark (dot, cross, star, and so on) you can draw on the matching physical base; it also appears on the player view, initiative tracker, and actor view.',
+          'Save frequently used actors as campaign templates and reuse them in any scene.',
+        ],
+      },
+      {
+        title: 'Venues',
+        paragraphs: [
+          'GM Tools > Venues (Ctrl+M) builds grid maps for the campaign. Start from a mat-sized preset, drag out rooms, paint terrain, draw walls, doors, and secret doors along grid lines, and stamp features such as stairs, chests, and trees. Venues are saved with the campaign and included in its export.',
+          'Show players sends a venue to the Venue Screen (View > Open Venue Screen). This second-monitor window never shows GM notes or GM-only features; secret doors appear as plain walls.',
+          'Mat Guide creates numbered drawing steps, grid coordinates, and a four-marker color key for copying a venue onto a one-inch table mat. The default is 32×46 usable squares, excluding the border; adjust it as needed. Large venues are split into sections, and Print sends the guide to a printer.',
+          'Venue editor shortcuts:',
+        ],
+        shortcuts: [
+          { keys: 'R', action: 'Room' },
+          { keys: 'B', action: 'Paint' },
+          { keys: 'E', action: 'Erase' },
+          { keys: 'W', action: 'Wall' },
+          { keys: 'D', action: 'Door' },
+          { keys: 'S', action: 'Secret door' },
+          { keys: 'F', action: 'Stamp' },
+          { keys: 'V', action: 'Select' },
+          { keys: 'Ctrl+Z', action: 'Undo' },
+          { keys: 'Ctrl+Y', action: 'Redo' },
+          { keys: 'Ctrl+S', action: 'Save' },
+        ],
+      },
+      {
+        title: 'Bestiary',
+        paragraphs: [
+          'GM Tools > Bestiary (Ctrl+B) searches a monster CSV you supply. Put a file named bestiary.csv in the ruleset sources directory alongside your reference PDFs, then Import it.',
+          'View entries, create NPCs directly from them, or save them as campaign templates.',
+        ],
+      },
+      {
+        title: 'Encyclopedia',
+        paragraphs: [
+          'GM Tools > Encyclopedia (Ctrl+E) searches rulebook PDFs you supply. Put PDFs for a ruleset in its source directory, then Index them there.',
+        ],
+      },
+      {
+        title: 'Name Generator',
+        paragraphs: [
+          'GM Tools > Name Generator (Ctrl+N) generates fantasy names for characters, places, items, factions, and events.',
+        ],
+      },
+      {
+        title: 'Chronicle',
+        paragraphs: [
+          'GM Tools > Chronicle (Ctrl+J) is the campaign journal. Write Markdown-formatted session recaps and other entries; a formatting guide appears on the right page.',
+          'The Dissidia theme uses cool silver-blue pages instead of Morrowind parchment; the Pokémon theme turns the book into a Game Boy screen.',
+        ],
+      },
+      {
+        title: 'Quick Roll',
+        paragraphs: [
+          'GM Tools > Quick Roll (Ctrl+D) rolls checks for any actor in the open scene using the skill, save, or ability modifier from their sheet. You can also use any custom die and modifier. A running history shows the results.',
+        ],
+      },
+      {
+        title: 'Import Character Sheet',
+        paragraphs: [
+          'GM Tools > Import Character Sheet (Ctrl+I) reads a scanned Pathfinder 1e sheet (PDF) with OCR. It extracts abilities, HP, initiative, AC (touch and flat-footed), speed, BAB/CMB/CMD, saves, and printed skill rows for review before saving.',
+          'No scene needs to be open: with only a campaign loaded, the actor is saved as a campaign template you can add to any scene.',
+          'OCR uses PaddleOCR, which is not bundled. If the dialog reports the engine missing, it shows the exact commands to create the dedicated OCR environment.',
+        ],
+      },
+      {
+        title: 'The Harrowing',
+        paragraphs: [
+          'GM Tools > The Harrowing (Ctrl+P) opens a chat with a local language model you run yourself. Use it for story beats, NPC background, and plot hooks.',
+          'No model ships with the app. Start your own server (for example, run ollama serve for Ollama), then open Settings in the dialog and enter its endpoint and model name.',
+          'Enable "Ground in my rulebooks" to answer using passages from your indexed reference PDFs.',
+        ],
+      },
+      {
+        title: 'Themes',
+        paragraphs: [
+          'View > Theme switches between the built-in Morrowind, Dissidia 012, and Pokémon (Gen I–III) themes and local themes installed in the app themes directory.',
+          'The Pokémon theme styles the player view as a Game Boy Advance battle screen with HP boxes and draining HP bars.',
+          'Use Open Themes Folder to add a folder containing theme.json and theme.css, then Reload Themes.',
+        ],
+      },
+      {
+        title: 'Keyboard shortcuts',
+        shortcuts: [
+          { keys: 'F1', action: 'How to Use' },
+          { keys: 'Ctrl+B', action: 'Bestiary' },
+          { keys: 'Ctrl+D', action: 'Quick Roll' },
+          { keys: 'Ctrl+E', action: 'Encyclopedia' },
+          { keys: 'Ctrl+I', action: 'Import Character Sheet' },
+          { keys: 'Ctrl+J', action: 'Chronicle' },
+          { keys: 'Ctrl+M', action: 'Venues' },
+          { keys: 'Ctrl+N', action: 'Name Generator' },
+          { keys: 'Ctrl+P', action: 'The Harrowing' },
+          { keys: 'Ctrl+Plus', action: 'Zoom in' },
+          { keys: 'Ctrl+-', action: 'Zoom out' },
+          { keys: 'Ctrl+0', action: 'Reset zoom' },
+          { keys: 'Ctrl+R', action: 'Restart' },
+          { keys: 'Ctrl+Q', action: 'Quit' },
+          { keys: 'Ctrl+Shift+I', action: 'Developer tools' },
+        ],
+      },
+    ],
+    dataDirectory: path.join(app.getPath('userData'), 'data'),
   });
 }
 
