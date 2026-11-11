@@ -16,9 +16,9 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 - **Reference Reader:** In-app PDF reading with page-number jump and fit-to-view zoom
 - **Name Generator:** Per-race syllable-grammar generator for actors, plus multi-template engines for places, items, factions, and events; batches are deduplicated
 - **Chronicle:** Campaign journal (GM Tools > Chronicle, Ctrl+J) styled as an open book — markdown-formatted entries with a formatting guide and live preview, persisted with the campaign; Dissidia 012 uses a silver-blue page texture instead of Morrowind parchment, and the Pokémon theme renders it as a Game Boy DMG screen
-- **Venues:** Square-grid map builder (GM Tools > Venues, Ctrl+M) with mat-sized presets (48×34, 34×48, 34×24, 24×24, 12×12, or custom up to 100×100); one-key tools for rooms, terrain paint, erase, walls, doors, secret doors, stamps, and select/move/rotate; undo/redo and explicit save; a player preview. Catalog terrain, edges, and stamps live in `venueCatalog.jsx`; each venue persists to its own JSON file in the campaign folder and travels in the campaign export
+- **Venues:** Square-grid map builder (GM Tools > Venues, Ctrl+M) with usable-grid presets excluding the mat's border (46×32, 32×46, 32×23, 24×24, 12×12, or custom up to 100×100); existing saved venues retain their dimensions; one-key tools for rooms, terrain paint, erase, walls, doors, secret doors, stamps, and select/move/rotate; undo/redo and explicit save; a player preview. Catalog terrain, edges, and stamps live in `venueCatalog.jsx`; each venue persists to its own JSON file in the campaign folder and travels in the campaign export
   - **Venue Screen:** Pop-out second-monitor window (View > Open Venue Screen) showing the venue the GM chose to show players; the backend strips GM notes and GM-only stamps and draws secret doors as walls before the window receives it
-  - **Mat Guide:** Translates a venue into numbered drawing steps with grid coordinates (e.g. H14) and a four-marker color key (black, red, green, blue) for the physical one-inch mat (34×48 by default, adjustable); best-fit/portrait/landscape orientation, whole-mat or close-up view, sections for venues larger than the mat, and print
+  - **Mat Guide:** Translates a venue into numbered drawing steps with grid coordinates (e.g. H14) and a four-marker color key (black, red, green, blue) for the physical one-inch mat (32×46 usable squares by default, adjustable); best-fit/portrait/landscape orientation, whole-mat or close-up view, sections for venues larger than the mat, and print
 - **Bestiary:** Import a user-supplied `bestiary.csv` from the ruleset sources directory into a per-ruleset SQLite FTS5 index; search with CR/type filters, view full monster entries, and create NPC actors or campaign templates from them (1e)
 - **The Harrowing:** Chat with a user-supplied local language model (GM Tools > The Harrowing, Ctrl+P) through any OpenAI-compatible endpoint (Ollama, LM Studio, …); status probe (reachable / model present / loaded), optional grounding in the indexed reference library, and a Sleep button that unloads the model from RAM (Ollama `keep_alive=0`). No model ships with the app; settings persist to `harrowing-settings.json` under the data dir
 - **Character Sheet Import:** OCR a scanned Pathfinder 1e sheet PDF (GM Tools > Import Character Sheet, Ctrl+I) into a reviewable actor draft — abilities, HP, initiative, AC (touch and flat-footed), speed, BAB/CMB/CMD, saves, printed skill rows, name — for GM confirmation before saving. No scene is required: with only a campaign loaded the actor is saved as a campaign template. Handwriting OCR uses PaddleOCR, kept out of the backend environment entirely: extraction runs as a subprocess from a dedicated user-created venv (`backend/requirements-ocr.txt`), and the import dialog shows the exact install commands when it is missing
@@ -42,6 +42,7 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 - **Themes:** View > Theme switches between the built-in Morrowind (base), Dissidia 012, and Pokémon (Gen I–III) skins and any local theme folder; the Pokémon theme styles the player view as a GBA battle screen and the Chronicle as a Game Boy DMG screen
 - **Persistence:** Save/load campaigns, scenes, and venues as JSON files
 - **Packaged Desktop App:** Installable AppImage and deb builds with auto-update (AppImage) and an apt-managed deb
+- **About:** Help > About opens on the GM window in a themed dialog bounded to the viewport, with independently scrollable details, a fixed Close button, Escape dismissal, and keyboard focus containment/restoration. Version comes from Electron's `app.getVersion()`
 
 ## Project Structure
 
@@ -93,6 +94,7 @@ pathfinder_app/
 │   │   ├── assets/textures/    # Generated Morrowind textures (ash backdrop, banner, parchment, carved 9-slice frame)
 │   │   ├── components/
 │   │   │   ├── GMDashboard.jsx
+│   │   │   ├── AboutDialog.jsx   # Scrollable, viewport-bounded Help > About dialog
 │   │   │   ├── ActorList.jsx / ActorRow.jsx / ActorForm.jsx
 │   │   │   ├── ActorEditModal.jsx / ActorViewModal.jsx / ActorStatFields.jsx
 │   │   │   ├── ActorTemplateLibrary.jsx
@@ -119,6 +121,7 @@ pathfinder_app/
 │   │   └── styles/
 │   │       ├── theme.css       # Morrowind theme tokens (built-in default; local themes
 │   │       │                   # override these --mw-* variables)
+│   │       ├── AboutDialog.css # Viewport-bounded Help > About dialog
 │   │       └── *.css           # Per-component styles
 │   └── package.json
 │

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { VENUE_MAX_SIDE } from '../venueGeometry';
+import { MAT_DEFAULT_SIZE } from '../matGuide';
 import '../styles/VenueLibrary.css';
 
-// The table mat is 34 x 48 one-inch squares; the presets map straight onto it.
+const { columns: matColumns, rows: matRows } = MAT_DEFAULT_SIZE;
+
 export const VENUE_SIZE_PRESETS = [
-  { id: 'mat-landscape', label: 'Whole mat, landscape (48×34)', width: 48, height: 34 },
-  { id: 'mat-portrait', label: 'Whole mat, portrait (34×48)', width: 34, height: 48 },
-  { id: 'half-mat', label: 'Half mat (34×24)', width: 34, height: 24 },
+  { id: 'mat-landscape', label: `Whole mat, landscape (${matRows}×${matColumns})`, width: matRows, height: matColumns },
+  { id: 'mat-portrait', label: `Whole mat, portrait (${matColumns}×${matRows})`, width: matColumns, height: matRows },
+  { id: 'half-mat', label: `Half mat (${matColumns}×${matRows / 2})`, width: matColumns, height: matRows / 2 },
   { id: 'dungeon', label: 'Dungeon (24×24)', width: 24, height: 24 },
   { id: 'room', label: 'Single room (12×12)', width: 12, height: 12 },
   { id: 'custom', label: 'Custom size' },

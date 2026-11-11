@@ -120,7 +120,7 @@ class Campaign(BaseModel):
         return campaign
 
 
-VENUE_MAX_SIDE = 100  # cells; the 34x48 table mat fits with room for larger maps split into sections
+VENUE_MAX_SIDE = 100  # cells; the 32x46 usable mat grid fits with room for larger maps split into sections
 _VENUE_CELL_KEY = re.compile(r"^(\d{1,3}),(\d{1,3})$")
 
 

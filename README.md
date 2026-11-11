@@ -45,6 +45,8 @@ actor, initiative, or persistence ownership.
   `--mw-hp-ghost`).
 - Zoom either window like a browser: **Ctrl+scroll wheel**, or View > Zoom In / Zoom Out /
   Reset Zoom (Ctrl+Plus / Ctrl+- / Ctrl+0). Zoom is per-window and resets on relaunch.
+- **Help > About** opens a themed, viewport-bounded dialog on the GM window. Its details scroll
+  independently, keeping the version and Close button visible; Escape also closes it.
 - Render actor sheets from the active ruleset definition, including scalar fields, notes, and
 	repeatable records such as weapons, skills, armor, gear, and spells. NPCs created from the
 	bestiary use a ruleset-defined monster sheet that shares the tracker's summary contract.
@@ -229,8 +231,9 @@ Entries persist with the campaign.
 ## Venues
 
 **GM Tools > Venues** (Ctrl+M) is the campaign's map library and editor. A venue is a square
-grid: the **New venue** form offers sizes that match the table mat (whole mat 48×34 or 34×48, half mat
-34×24, dungeon 24×24, single room 12×12) or a custom size up to 100×100.
+grid: the **New venue** form offers sizes that match the usable grid inside the table mat's border
+(whole mat 46×32 or 32×46, half mat 32×23, dungeon 24×24, single room 12×12) or a custom size
+up to 100×100. Existing saved venues keep their dimensions.
 
 The editor's tools each have a one-key shortcut:
 
@@ -251,7 +254,7 @@ Screen** or from the Venues page and drag it to the second monitor. Players neve
 venue's GM notes, stamps marked GM-only, or secret doors, which appear to them as plain walls;
 the backend strips these before the Venue Screen receives the venue.
 
-**Mat Guide** turns the venue into instructions for the physical one-inch grid mat (34×48 by
+**Mat Guide** turns the venue into instructions for the physical one-inch grid mat (32×46 by
 default; the size is adjustable). It picks the orientation that fits best, splits a venue
 larger than the mat into sections, and lists numbered drawing steps with grid coordinates such
 as H14 and a color key for four markers — black, red, green, and blue. **Print** prints the

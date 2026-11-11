@@ -1,5 +1,5 @@
 /**
- * Mat Guide layout: content bounds, centering on the 34 x 48 table mat, orientation choice,
+ * Mat Guide layout: content bounds, centering on the 32 x 46 table mat, orientation choice,
  * splitting oversize venues into sections, and a legend of only what is used.
  */
 import { MAT_COLORS, VENUE_EDGE_KINDS, VENUE_FEATURES, VENUE_TERRAINS } from './venueCatalog';
@@ -53,17 +53,17 @@ describe('planMat', () => {
   it('centers a small venue on the portrait mat and counts the blank squares', () => {
     const venue = room(blank(40, 40), 'floor', 10, 10, 19, 29); // 10 wide, 20 tall
     const plan = planMat(venue);
-    expect(plan).toMatchObject({ orientation: 'portrait', columns: 34, rows: 48, empty: false });
+    expect(plan).toMatchObject({ orientation: 'portrait', columns: 32, rows: 46, empty: false });
     expect(plan.sections).toHaveLength(1);
-    expect(plan.sections[0]).toMatchObject({ x0: 10, y0: 10, width: 10, height: 20, left: 12, top: 14 });
+    expect(plan.sections[0]).toMatchObject({ x0: 10, y0: 10, width: 10, height: 20, left: 11, top: 13 });
   });
 
   it('turns the mat for a wide venue and keeps the size order-insensitive', () => {
     const venue = room(blank(60, 30), 'floor', 0, 0, 39, 19); // 40 x 20: only fits landscape
     expect(planMat(venue).orientation).toBe('landscape');
-    const swapped = planMat(venue, { columns: 48, rows: 34 }, 'auto');
-    expect(swapped).toMatchObject({ orientation: 'landscape', columns: 48, rows: 34 });
-    expect(swapped.sections[0]).toMatchObject({ left: 4, top: 7 });
+    const swapped = planMat(venue, { columns: 46, rows: 32 }, 'auto');
+    expect(swapped).toMatchObject({ orientation: 'landscape', columns: 46, rows: 32 });
+    expect(swapped.sections[0]).toMatchObject({ left: 3, top: 6 });
   });
 
   it('obeys an explicit orientation even when it needs more sections', () => {
@@ -75,7 +75,7 @@ describe('planMat', () => {
 
   it('splits an oversize venue into even sections in reading order', () => {
     const venue = room(blank(100, 100), 'cave', 0, 0, 69, 59); // 70 x 60
-    const plan = planMat(venue, MAT_DEFAULT_SIZE, 'landscape'); // 48 x 34 squares
+    const plan = planMat(venue, MAT_DEFAULT_SIZE, 'landscape'); // 46 x 32 squares
     expect(plan.sections).toHaveLength(4);
     expect(plan.sections.map(({ x0, x1, y0, y1 }) => [x0, x1, y0, y1])).toEqual([
       [0, 35, 0, 30], [35, 70, 0, 30], [0, 35, 30, 60], [35, 70, 30, 60],
@@ -88,6 +88,29 @@ describe('planMat', () => {
     const plan = planMat(blank(20, 10));
     expect(plan.empty).toBe(true);
     expect(plan.sections[0]).toMatchObject({ x0: 0, y0: 0, width: 20, height: 10 });
+  });
+
+  it.each([
+    [46, 32, 1],
+    [32, 46, 1],
+    [47, 32, 2],
+    [46, 33, 2],
+    [48, 34, 2],
+  ])('plans a %i by %i venue into %i sections on the usable mat', (width, height, count) => {
+    const venue = room(blank(width, height), 'floor', 0, 0, width - 1, height - 1);
+    const plan = planMat(venue);
+    expect(plan.sections).toHaveLength(count);
+    plan.sections.forEach((section) => {
+      expect(section.left + section.width).toBeLessThanOrEqual(plan.columns);
+      expect(section.top + section.height).toBeLessThanOrEqual(plan.rows);
+    });
+    expect(venue.width).toBe(width);
+    expect(venue.height).toBe(height);
+  });
+
+  it('uses four sections for the old whole-mat size when held landscape', () => {
+    const plan = planMat(blank(48, 34), MAT_DEFAULT_SIZE, 'landscape');
+    expect(plan.sections).toHaveLength(4);
   });
 
   it('clamps typed mat sizes', () => {

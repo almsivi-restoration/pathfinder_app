@@ -3,8 +3,8 @@
 import { getEdgeKind, getFeature, getTerrain } from './venueCatalog';
 import { cellKey, parseCellKey, resolveEdges } from './venueGeometry';
 
-// The table's 34.5" x 48" one-inch grid mat: 34 whole squares by 48.
-export const MAT_DEFAULT_SIZE = { columns: 34, rows: 48 };
+// Usable one-inch squares, excluding the table mat's ungridded border.
+export const MAT_DEFAULT_SIZE = { columns: 32, rows: 46 };
 export const MAT_MIN_SIDE = 4;
 export const MAT_MAX_SIDE = 100;
 export const MAT_ORIENTATIONS = ['auto', 'portrait', 'landscape'];
@@ -59,7 +59,7 @@ function splitSpan(start, span, pieces) {
   return runs;
 }
 
-// The size is order-insensitive (34 x 48 and 48 x 34 are the same mat); orientation decides
+// The size is order-insensitive (32 x 46 and 46 x 32 are the same mat); orientation decides
 // which side runs across. "auto" picks whichever needs fewer sections, then the one matching
 // the venue's shape.
 export function planMat(venue, size = MAT_DEFAULT_SIZE, orientation = 'auto') {

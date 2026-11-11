@@ -1,7 +1,7 @@
 ---
 description: "Canonical domain vocabulary, naming, casing, and formatting conventions for Game Master's Workbench. The singular voice of the codebase — ALWAYS load this instruction."
 name: "gmw-lexicon"
-version: "1.3.0"
+version: "1.3.1"
 applyTo: "**"
 ---
 
@@ -43,7 +43,7 @@ controlling behavior boundary.
 | **Campaign Export** | A single portable JSON bundle (`format: "gm-workbench-campaign"`, integer `version`) holding a saved Campaign, its saved Scenes, and its Venues. | `GET /api/campaign/export`, `POST /api/campaign/import`; import never overwrites — a taken name gets an ` (imported)` suffix. Version 2 added venues; version 1 bundles still import. |
 | **Venue** | A square-grid map belonging to a Campaign: terrain cells, wall/door edges, and stamped features. Not "map" or "location". | One file per venue at `campaigns/<name>/venues/<venue_id>.json`; catalog in `frontend/src/venueCatalog.jsx`. Notes, `gm_only` features, and secret doors never reach players. |
 | **Venue Screen** | The pop-out second-monitor window showing players the shown Venue. | Reads only `GET /api/venue/shown` (the player-filtered copy); which venue is shown is in-memory session state. |
-| **Mat Guide** | A step-by-step drawing guide for copying a Venue onto the physical one-inch grid mat, in the four marker colors. | Default mat 34×48; splits venues larger than the mat into sections. |
+| **Mat Guide** | A step-by-step drawing guide for copying a Venue onto the physical one-inch grid mat, in the four marker colors. | Default mat 32×46 usable squares, excluding the border; splits venues larger than the mat into sections. |
 | **Local Theme** | A user-installed UI skin: a folder under the themes directory with a `theme.json` manifest and a `theme.css` stylesheet overriding `--mw-*` tokens. | Built-in `morrowind` theme always available (the base sheet); `dissidia` and `pokemon` ship as vendored built-ins layered on it; selection persists via `theme-settings.json`. |
 
 ## Shared sheet contract keys

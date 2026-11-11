@@ -15,7 +15,7 @@ const fill = (terrain, x0, y0, x1, y1, into = {}) => {
   return cells;
 };
 
-// A 4 x 4 room at C4:F7; on the default 34 x 48 mat it centers 15 squares in and 22 down.
+// A 4 x 4 room at C4:F7; on the default 32 x 46 mat it centers 14 squares in and 21 down.
 const crypt = () => venueWith({ cells: fill('floor', 2, 3, 5, 6) });
 
 const renderGuide = (venue = crypt(), onClose = jest.fn()) => {
@@ -30,25 +30,26 @@ const axisLabels = () => document.querySelectorAll('.mat-sheet .mat-axis text').
 test('explains where the map starts on the mat', () => {
   renderGuide();
   expect(steps().getByText('tall')).toBeInTheDocument();
-  expect(steps().getByText(/34 squares across, 48 down/)).toBeInTheDocument();
-  expect(steps().getByText('15 squares')).toBeInTheDocument();
-  expect(steps().getByText('22 squares')).toBeInTheDocument();
-  expect(steps().getByText('P23')).toBeInTheDocument();
+  expect(steps().getByText(/32 squares across, 46 down/)).toBeInTheDocument();
+  expect(steps().getByText('14 squares')).toBeInTheDocument();
+  expect(steps().getByText('21 squares')).toBeInTheDocument();
+  expect(steps().getByText('O22')).toBeInTheDocument();
   expect(steps().getByText('4 × 4')).toBeInTheDocument();
-  expect(screen.getByRole('img', { name: 'Crypt on a 34 by 48 square mat' })).toBeInTheDocument();
+  expect(screen.getByRole('img', { name: 'Crypt on a 32 by 46 square mat' })).toBeInTheDocument();
 });
 
 test('turning the mat wide re-centers the map and relabels the columns', () => {
   renderGuide();
-  expect(sheetText()).not.toContain('AV');
+  expect(sheetText()).not.toContain('AT');
 
   fireEvent.click(screen.getByRole('button', { name: 'Landscape' }));
 
   expect(screen.getByRole('button', { name: 'Landscape' })).toHaveAttribute('aria-pressed', 'true');
   expect(steps().getByText('wide')).toBeInTheDocument();
-  expect(steps().getByText('W16')).toBeInTheDocument();
-  expect(screen.getByRole('img', { name: 'Crypt on a 48 by 34 square mat' })).toBeInTheDocument();
-  expect(sheetText()).toContain('AV');
+  expect(steps().getByText('V15')).toBeInTheDocument();
+  expect(screen.getByRole('img', { name: 'Crypt on a 46 by 32 square mat' })).toBeInTheDocument();
+  expect(sheetText()).toContain('AT');
+  expect(sheetText()).not.toContain('AU');
 });
 
 test('a typed mat size applies on Enter', () => {
@@ -57,7 +58,7 @@ test('a typed mat size applies on Enter', () => {
   const other = screen.getByRole('spinbutton', { name: 'Mat squares, other side' });
 
   fireEvent.change(side, { target: { value: '20' } });
-  expect(steps().getByText('P23')).toBeInTheDocument();
+  expect(steps().getByText('O22')).toBeInTheDocument();
   fireEvent.change(other, { target: { value: '20' } });
   fireEvent.keyDown(other, { key: 'Enter' });
 
@@ -68,17 +69,17 @@ test('a typed mat size applies on Enter', () => {
 
 test('the close-up shows just the map and its margin, still in mat coordinates', () => {
   renderGuide();
-  expect(axisLabels()).toBe(2 * 34 + 2 * 48);
+  expect(axisLabels()).toBe(2 * 32 + 2 * 46);
 
   fireEvent.click(screen.getByRole('button', { name: 'Close-up' }));
 
-  // The 4 x 4 map at P23 plus two squares each side: columns N..U, rows 21..28.
-  expect(screen.getByRole('img', { name: 'Crypt on a 34 by 48 square mat, close-up' })).toBeInTheDocument();
+  // The 4 x 4 map at O22 plus two squares each side: columns M..T, rows 20..27.
+  expect(screen.getByRole('img', { name: 'Crypt on a 32 by 46 square mat, close-up' })).toBeInTheDocument();
   expect(axisLabels()).toBe(2 * 8 + 2 * 8);
-  expect(sheetText()).toContain('N');
-  expect(sheetText()).not.toContain('M');
-  expect(sheetText()).toContain('28');
-  expect(sheetText()).not.toContain('29');
+  expect(sheetText()).toContain('M');
+  expect(sheetText()).not.toContain('L');
+  expect(sheetText()).toContain('27');
+  expect(sheetText()).not.toContain('28');
 });
 
 test('a venue too big for one mat is drawn a section at a time', () => {

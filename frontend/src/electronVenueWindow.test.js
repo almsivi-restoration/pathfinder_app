@@ -9,6 +9,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import vm from 'vm';
 
 const mainPath = path.join(__dirname, '..', 'public', 'electron.js');
 let userData;
@@ -23,7 +24,11 @@ function loadMain({ dev }) {
       this.focusCount = 0;
       this.closed = false;
       this.sent = [];
-      this.webContents = { send: (channel) => this.sent.push(channel) };
+      this.deliveries = [];
+      this.webContents = { send: (channel, ...args) => {
+        this.sent.push(channel);
+        this.deliveries.push({ channel, args });
+      } };
       state.windows.push(this);
     }
 
@@ -186,4 +191,50 @@ test('GM Tools always open on the GM window, whichever window has focus', async 
     'open-harrowing',
   ]);
   expect(gmWindow.focusCount).toBe(tools.length);
+});
+
+test('About opens on the GM window with the actual app version and complete content', async () => {
+  const state = loadMain({ dev: true });
+  await state.appHandlers.ready();
+  const gmWindow = state.windows[0];
+  await state.ipc['open-venue-window']();
+  const venueWindow = state.windows[state.windows.length - 1];
+  state.focused = venueWindow;
+
+  const help = state.menu.find((entry) => entry.label === 'Help').submenu;
+  help.find((entry) => entry.label.startsWith('About')).click();
+
+  expect(venueWindow.sent).toEqual([]);
+  expect(gmWindow.focusCount).toBe(1);
+  expect(gmWindow.deliveries).toEqual([{
+    channel: 'open-about',
+    args: [{
+      version: '0.0.0-test',
+      description: expect.stringContaining('A tabletop GM companion'),
+      dataDirectory: path.join(userData, 'data'),
+    }],
+  }]);
+  expect(gmWindow.deliveries[0].args[0].description).toContain('Reference PDFs and bestiary CSVs are user-supplied');
+});
+
+test('the About preload subscription forwards details and removes its listener', () => {
+  let bridge;
+  const ipcRenderer = { on: jest.fn(), removeListener: jest.fn() };
+  vm.runInNewContext(fs.readFileSync(path.join(path.dirname(mainPath), 'preload.js'), 'utf8'), {
+    require: () => ({
+      contextBridge: { exposeInMainWorld: (_name, exposed) => { bridge = exposed; } },
+      ipcRenderer,
+    }),
+    window: { addEventListener: jest.fn() },
+    process: { env: {} },
+  });
+  const callback = jest.fn();
+  const unsubscribe = bridge.onOpenAbout(callback);
+  const [channel, listener] = ipcRenderer.on.mock.calls[0];
+  const details = { version: '0.0.0-test', description: 'About', dataDirectory: '/data' };
+  expect(channel).toBe('open-about');
+  listener({}, details);
+  expect(callback).toHaveBeenCalledWith(details);
+  unsubscribe();
+  expect(ipcRenderer.removeListener).toHaveBeenCalledWith(channel, listener);
 });

@@ -85,6 +85,24 @@ test('creating a custom-size venue opens it in the editor', async () => {
   expect(screen.getByLabelText('New venue name')).toHaveValue('');
 });
 
+test.each([
+  ['mat-landscape', 'Whole mat, landscape (46×32)', 46, 32],
+  ['mat-portrait', 'Whole mat, portrait (32×46)', 32, 46],
+  ['half-mat', 'Half mat (32×23)', 32, 23],
+  ['dungeon', 'Dungeon (24×24)', 24, 24],
+  ['room', 'Single room (12×12)', 12, 12],
+])('creating a %s venue uses the labeled dimensions', async (preset, label, width, height) => {
+  render(<Venues onBack={() => {}} />);
+  expect(screen.getByLabelText('New venue size')).toHaveValue('mat-landscape');
+  expect(screen.getByRole('option', { name: label })).toHaveValue(preset);
+  fireEvent.change(screen.getByLabelText('New venue name'), { target: { value: 'Test venue' } });
+  fireEvent.change(screen.getByLabelText('New venue size'), { target: { value: preset } });
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Create venue' }));
+  });
+  expect(actions.createVenue).toHaveBeenCalledWith({ name: 'Test venue', width, height });
+});
+
 test('switching venues with unsaved edits asks first', async () => {
   render(<Venues onBack={() => {}} />);
 

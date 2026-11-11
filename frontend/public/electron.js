@@ -544,7 +544,7 @@ function showHelp() {
       'Workflow: create or load a campaign, open a scene, add actors, then run initiative from the GM Dashboard. Open a second, player-safe view with View > Open Player View. GM Tools and their shortcuts always open on the GM window, even while the Player View or Venue Screen has focus. The player view banner shows the scene name, and the actor whose turn it is stands out on both screens (an accent outline and tint plus a Current Turn tag for players, an accent bar and marker for the GM); the active actor always leads the player order, and PCs show their exact HP inside their health bar. Health bars react to what happens at the table: big hits shake the bar and drain a ghost of the lost chunk, small hits flash, and healing glows.\n\n' +
       'Zoom: Ctrl+scroll wheel scales any window (GM, Player View, or Venue Screen), or use View > Zoom In / Zoom Out / Reset Zoom. Zoom is per-window and resets when the app restarts.\n\n' +
       'Actors: the Clone button duplicates any actor in the scene (handy for groups of identical monsters). The color swatch assigns a marker color, shown as a dot and accent border on the player view to match your physical grid; the symbol picker beside it adds a simple mark (dot, cross, star, and so on) you can draw on the matching physical base, shown on the player view, the initiative tracker, and the actor view. Save frequently used actors as campaign templates and reuse them in any scene.\n\n' +
-      'Venues: GM Tools > Venues (Ctrl+M) builds grid maps for the campaign. Start from a mat-sized preset, drag out rooms, paint terrain, draw walls, doors, and secret doors along grid lines, and stamp features such as stairs, chests, and trees (keys: R room, B paint, E erase, W wall, D door, S secret door, F stamp, V select; Ctrl+Z undo, Ctrl+Y redo, Ctrl+S save). Venues are saved with the campaign and included in its export. Show players sends a venue to the Venue Screen (View > Open Venue Screen), a second-monitor window that never shows GM notes, GM-only features, or secret doors (they appear as plain walls). Mat Guide turns a venue into numbered drawing steps with grid coordinates and a four-marker color key for copying it onto a one-inch table mat (34×48 by default, adjustable), splitting large venues into sections; Print sends the guide to a printer.\n\n' +
+      'Venues: GM Tools > Venues (Ctrl+M) builds grid maps for the campaign. Start from a mat-sized preset, drag out rooms, paint terrain, draw walls, doors, and secret doors along grid lines, and stamp features such as stairs, chests, and trees (keys: R room, B paint, E erase, W wall, D door, S secret door, F stamp, V select; Ctrl+Z undo, Ctrl+Y redo, Ctrl+S save). Venues are saved with the campaign and included in its export. Show players sends a venue to the Venue Screen (View > Open Venue Screen), a second-monitor window that never shows GM notes, GM-only features, or secret doors (they appear as plain walls). Mat Guide turns a venue into numbered drawing steps with grid coordinates and a four-marker color key for copying it onto a one-inch table mat (32×46 usable squares by default, excluding the border, adjustable), splitting large venues into sections; Print sends the guide to a printer.\n\n' +
       'Bestiary: GM Tools > Bestiary (Ctrl+B) searches a monster CSV you supply. Drop a file named bestiary.csv into the ruleset sources directory (alongside your reference PDFs), Import it, then view entries, create NPCs directly from them, or save them as campaign templates.\n\n' +
       'Encyclopedia: GM Tools > Encyclopedia (Ctrl+E) searches rulebook PDFs you supply. Drop PDFs for a ruleset into its source directory, then Index them there.\n\n' +
       'Name Generator: GM Tools > Name Generator (Ctrl+N) generates fantasy names for characters, places, items, factions, and events.\n\n' +
@@ -562,10 +562,10 @@ function showHelp() {
 
 // GM Tools always open on the GM window. The Player View and the Venue Screen are what the
 // table sees: a tool opened from the menu while one of them has focus must not appear there.
-function sendToGmWindow(channel) {
+function sendToGmWindow(channel, ...args) {
   if (!mainWindow) return;
   mainWindow.focus();
-  mainWindow.webContents.send(channel);
+  mainWindow.webContents.send(channel, ...args);
 }
 
 function buildMenuTemplate() {
@@ -701,21 +701,13 @@ function buildMenuTemplate() {
       {
         label: `About (v${app.getVersion()})`,
         click: () => {
-          const window = BrowserWindow.getFocusedWindow() || mainWindow;
-          if (window) {
-            dialog.showMessageBox(window, {
-              type: 'info',
-              title: 'About',
-              message: "Game Master's Workbench",
-              detail:
-                `Version ${app.getVersion()}\n\n` +
+          sendToGmWindow('open-about', {
+            version: app.getVersion(),
+            description:
                 'A tabletop GM companion for Pathfinder 1e and 2e and Numenera: campaign management with renaming and portable export/import, scene and initiative tracking, reusable actor templates with marker colors and symbols, a grid venue builder with a player-safe Venue Screen and a Mat Guide for drawing venues on your table mat, GM Tools that always open on the GM window, a searchable rules encyclopedia, a bestiary, a name generator, quick rolls, scanned character-sheet import, a chat window to your own local model (GM Tools > The Harrowing), a player-safe second-screen view with the scene name, current-turn highlighting, and game-style health-bar impact effects, browser-style per-window zoom (Ctrl+scroll), and switchable UI themes (View > Theme) — Morrowind, Dissidia 012, and Pokémon (Gen I–III) built in, plus your own local themes.\n\n' +
-                'Reference PDFs and bestiary CSVs are user-supplied and are never included with the app.\n\n' +
-                'Data directory:\n' +
-                path.join(app.getPath('userData'), 'data'),
-              buttons: ['Close'],
-            });
-          }
+                'Reference PDFs and bestiary CSVs are user-supplied and are never included with the app.',
+            dataDirectory: path.join(app.getPath('userData'), 'data'),
+          });
         },
       },
     ],
