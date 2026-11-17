@@ -16,8 +16,8 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 - **Reference Reader:** In-app PDF reading with page-number jump and fit-to-view zoom
 - **Name Generator:** Per-race syllable-grammar generator for actors, plus multi-template engines for places, items, factions, and events; batches are deduplicated
 - **Chronicle:** Campaign journal (GM Tools > Chronicle, Ctrl+J) styled as an open book — markdown-formatted entries with a formatting guide and live preview, persisted with the campaign; Dissidia 012 uses a silver-blue page texture instead of Morrowind parchment, and the Pokémon theme renders it as a Game Boy DMG screen
-- **Venues:** Square-grid map builder (GM Tools > Venues, Ctrl+M) with usable-grid presets excluding the mat's border (46×32, 32×46, 32×23, 24×24, 12×12, or custom up to 100×100); existing saved venues retain their dimensions; one-key tools for rooms, terrain paint, erase, walls, doors, secret doors, stamps, and select/move/rotate/resize; stamps span up to 8×8 squares and doors drag out wide; actor stamps snapshot a template's or scene actor's marker symbol and color; custom PNG/SVG stamps are imported per campaign; venues nest inside other venues (rooms of a mansion), linked by passage stamps that open their target venue, with Back to returning to the parent; undo/redo and explicit save; a player preview. Catalog terrain, edges, and stamps live in `venueCatalog.jsx`; each venue persists to its own JSON file in the campaign folder and travels in the campaign export
-  - **Venue Screen:** Pop-out second-monitor window (View > Open Venue Screen) showing the venue the GM chose to show players; the backend strips GM notes, GM-only stamps, and passage targets and draws secret doors as walls before the window receives it; when the GM follows a passage out of the shown venue, the screen follows
+- **Venues:** Square-grid map builder (GM Tools > Venues, Ctrl+M) with usable-grid presets excluding the mat's border (46×32, 32×46, 32×23, 24×24, 12×12, or custom up to 100×100); existing saved venues retain their dimensions; one-key tools for rooms, terrain paint, erase, walls, doors, secret doors, stamps, and select/move/rotate/resize; stamps span up to 8×8 squares and doors drag out wide; actor stamps snapshot a template's or scene actor's marker symbol and color; custom PNG/SVG stamps are imported per campaign; venues nest inside other venues (rooms of a mansion), linked by passage stamps that open their target venue, with Back to returning to the parent; a Hide tool that fogs the squares players have not found yet (right-drag or Reveal all lifts it); undo/redo and explicit save; a player preview. Catalog terrain, edges, and stamps live in `venueCatalog.jsx`; each venue persists to its own JSON file in the campaign folder and travels in the campaign export
+  - **Venue Screen:** Pop-out second-monitor window (View > Open Venue Screen) showing the venue the GM chose to show players; the backend strips GM notes, GM-only stamps, passage targets, and everything under hidden squares (drawn as fog, keeping the GM's walls along its edge) and draws secret doors as walls before the window receives it; when the GM follows a passage out of the shown venue, the screen follows
   - **Mat Guide:** Translates a venue into numbered drawing steps with grid coordinates (e.g. H14) and a four-marker color key (black, red, green, blue) for the physical one-inch mat (32×46 usable squares by default, adjustable); best-fit/portrait/landscape orientation, whole-mat or close-up view, sections for venues larger than the mat, and print
 - **Bestiary:** Import a user-supplied `bestiary.csv` from the ruleset sources directory into a per-ruleset SQLite FTS5 index; search by word prefix, CR range, type, exact alignment, and environment substring (`any` is an ordinary word); view full monster entries, and create NPC actors or campaign templates from them (1e)
 - **The Harrowing:** Chat with a user-supplied local language model (GM Tools > The Harrowing, Ctrl+P) through any OpenAI-compatible endpoint (Ollama, LM Studio, …); status probe (reachable / model present / loaded), optional grounding in the indexed reference library, and a Sleep button that unloads the model from RAM (Ollama `keep_alive=0`). No model ships with the app; settings persist to `harrowing-settings.json` under the data dir
@@ -88,7 +88,7 @@ pathfinder_app/
 │   │   ├── theme.js            # Theme bridge (applies built-in extra and local theme skins)
 │   │   ├── markerSymbols.js    # Marker symbol catalog (append-only ids, hand-drawable marks) and base discs
 │   │   ├── venueCatalog.jsx    # Venue terrain/edge/stamp catalog: art, mat translation, mat colors
-│   │   ├── venueGeometry.js    # Venue grid math (cell labels, derived walls, edges, paint, stamps)
+│   │   ├── venueGeometry.js    # Venue grid math (cell labels, derived walls, edges, paint, stamps, hidden squares)
 │   │   ├── matGuide.js         # Mat Guide planner (fit, orientation, sections, placement, color key)
 │   │   ├── themeSelectorContract.test.js  # Skins own every contract selector; Mat Guide print rules outrank skins
 │   │   ├── assets/fonts/       # Bundled Libertine fonts (OFL)
@@ -210,7 +210,7 @@ pathfinder_app/
 - `GET /api/campaign/current` — Get active campaign
 - `POST /api/campaign/save` — Save current campaign
 - `POST /api/campaign/rename` — Rename a saved campaign (`name` and `new_name` query parameters)
-- `GET /api/campaign/export` — Export a saved campaign with its saved scenes, venues, and custom stamps as one JSON bundle (`name` query parameter; bundle `version` 4, versions 1–3 still import)
+- `GET /api/campaign/export` — Export a saved campaign with its saved scenes, venues, and custom stamps as one JSON bundle (`name` query parameter; bundle `version` 5, versions 1–4 still import)
 - `POST /api/campaign/import` — Import an exported bundle (JSON body) as a new campaign; a taken name gets an ` (imported)` suffix
 - `DELETE /api/campaign/{campaign_name}` — Delete a saved campaign
 
@@ -377,12 +377,15 @@ venues are not listed in `campaign.json`.
               symbol, color,        // kind "actor": snapshot of the actor's marker
               stamp_id,             // kind "custom": a CustomStamp of this campaign
               target_venue_id}]     // kind "passage": GM-only, stripped for players
+  hidden: ["x,y"]       // squares under fog for players; independent of cells
   created_at: datetime
   updated_at: datetime
 }
 ```
 Walls between a filled cell and empty space are derived when drawing and are not stored.
 Doors are stored as unit edges; touching doors on one line draw as a single wide door.
+The players' copy drops everything under a hidden square and pins the walls the GM sees along
+the fog's edge as explicit edges, since those would otherwise be derived from the stripped cells.
 
 ### CustomStamp
 Stored at `campaigns/<name>/stamps/<id>.json` beside its `<id>.png` or `<id>.svg`; the image

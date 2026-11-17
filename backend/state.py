@@ -21,7 +21,7 @@ import uuid
 
 
 CAMPAIGN_EXPORT_FORMAT = "gm-workbench-campaign"
-CAMPAIGN_EXPORT_VERSION = 4  # 2 added venues, 3 custom stamps, 4 venue nesting; older bundles still import
+CAMPAIGN_EXPORT_VERSION = 5  # 2 added venues, 3 custom stamps, 4 venue nesting, 5 hidden squares; older bundles still import
 _SCENE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 _VENUE_ID_PATTERN = _SCENE_ID_PATTERN
 _STAMP_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
@@ -29,27 +29,111 @@ _STAMP_EXTENSIONS = {"image/png": "png", "image/svg+xml": "svg"}
 _PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 # Edge kinds drawn as something else on the Venue Screen, so players cannot spot them.
 _PLAYER_EDGE_DISGUISES = {"secret_door": "wall"}
+# Terrain surfaces, mirrored from VENUE_TERRAINS in frontend/src/venueCatalog.jsx. Walls between
+# a room and empty space are derived from surfaces, never stored, so cutting hidden squares out
+# of the players' copy needs them to keep the walls the GM sees along the cut. Unknown ids count
+# as indoor, as the frontend draws them as floor. test_venues guards the mirror against drift.
+_TERRAIN_SURFACES = {
+    "floor": "indoor",
+    "flagstone": "indoor",
+    "wood": "indoor",
+    "cave": "indoor",
+    "rubble": "neutral",
+    "water": "neutral",
+    "chasm": "neutral",
+    "bridge": "neutral",
+    "grass": "outdoor",
+    "dirt": "outdoor",
+}
 
 logger = logging.getLogger(__name__)
 
 
+def _square(key: str) -> tuple:
+    x, y = key.split(",")
+    return int(x), int(y)
+
+
+def _edge_squares(x: int, y: int, side: str) -> tuple:
+    """The two squares a grid line separates (venueGeometry.edgeCells)."""
+    return ((x, y - 1), (x, y)) if side == "n" else ((x - 1, y), (x, y))
+
+
+def _walled_against(surface: str, other: str) -> bool:
+    """venueGeometry.walledAgainst: indoor walls against void, the border, and outdoor ground;
+    neutral only against void; outdoor never."""
+    if surface == "indoor":
+        return other in ("void", "outside", "outdoor")
+    if surface == "neutral":
+        return other == "void"
+    return False
+
+
+def _derived_wall(venue: Venue, terrain: Dict[tuple, str], x: int, y: int, side: str) -> bool:
+    """venueGeometry.isDerivedWall over the given terrain, keyed by (x, y)."""
+    def surface(square):
+        if not (0 <= square[0] < venue.width and 0 <= square[1] < venue.height):
+            return "outside"
+        if square not in terrain:
+            return "void"
+        return _TERRAIN_SURFACES.get(terrain[square], "indoor")
+
+    a, b = (surface(square) for square in _edge_squares(x, y, side))
+    return _walled_against(a, b) or _walled_against(b, a)
+
+
 def player_venue_view(venue: Venue) -> dict:
-    """Return the players' copy of a venue: no GM notes, no GM-only features, and secret
-    doors drawn as plain walls. Stripping happens here so hidden content never leaves the server."""
+    """Return the players' copy of a venue: no GM notes, no GM-only features, secret doors drawn
+    as plain walls, and nothing under hidden squares (the copy lists them so the screen can draw
+    fog). Stripping happens here so hidden content never leaves the server."""
+    hidden = {_square(key) for key in venue.hidden}
+    terrain = {_square(key): terrain_id for key, terrain_id in venue.cells.items()}
+    shown_terrain = {square: terrain_id for square, terrain_id in terrain.items() if square not in hidden}
+
+    def line_visible(x, y, side):
+        squares = _edge_squares(x, y, side)
+        if not any(square in hidden for square in squares):
+            return True
+        # A line beside a hidden square shows only where the players see ground beside it.
+        return any(square in shown_terrain for square in squares)
+
+    edges = [
+        {**edge.model_dump(), "kind": _PLAYER_EDGE_DISGUISES.get(edge.kind, edge.kind)}
+        for edge in venue.edges
+        if line_visible(edge.x, edge.y, edge.side)
+    ]
+    # Cutting hidden squares away changes what the screen would derive along the cut (a corridor
+    # into hidden floor would end in a wall), so pin the GM's view there with explicit edges.
+    explicit = {(edge.x, edge.y, edge.side) for edge in venue.edges}
+    for x, y in sorted(hidden, key=lambda square: (square[1], square[0])):
+        for line in ((x, y, "n"), (x, y + 1, "n"), (x, y, "w"), (x + 1, y, "w")):
+            if line in explicit or not line_visible(*line):
+                continue
+            gm_wall = _derived_wall(venue, terrain, *line)
+            if gm_wall != _derived_wall(venue, shown_terrain, *line):
+                edges.append({"x": line[0], "y": line[1], "side": line[2], "kind": "wall" if gm_wall else "opening"})
+
+    def covers_hidden(feature):
+        return any(
+            (x, y) in hidden
+            for x in range(feature.x, feature.x + feature.width)
+            for y in range(feature.y, feature.y + feature.height)
+        )
+
     return {
         "id": venue.id,
         "name": venue.name,
         "grid": venue.grid,
         "width": venue.width,
         "height": venue.height,
-        "cells": dict(venue.cells),
-        "edges": [
-            {**edge.model_dump(), "kind": _PLAYER_EDGE_DISGUISES.get(edge.kind, edge.kind)}
-            for edge in venue.edges
-        ],
+        "cells": {f"{x},{y}": terrain_id for (x, y), terrain_id in shown_terrain.items()},
+        "edges": edges,
         "features": [
-            feature.model_dump(exclude={"target_venue_id"}) for feature in venue.features if not feature.gm_only
+            feature.model_dump(exclude={"target_venue_id"})
+            for feature in venue.features
+            if not feature.gm_only and not covers_hidden(feature)
         ],
+        "hidden": [f"{x},{y}" for x, y in sorted(hidden, key=lambda square: (square[1], square[0]))],
         "updated_at": venue.updated_at.isoformat(),
     }
 

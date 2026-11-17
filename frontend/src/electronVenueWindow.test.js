@@ -248,7 +248,7 @@ test('How to Use and F1 send the complete guide to the GM window, not a player s
     expect(paragraph.length).toBeLessThanOrEqual(400);
   });
   expect(guide.find((section) => section.title === 'Venues').shortcuts.map((shortcut) => shortcut.keys))
-    .toEqual(['R', 'B', 'E', 'W', 'D', 'S', 'F', 'V', 'Ctrl+Z', 'Ctrl+Y', 'Ctrl+S']);
+    .toEqual(['R', 'B', 'E', 'W', 'D', 'S', 'F', 'V', 'H', 'Ctrl+Z', 'Ctrl+Y', 'Ctrl+S']);
   expect(guide.find((section) => section.title === 'Keyboard shortcuts').shortcuts.map((shortcut) => shortcut.keys))
     .toEqual([
       'F1', 'Ctrl+B', 'Ctrl+D', 'Ctrl+E', 'Ctrl+I', 'Ctrl+J', 'Ctrl+M', 'Ctrl+N',

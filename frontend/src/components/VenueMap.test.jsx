@@ -43,6 +43,27 @@ test('the player view hides secret doors, GM-only stamps, and empty labels', () 
   expect(container.textContent).not.toContain('lich');
 });
 
+const HIDDEN_ROOM = { ...VENUE, hidden: ['2,0', '3,0', '2,1', '3,1'] };
+
+test('the player view draws hidden squares as fog with nothing of theirs beneath', () => {
+  const { container } = render(<VenueMap venue={HIDDEN_ROOM} mode="player" />);
+
+  expect(container.querySelector('.venue-map-fog')).toHaveAttribute('d', 'M80 0h80v40h-80zM80 40h80v40h-80z');
+  expect(container.querySelector('[data-terrain="flagstone"]')).toBeNull();
+  expect(featureIds(container)).toEqual(['a']);
+  expect(container.querySelector('.venue-map-veil')).toBeNull();
+});
+
+test('the GM view veils hidden squares and still draws what lies under them', () => {
+  const { container } = render(<VenueMap venue={HIDDEN_ROOM} mode="gm" />);
+
+  expect(container.querySelector('.venue-map-veil')).not.toBeNull();
+  expect(container.querySelector('.venue-map-hidden-outline')).not.toBeNull();
+  expect(container.querySelector('.venue-map-fog')).toBeNull();
+  expect(container.querySelector('[data-terrain="flagstone"]')).not.toBeNull();
+  expect(featureIds(container)).toEqual(['a', 'b', 'c']);
+});
+
 test('each terrain gets one fill path and patterned terrains get a pattern', () => {
   const { container } = render(<VenueMap venue={VENUE} />);
 

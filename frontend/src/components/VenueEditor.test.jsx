@@ -234,6 +234,50 @@ test('dragging the door tool along a line lays one wide door, and dragging again
   expect(container.querySelector('.venue-map-door')).toHaveAttribute('data-length', '1');
 });
 
+// Hidden squares are fog for the players: the editor veils them, the preview fogs them.
+test('the hide tool drags fog over squares, the preview shows only fog there, and save sends them', async () => {
+  const venue = { ...blankVenue(), cells: { '0,0': 'floor', '1,0': 'floor', '0,1': 'floor', '1,1': 'floor' } };
+  const { container, svg, onSave } = renderEditor(venue);
+  expect(screen.getByText('Nothing hidden')).toBeInTheDocument();
+
+  fireEvent.keyDown(window, { key: 'h' });
+  expect(screen.getByRole('button', { name: 'Hide' })).toHaveAttribute('aria-pressed', 'true');
+  drag(svg, [1, 1], [0, 0]);
+  expect(screen.getByText('4 squares under fog')).toBeInTheDocument();
+  expect(container.querySelector('.venue-map-veil')).not.toBeNull();
+  expect(container.querySelector('[data-terrain="floor"]')).not.toBeNull();
+
+  fireEvent.click(screen.getByLabelText('Player preview'));
+  expect(container.querySelector('.venue-map-veil')).toBeNull();
+  expect(container.querySelector('.venue-map-fog')).not.toBeNull();
+  expect(container.querySelector('[data-terrain="floor"]')).toBeNull();
+  fireEvent.click(screen.getByLabelText('Player preview'));
+
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  });
+  expect(onSave.mock.calls[0][0].hidden).toEqual(['0,0', '1,0', '0,1', '1,1']);
+});
+
+test('right-dragging the hide tool reveals squares, and Reveal all lifts the rest as one undo step', () => {
+  const venue = { ...blankVenue(), hidden: ['0,0', '1,0', '0,1', '1,1'] };
+  const { container, svg } = renderEditor(venue);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Hide' }));
+  fireEvent.pointerDown(svg, { ...at(1, 0), button: 2 });
+  fireEvent.pointerMove(svg, { ...at(1, 1), button: 2 });
+  fireEvent.pointerUp(svg, { ...at(1, 1), button: 2 });
+  expect(screen.getByText('2 squares under fog')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Reveal all' }));
+  expect(screen.getByText('Nothing hidden')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Reveal all' })).toBeDisabled();
+  expect(container.querySelector('.venue-map-veil')).toBeNull();
+
+  fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+  expect(screen.getByText('2 squares under fog')).toBeInTheDocument();
+});
+
 test('renaming is saved but is not undone with the map edits', async () => {
   const { svg, onSave } = renderEditor();
 

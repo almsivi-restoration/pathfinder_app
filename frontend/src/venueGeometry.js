@@ -175,20 +175,24 @@ export function cellsPath(keys, size) {
   return parts.join('');
 }
 
-// Outline of one terrain's region (e.g. a shoreline), as merged segments.
-export function terrainOutline(venue, terrain) {
+// Outline of a set of squares ("x,y" keys), as merged segments.
+export function regionOutline(keys) {
+  const inside = new Set(keys);
   const segments = [];
-  const same = (x, y) => venue.cells[cellKey(x, y)] === terrain;
-  for (const [key, value] of Object.entries(venue.cells)) {
-    if (value !== terrain) continue;
+  for (const key of inside) {
     const [x, y] = parseCellKey(key);
-    if (!same(x, y - 1)) segments.push(edgeSegment(x, y, 'n'));
-    if (!same(x, y + 1)) segments.push(edgeSegment(x, y + 1, 'n'));
-    if (!same(x - 1, y)) segments.push(edgeSegment(x, y, 'w'));
-    if (!same(x + 1, y)) segments.push(edgeSegment(x + 1, y, 'w'));
+    if (!inside.has(cellKey(x, y - 1))) segments.push(edgeSegment(x, y, 'n'));
+    if (!inside.has(cellKey(x, y + 1))) segments.push(edgeSegment(x, y + 1, 'n'));
+    if (!inside.has(cellKey(x - 1, y))) segments.push(edgeSegment(x, y, 'w'));
+    if (!inside.has(cellKey(x + 1, y))) segments.push(edgeSegment(x + 1, y, 'w'));
   }
   return mergeSegments(segments);
 }
+
+// Outline of one terrain's region (e.g. a shoreline), as merged segments.
+export const terrainOutline = (venue, terrain) => regionOutline(
+  Object.keys(venue.cells).filter((key) => venue.cells[key] === terrain),
+);
 
 export function rectCells(x0, y0, x1, y1) {
   const cells = [];
@@ -393,6 +397,64 @@ export function removeFeature(venue, featureId) {
 
 export const rotateBy = (rotation, step) => (((rotation + step) % 360) + 360) % 360;
 
+// Hidden squares ("x,y" keys, venue.hidden) are squares the players cannot see yet: the Venue
+// Screen draws fog over them. hiddenKeys spells each key once, canonically, row by row, so a
+// hand-edited "01,2" never counts as a second square beside "1,2".
+const sortRowMajor = (keys) => keys
+  .map((key) => [key, ...parseCellKey(key)])
+  .sort((a, b) => a[2] - b[2] || a[1] - b[1])
+  .map(([key]) => key);
+
+export const hiddenKeys = (venue) => sortRowMajor([
+  ...new Set((venue.hidden || []).map((key) => cellKey(...parseCellKey(key)))),
+]);
+
+export function setHidden(venue, cells, hide) {
+  const current = hiddenKeys(venue);
+  const hidden = new Set(current);
+  for (const [x, y] of cells) {
+    if (!inBounds(venue, x, y)) continue;
+    if (hide) hidden.add(cellKey(x, y));
+    else hidden.delete(cellKey(x, y));
+  }
+  if (hidden.size === current.length && current.every((key) => hidden.has(key))) return venue;
+  return { ...venue, hidden: sortRowMajor([...hidden]) };
+}
+
+export const revealAll = (venue) => ((venue.hidden || []).length ? { ...venue, hidden: [] } : venue);
+
+// The players' view of hidden squares, mirroring the backend's player_venue_view: terrain,
+// edges, and stamps under them go, and explicit edges pin the walls the GM sees along the cut
+// (a corridor runs into the fog rather than ending in a wall). Concealing twice changes nothing.
+export function concealHidden(venue) {
+  const hidden = hiddenKeys(venue);
+  if (!hidden.length) return venue;
+  const hiddenSet = new Set(hidden);
+  const cells = Object.fromEntries(Object.entries(venue.cells).filter(([key]) => !hiddenSet.has(key)));
+  const shown = { ...venue, cells };
+  // A line beside a hidden square shows only where the players see terrain beside it.
+  const lineVisible = (x, y, side) => {
+    const keys = edgeCells(x, y, side).map(([cx, cy]) => cellKey(cx, cy));
+    return !keys.some((key) => hiddenSet.has(key)) || keys.some((key) => Boolean(cells[key]));
+  };
+  const explicit = new Set(venue.edges.map((edge) => edgeId(edge.x, edge.y, edge.side)));
+  const edges = venue.edges.filter((edge) => lineVisible(edge.x, edge.y, edge.side));
+  for (const key of hidden) {
+    const [x, y] = parseCellKey(key);
+    for (const [lx, ly, side] of [[x, y, 'n'], [x, y + 1, 'n'], [x, y, 'w'], [x + 1, y, 'w']]) {
+      if (explicit.has(edgeId(lx, ly, side)) || !lineVisible(lx, ly, side)) continue;
+      const gmWall = isDerivedWall(venue, lx, ly, side);
+      if (gmWall !== isDerivedWall(shown, lx, ly, side)) {
+        edges.push({ x: lx, y: ly, side, kind: gmWall ? 'wall' : 'opening' });
+      }
+    }
+  }
+  const features = venue.features.filter((feature) => (
+    !featureCells(feature).some(([fx, fy]) => hiddenSet.has(cellKey(fx, fy)))
+  ));
+  return { ...venue, cells, edges, features, hidden };
+}
+
 // Change the grid size; anything that falls outside the new bounds is cropped.
 export function resizeVenue(venue, width, height) {
   if (width === venue.width && height === venue.height) return venue;
@@ -408,6 +470,7 @@ export function resizeVenue(venue, width, height) {
     cells,
     edges: venue.edges.filter((edge) => isEdgeInBounds(sized, edge.x, edge.y, edge.side)),
     features: venue.features.filter((feature) => featureFits(sized, feature)),
+    hidden: hiddenKeys(venue).filter((key) => inBounds(sized, ...parseCellKey(key))),
   });
 }
 

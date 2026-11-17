@@ -89,7 +89,8 @@
 .venue-canvas[data-tool='room'] .venue-map,
 .venue-canvas[data-tool='paint'] .venue-map,
 .venue-canvas[data-tool='erase'] .venue-map,
-.venue-canvas[data-tool='stamp'] .venue-map {
+.venue-canvas[data-tool='stamp'] .venue-map,
+.venue-canvas[data-tool='hide'] .venue-map {
   cursor: crosshair;
 }
 
@@ -241,6 +242,25 @@
 }
 
 .venue-size-row .btn-small {
+  flex-shrink: 0;
+}
+
+.venue-hidden-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.venue-hidden-row > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.venue-hidden-row .btn-small {
   flex-shrink: 0;
 }
 

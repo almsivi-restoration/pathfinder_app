@@ -3,6 +3,7 @@ import {
   HATCH_PATH,
   HATCH_TILE,
   VENUE_CELL as C,
+  VENUE_FOG,
   VENUE_HATCH_INK,
   VENUE_INK,
   VENUE_PAPER,
@@ -11,7 +12,16 @@ import {
   getFeature,
   getTerrain,
 } from '../venueCatalog';
-import { cellsPath, featureSize, resolveEdges, segmentsPath, terrainOutline } from '../venueGeometry';
+import {
+  cellsPath,
+  concealHidden,
+  featureSize,
+  hiddenKeys,
+  regionOutline,
+  resolveEdges,
+  segmentsPath,
+  terrainOutline,
+} from '../venueGeometry';
 import '../styles/VenueMap.css';
 
 // Half a cell of margin around the map holds the frame.
@@ -158,10 +168,11 @@ function Feature({ feature, mode, selected, resizable }) {
 }
 
 // The one venue renderer, shared by the editor, the Venue Screen, and previews.
-// mode="player" draws what the table may see: secret doors become walls, GM-only stamps vanish.
+// mode="player" draws what the table may see: secret doors become walls, GM-only stamps vanish,
+// and hidden squares are fog. The GM sees hidden squares under a veil with a dashed outline.
 // Without pxPerCell the map scales to fill its container.
 export default function VenueMap({
-  venue,
+  venue: source,
   mode = 'gm',
   pxPerCell,
   editorGrid = false,
@@ -173,6 +184,8 @@ export default function VenueMap({
   ...handlers
 }) {
   const ids = safeId(useId());
+  // The Venue Screen's copy arrives already concealed; this makes the editor's preview match it.
+  const venue = useMemo(() => (mode === 'player' ? concealHidden(source) : source), [source, mode]);
   const width = venue.width * C;
   const height = venue.height * C;
 
@@ -194,11 +207,14 @@ export default function VenueMap({
         outline: terrain.outline ? segmentsPath(terrainOutline(venue, terrainId), C) : null,
       };
     });
+    const hidden = hiddenKeys(venue);
     return {
       terrains,
       hatchPath: cellsPath(hatched, C),
       allCellsPath: cellsPath(Object.keys(venue.cells), C),
       edges: resolveEdges(venue, mode),
+      hiddenPath: cellsPath(hidden, C),
+      hiddenOutline: mode === 'gm' ? segmentsPath(regionOutline(hidden), C) : '',
     };
   }, [venue, mode, ids]);
 
@@ -257,6 +273,10 @@ export default function VenueMap({
         {layers.allCellsPath && <path d={layers.allCellsPath} fill={`url(#vg${ids})`} />}
       </g>
 
+      {mode === 'player' && layers.hiddenPath && (
+        <path d={layers.hiddenPath} fill={VENUE_FOG} className="venue-map-fog" pointerEvents="none" />
+      )}
+
       <path
         d={segmentsPath(layers.edges.walls, C)}
         stroke={VENUE_INK}
@@ -277,6 +297,20 @@ export default function VenueMap({
           resizable={resizableSelection}
         />
       ))}
+
+      {mode === 'gm' && layers.hiddenPath && (
+        <g className="venue-map-hidden" pointerEvents="none">
+          <path d={layers.hiddenPath} fill={VENUE_FOG} opacity="0.35" className="venue-map-veil" />
+          <path
+            d={layers.hiddenOutline}
+            stroke={VENUE_SECRET_INK}
+            strokeWidth="2"
+            strokeDasharray="6 4"
+            fill="none"
+            className="venue-map-hidden-outline"
+          />
+        </g>
+      )}
 
       <rect x="-6" y="-6" width={width + 12} height={height + 12} fill="none" stroke={VENUE_INK} strokeWidth="2.4" />
       <rect x="-12" y="-12" width={width + 24} height={height + 24} fill="none" stroke={VENUE_INK} strokeWidth="0.9" />

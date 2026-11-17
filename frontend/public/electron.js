@@ -574,7 +574,8 @@ function showHelp() {
           'The Actors section stamps a campaign template or scene actor using its marker symbol and color. The stamp is a snapshot and does not follow the encounter. Custom stamps > Import image adds your own PNG or SVG as a stamp; it is saved with the campaign, included in its export, and drawn on the mat as the letters you choose.',
           'Venues can sit inside other venues, such as a mansion with a venue for each room. Choose Inside when creating a venue, or Inside venue in its sidebar, and the list nests rooms under their venue.',
           'Add a Passage stamp and set where it leads. Go to, or double-clicking it with Select, opens that venue, and Back to returns to the venue it sits inside. If the players are watching the venue you leave, the Venue Screen follows you.',
-          'Show players sends a venue to the Venue Screen (View > Open Venue Screen). This second-monitor window never shows GM notes, GM-only features, or where a passage leads; secret doors appear as plain walls.',
+          'Show players sends a venue to the Venue Screen (View > Open Venue Screen). This second-monitor window never shows GM notes, GM-only features, hidden squares, or where a passage leads; secret doors appear as plain walls.',
+          'Hide (H) drags fog over squares the players have not found yet; right-drag reveals them, and Reveal all in the sidebar lifts all the fog. The Venue Screen shows hidden squares as fog with nothing inside, but keeps the walls and doors between them and visible rooms. Save to update the Venue Screen. The Mat Guide still draws every square, hidden or not.',
           'Mat Guide creates numbered drawing steps, grid coordinates, and a four-marker color key for copying a venue onto a one-inch table mat. The default is 32×46 usable squares, excluding the border; adjust it as needed. Large venues are split into sections, and Print sends the guide to a printer.',
           'Venue editor shortcuts:',
         ],
@@ -587,6 +588,7 @@ function showHelp() {
           { keys: 'S', action: 'Secret door' },
           { keys: 'F', action: 'Stamp' },
           { keys: 'V', action: 'Select' },
+          { keys: 'H', action: 'Hide' },
           { keys: 'Ctrl+Z', action: 'Undo' },
           { keys: 'Ctrl+Y', action: 'Redo' },
           { keys: 'Ctrl+S', action: 'Save' },
@@ -818,7 +820,7 @@ function buildMenuTemplate() {
           sendToGmWindow('open-about', {
             version: app.getVersion(),
             description:
-                'A tabletop GM companion for Pathfinder 1e and 2e and Numenera: campaign management with renaming and portable export/import, scene and initiative tracking, reusable actor templates with marker colors and symbols, a grid venue builder with resizable, actor, and custom image stamps, wide doors, rooms nested inside venues and linked by passages, a player-safe Venue Screen, and a Mat Guide for drawing venues on your table mat, GM Tools that always open on the GM window, a searchable rules encyclopedia, a bestiary, a name generator, quick rolls, scanned character-sheet import, a chat window to your own local model (GM Tools > The Harrowing), a player-safe second-screen view with the scene name, current-turn highlighting, and game-style health-bar impact effects, browser-style per-window zoom (Ctrl+scroll), and switchable UI themes (View > Theme) — Morrowind, Dissidia 012, and Pokémon (Gen I–III) built in, plus your own local themes.\n\n' +
+                'A tabletop GM companion for Pathfinder 1e and 2e and Numenera: campaign management with renaming and portable export/import, scene and initiative tracking, reusable actor templates with marker colors and symbols, a grid venue builder with resizable, actor, and custom image stamps, wide doors, rooms nested inside venues and linked by passages, fog that hides squares from the players, a player-safe Venue Screen, and a Mat Guide for drawing venues on your table mat, GM Tools that always open on the GM window, a searchable rules encyclopedia, a bestiary, a name generator, quick rolls, scanned character-sheet import, a chat window to your own local model (GM Tools > The Harrowing), a player-safe second-screen view with the scene name, current-turn highlighting, and game-style health-bar impact effects, browser-style per-window zoom (Ctrl+scroll), and switchable UI themes (View > Theme) — Morrowind, Dissidia 012, and Pokémon (Gen I–III) built in, plus your own local themes.\n\n' +
                 'Reference PDFs and bestiary CSVs are user-supplied and are never included with the app.',
             dataDirectory: path.join(app.getPath('userData'), 'data'),
           });

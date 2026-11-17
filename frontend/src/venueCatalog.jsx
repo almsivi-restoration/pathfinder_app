@@ -13,6 +13,7 @@ export const VENUE_PAPER = '#fbf7ec';
 export const VENUE_VOID = '#e4d8bc';
 export const VENUE_HATCH_INK = '#3d3124';
 export const VENUE_SECRET_INK = '#a3281c';
+export const VENUE_FOG = '#59606b';
 
 // The four marker colors that ship with the table mat.
 export const MAT_COLORS = {

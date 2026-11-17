@@ -17,6 +17,7 @@ import {
   FEATURE_MAX_SIDE,
   featureAt,
   featureSize,
+  hiddenKeys,
   inBounds,
   nearestEdge,
   newFeatureId,
@@ -24,8 +25,10 @@ import {
   rectCells,
   removeFeature,
   resizeVenue,
+  revealAll,
   rotateFeature,
   setEdge,
+  setHidden,
   showsWall,
   toggleEdgeKind,
   updateFeature,
@@ -125,6 +128,19 @@ export const VENUE_TOOLS = [
     hint: 'Click a stamp to select it, drag to move it, drag its corner handle to resize it. [ and ] rotate, Delete removes.',
     icon: icon(<path d="M5.5 3v13l3.4-3.3 2.4 4.6 2-1-2.3-4.5 4.6-.2z" fill="currentColor" />),
   },
+  {
+    id: 'hide',
+    label: 'Hide',
+    key: 'h',
+    hint: 'Drag a rectangle to hide squares from the players under fog. Right-drag reveals them.',
+    icon: icon(
+      <>
+        <path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10z" {...line} strokeWidth="1.6" />
+        <circle cx="10" cy="10" r="2.4" {...line} strokeWidth="1.6" />
+        <path d="M3.5 16.5l13-13" {...line} strokeWidth="1.8" />
+      </>,
+    ),
+  },
 ];
 const TOOL_BY_KEY = Object.fromEntries(VENUE_TOOLS.map((tool) => [tool.key, tool.id]));
 const EDGE_TOOLS = new Set(['wall', 'door', 'secret']);
@@ -220,6 +236,7 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
 
   const { present } = history;
   const display = draft || present;
+  const hiddenCount = hiddenKeys(display).length;
   const selectedFeature = present.features.find((feature) => feature.id === selectedFeatureId) || null;
   const dirty = present !== saved.venue || name !== saved.name || notes !== saved.notes;
   const activeTool = VENUE_TOOLS.find((entry) => entry.id === tool);
@@ -442,6 +459,9 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
       setSelectedFeatureId(feature?.id || null);
       // Keep the grab point under the pointer so a large stamp does not jump to its corner.
       if (feature) beginDrag({ kind: 'move', featureId: feature.id, grab: [x - feature.x, y - feature.y] }, present);
+    } else if (tool === 'hide') {
+      const start = clampCell(present, point);
+      beginDrag({ kind: 'hide', start, hide: !rightButton }, setHidden(present, [start], !rightButton));
     }
   };
 
@@ -495,6 +515,9 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
         width: clampFeatureSide(Math.round(point.x - feature.x), present.width - feature.x),
         height: clampFeatureSide(Math.round(point.y - feature.y), present.height - feature.y),
       }));
+    } else if (drag.kind === 'hide') {
+      const [ex, ey] = clampCell(present, point);
+      updateDrag(setHidden(drag.base, rectCells(drag.start[0], drag.start[1], ex, ey), drag.hide));
     }
   };
 
@@ -986,6 +1009,20 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
                 ))}
               </select>
             </label>
+            <div className="venue-field">
+              <span>Hidden from players</span>
+              <div className="venue-hidden-row">
+                <span>{hiddenCount ? `${hiddenCount} square${hiddenCount === 1 ? '' : 's'} under fog` : 'Nothing hidden'}</span>
+                <button
+                  type="button"
+                  className="btn-small btn-edit"
+                  disabled={!hiddenCount}
+                  onClick={() => commit(revealAll(present))}
+                >
+                  Reveal all
+                </button>
+              </div>
+            </div>
             <label className="venue-field">
               <span>GM notes (never shown to players)</span>
               <textarea rows={4} value={notes} onChange={(event) => setNotes(event.target.value)} />

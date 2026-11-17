@@ -4,6 +4,7 @@ import {
   cellsAlong,
   cellsPath,
   columnLabel,
+  concealHidden,
   edgesAlongLine,
   featureAt,
   addFeature,
@@ -12,11 +13,14 @@ import {
   nearestEdge,
   paintCells,
   rectCells,
+  regionOutline,
   removeFeature,
   resizeVenue,
   resolveEdges,
+  revealAll,
   rotateBy,
   rotateFeature,
+  setHidden,
   showsWall,
   toggleEdgeKind,
   updateFeature,
@@ -246,11 +250,63 @@ describe('resizing', () => {
     venue = toggleEdgeKind(venue, 5, 2, 'w', 'door');
     venue = addFeature(venue, { kind: 'tree', x: 5, y: 5 });
     venue = addFeature(venue, { kind: 'statue', x: 2, y: 2, width: 3, height: 1 }); // now crosses x=4
+    venue = setHidden(venue, [[1, 1], [5, 1]], true);
     const cropped = resizeVenue(venue, 4, 4);
     expect(Object.keys(cropped.cells)).toHaveLength(16);
     expect(cropped.edges).toEqual([]);
     expect(cropped.features).toEqual([]);
+    expect(cropped.hidden).toEqual(['1,1']);
     expect(resizeVenue(cropped, 4, 4)).toBe(cropped);
+  });
+});
+
+describe('hidden squares', () => {
+  it('hides squares on the map once each, row by row, and reveals them', () => {
+    const venue = blank(4, 4);
+    const hidden = setHidden(venue, [[2, 1], [0, 1], [9, 9], [2, 1]], true);
+    expect(hidden.hidden).toEqual(['0,1', '2,1']);
+    expect(setHidden(hidden, [[0, 1]], true)).toBe(hidden);
+    expect(setHidden(hidden, [[3, 3]], false)).toBe(hidden);
+    expect(setHidden(hidden, rectCells(0, 0, 3, 3), false).hidden).toEqual([]);
+    expect(revealAll(hidden).hidden).toEqual([]);
+    expect(revealAll(venue)).toBe(venue);
+    // A hand-edited spelling is the same square, never a second one.
+    const respelled = { ...venue, hidden: ['01,2'] };
+    expect(setHidden(respelled, [[1, 2]], true)).toBe(respelled);
+    expect(setHidden(respelled, [[1, 2]], false).hidden).toEqual([]);
+  });
+
+  it('conceals what lies under hidden squares as the server does, keeping the walls at the fog', () => {
+    // The layout of the backend's test_hidden_squares_reach_the_screen_as_fog_...: a corridor
+    // runs east into a hidden hall and vault; a hidden room sits between a lawn and a passage.
+    let venue = room(blank(6, 3), 'floor', 0, 0, 2, 0);
+    venue = paintCells(venue, [[3, 0]], 'chasm');
+    venue = paintCells(venue, [[0, 1]], 'grass');
+    venue = room(venue, 'floor', 0, 2, 1, 2);
+    venue = paintCells(venue, [[1, 1]], 'floor');
+    venue = toggleEdgeKind(venue, 1, 1, 'n', 'door');
+    venue = toggleEdgeKind(venue, 1, 2, 'n', 'secret_door');
+    venue = toggleEdgeKind(venue, 3, 0, 'w', 'door');
+    venue = addFeature(venue, { kind: 'chest', x: 3, y: 0 });
+    venue = addFeature(venue, { kind: 'table', x: 0, y: 0, width: 2, height: 2 });
+    venue = addFeature(venue, { kind: 'statue', x: 0, y: 2, width: 2 });
+    venue = setHidden(venue, [[3, 0], [1, 1], [2, 0]], true);
+
+    const shown = concealHidden(venue);
+    expect(shown.hidden).toEqual(['2,0', '3,0', '1,1']);
+    expect(shown.cells).toEqual({ '0,0': 'floor', '1,0': 'floor', '0,1': 'grass', '0,2': 'floor', '1,2': 'floor' });
+    expect(shown.features.map((feature) => feature.kind)).toEqual(['statue']);
+    expect(shown.edges.map(({ x, y, side, kind }) => `${x},${y},${side},${kind}`).sort()).toEqual([
+      '1,1,n,door', '1,1,w,wall', '1,2,n,secret_door', '2,0,w,opening',
+    ]);
+    expect(concealHidden(shown)).toEqual(shown);
+    const open = blank();
+    expect(concealHidden(open)).toBe(open);
+  });
+
+  it('outlines a region as merged strokes', () => {
+    expect(regionOutline(['0,0', '0,1', '1,1'])).toHaveLength(6); // an L has six sides
+    expect(regionOutline([])).toEqual([]);
   });
 });
 

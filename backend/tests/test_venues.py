@@ -2,6 +2,10 @@
 real routes (client fixture) plus StateManager where the disk layout itself is under test."""
 
 import json
+import re
+from pathlib import Path
+
+from state import _TERRAIN_SURFACES
 
 
 def new_campaign(client, name="Venues"):
@@ -99,6 +103,10 @@ def test_venue_validation_rejects_contents_outside_the_grid(client):
         {**venue, "features": [{"id": "f", "kind": "statue", "x": 0, "y": 2, "height": 2}]},
         {**venue, "features": [{"id": "f", "kind": "statue", "x": 0, "y": 0, "width": 0}]},
         {**venue, "features": [{"id": "f", "kind": "actor", "x": 0, "y": 0, "color": "red"}]},
+        {**venue, "hidden": ["4,0"]},
+        {**venue, "hidden": ["0,3"]},
+        {**venue, "hidden": ["a,b"]},
+        {**venue, "hidden": ["1,2", "01,2"]},
     ]
     for payload in bad_payloads:
         response = client.put(f"/api/venue/{venue['id']}", json=payload)
@@ -156,6 +164,52 @@ def test_venue_screen_receives_only_the_player_safe_projection(client):
     assert client.get("/api/venue/shown").json()["venue"]["cells"] == {"5,5": "floor"}
     assert client.post("/api/venue/hide").json() == {"shown_venue_id": None}
     assert client.get("/api/venue/shown").json() == {"venue": None}
+
+
+def test_hidden_squares_reach_the_screen_as_fog_and_keep_the_walls_at_their_edge(client):
+    new_campaign(client)
+    venue = new_venue(client, width=6, height=3)
+    house = {
+        **venue,
+        # A corridor runs east into a hidden hall (2,0) and vault (3,0); a hidden room (1,1)
+        # sits between a lawn (0,1) and a passage (0,2)-(1,2).
+        "cells": {
+            "0,0": "floor", "1,0": "floor", "2,0": "floor", "3,0": "chasm",
+            "0,1": "grass", "1,1": "floor", "0,2": "floor", "1,2": "floor",
+        },
+        "hidden": ["3,0", "1,1", "2,0"],
+        "edges": [
+            {"x": 1, "y": 1, "side": "n", "kind": "door"},
+            {"x": 1, "y": 2, "side": "n", "kind": "secret_door"},
+            {"x": 3, "y": 0, "side": "w", "kind": "door"},
+        ],
+        "features": [
+            {"id": "hoard", "kind": "chest", "x": 3, "y": 0, "label": "Dragon hoard"},
+            {"id": "table", "kind": "table", "x": 0, "y": 0, "width": 2, "height": 2},
+            {"id": "statue", "kind": "statue", "x": 0, "y": 2, "width": 2},
+            {"id": "way", "kind": "passage", "x": 2, "y": 0, "target_venue_id": "cellar"},
+        ],
+    }
+    response = client.put(f"/api/venue/{venue['id']}", json=house)
+    assert response.status_code == 200, response.text
+    assert response.json()["hidden"] == ["3,0", "1,1", "2,0"]  # the GM's copy keeps everything
+
+    client.post("/api/venue/show", params={"venue_id": venue["id"]})
+    shown = client.get("/api/venue/shown").json()["venue"]
+
+    assert shown["hidden"] == ["2,0", "3,0", "1,1"]
+    assert shown["cells"] == {"0,0": "floor", "1,0": "floor", "0,1": "grass", "0,2": "floor", "1,2": "floor"}
+    # A stamp touching any hidden square goes, even one mostly in view.
+    assert [f["id"] for f in shown["features"]] == ["statue"]
+    assert sorted((e["x"], e["y"], e["side"], e["kind"]) for e in shown["edges"]) == [
+        (1, 1, "n", "door"),  # a door on the fog's edge stays
+        (1, 1, "w", "wall"),  # the hidden room still walls off the lawn
+        (1, 2, "n", "wall"),  # a secret door still reads as wall
+        (2, 0, "w", "opening"),  # the corridor runs into the fog instead of ending in a wall
+    ]
+    serialized = json.dumps(shown)
+    for secret in ["chasm", "Dragon hoard", "cellar", "secret_door"]:
+        assert secret not in serialized
 
 
 def test_rooms_nest_inside_venues_without_cycles_and_passages_stay_gm_side(client):
@@ -229,11 +283,11 @@ def test_shown_venue_clears_on_delete_and_campaign_switch(client):
 def test_export_carries_venues_and_import_restores_them(client):
     new_campaign(client, "Origin")
     venue = new_venue(client)
-    client.put(f"/api/venue/{venue['id']}", json=furnished(venue))
+    client.put(f"/api/venue/{venue['id']}", json={**furnished(venue), "hidden": ["5,5"]})
     other = new_venue(client, name="Alley", width=3, height=20)
 
     bundle = client.get("/api/campaign/export", params={"name": "Origin"}).json()
-    assert bundle["version"] == 4
+    assert bundle["version"] == 5
     assert {v["id"] for v in bundle["venues"]} == {venue["id"], other["id"]}
     exported = next(v for v in bundle["venues"] if v["id"] == venue["id"])
     assert exported["notes"].startswith("The lich")  # export is the GM's full copy
@@ -244,6 +298,7 @@ def test_export_carries_venues_and_import_restores_them(client):
     imported = client.get(f"/api/venue/{venue['id']}").json()
     assert imported["cells"] == exported["cells"]
     assert imported["features"] == exported["features"]
+    assert imported["hidden"] == ["5,5"]
     assert sorted(v["name"] for v in client.get("/api/venues").json()["venues"]) == ["Alley", "Crypt"]
 
 
@@ -261,18 +316,33 @@ def test_import_accepts_older_bundles_and_rejects_bad_venues(client):
 
     response = client.post("/api/campaign/import", json={**bundle, "version": 3})
     assert response.status_code == 200, response.text
+    # Venues from before hidden squares carry no "hidden" key.
+    unhidden = {key: value for key, value in bundle["venues"][0].items() if key != "hidden"}
+    response = client.post("/api/campaign/import", json={**bundle, "version": 4, "venues": [unhidden]})
+    assert response.status_code == 200, response.text
 
     bad_bundles = [
         {**bundle, "venues": [{**bundle["venues"][0], "id": "../escape"}]},
         {**bundle, "venues": [bundle["venues"][0], bundle["venues"][0]]},
         {**bundle, "venues": [{**bundle["venues"][0], "cells": {"99,99": "floor"}}]},
+        {**bundle, "venues": [{**bundle["venues"][0], "hidden": ["99,99"]}]},
         {**bundle, "venues": [{"id": venue["id"]}]},
-        {**bundle, "version": 5},
+        {**bundle, "version": 6},
     ]
     for bad_bundle in bad_bundles:
         response = client.post("/api/campaign/import", json=bad_bundle)
         assert response.status_code == 400, bad_bundle
         assert response.json()["detail"]
+
+
+def test_terrain_surface_mirror_matches_the_frontend_catalog():
+    """state._TERRAIN_SURFACES must track VENUE_TERRAINS, or the screen's walls drift along the fog."""
+    catalog = Path(__file__).resolve().parents[2] / "frontend" / "src" / "venueCatalog.jsx"
+    block = catalog.read_text(encoding="utf-8").split("export const VENUE_TERRAINS = [", 1)[1].split("\n];", 1)[0]
+    ids = re.findall(r"^    id: '([^']+)'", block, re.MULTILINE)
+    surfaces = re.findall(r"^    surface: '([^']+)'", block, re.MULTILINE)
+    assert len(ids) == len(surfaces)
+    assert dict(zip(ids, surfaces)) == _TERRAIN_SURFACES
 
 
 PNG_BYTES = b"\x89PNG\r\n\x1a\n" + b"\x00" * 24

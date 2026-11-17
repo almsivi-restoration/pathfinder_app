@@ -178,6 +178,9 @@ class Venue(BaseModel):
     cells: Dict[str, str] = Field(default_factory=dict)
     edges: List[VenueEdge] = Field(default_factory=list)
     features: List[VenueFeature] = Field(default_factory=list, max_length=2000)
+    # "x,y" squares the players cannot see yet: the Venue Screen copy covers them with fog and
+    # drops everything under them. Kept apart from cells, so erasing terrain never reveals one.
+    hidden: List[str] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
 
@@ -191,6 +194,16 @@ class Venue(BaseModel):
                 raise ValueError(f"Cell {key!r} is outside the {self.width}x{self.height} venue")
             if not terrain or len(terrain) > 32:
                 raise ValueError(f"Cell {key!r} has an invalid terrain id")
+        hidden_squares = set()
+        for key in self.hidden:
+            match = _VENUE_CELL_KEY.match(key)
+            if not match or int(match[1]) >= self.width or int(match[2]) >= self.height:
+                raise ValueError(f"Hidden square {key!r} is outside the {self.width}x{self.height} venue")
+            # Compared as numbers, so "01,2" cannot pass as a second spelling of "1,2".
+            square = (int(match[1]), int(match[2]))
+            if square in hidden_squares:
+                raise ValueError(f"Hidden square {key!r} is listed twice")
+            hidden_squares.add(square)
         seen_edges = set()
         for edge in self.edges:
             max_x = self.width - 1 if edge.side == "n" else self.width

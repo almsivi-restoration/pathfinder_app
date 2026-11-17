@@ -1,7 +1,7 @@
 ---
 description: "Blueprint: frontend-owned content catalogs whose ids are persisted (marker symbols, venue terrains/edges/stamps) — append-only ids, opaque backend storage, visible fallbacks, physical-mat translation, and server-side GM-only stripping. Load when adding or editing a catalog entry or a renderer that reads one."
 name: "bp-content-catalog"
-version: "1.1.0"
+version: "1.2.0"
 applyTo: "frontend/src/markerSymbols.js, frontend/src/venueCatalog.jsx, frontend/src/components/MarkerSymbol.jsx, frontend/src/components/CustomStampArt.jsx, frontend/src/components/SymbolPicker.jsx, frontend/src/components/Venue*.jsx, frontend/src/components/Mat*.jsx, frontend/src/matGuide.js, frontend/src/venueGeometry.js"
 ---
 
@@ -52,6 +52,13 @@ with `getTerrain`/`getFeature`/`getEdgeKind` falling back to an
 - **The backend stores ids opaquely.** Models bound the string length
   (`max_length=32`) but never validate against the catalog, so a newer
   build's ids survive a round trip through an older backend.
+- **One backend mirror, guarded against drift.** Hiding squares from the
+  players must keep the walls the GM sees along the cut, and those walls
+  derive from terrain surfaces, so `_TERRAIN_SURFACES` in
+  `backend/state.py` mirrors each terrain's `surface`.
+  `test_terrain_surface_mirror_matches_the_frontend_catalog` fails when it
+  disagrees with `VENUE_TERRAINS`; a new terrain updates both in one
+  commit. Unknown ids still count as indoor, so storage stays opaque.
 - **Unknown ids degrade visibly or silently, never fatally.** Venue
   lookups return a placeholder (plain floor, a dashed `?` box, a wall);
   `MarkerSymbol` renders nothing. No renderer may throw on an unknown id.
@@ -86,8 +93,9 @@ with `getTerrain`/`getFeature`/`getEdgeKind` falling back to an
 - **GM-only is enforced on the server.** A catalog `gmOnly` edge kind
   needs a disguise in `_PLAYER_EDGE_DISGUISES` (`backend/state.py`), and
   per-feature `gm_only` stamps are dropped by `player_venue_view` before
-  the Venue Screen ever receives them. The frontend's player mode is a
-  display preview, not the security boundary.
+  the Venue Screen ever receives them, as is everything under a hidden
+  square (terrain, edges, stamps), which the screen draws as fog. The
+  frontend's player mode is a display preview, not the security boundary.
 - **Off-palette kinds still register.** `ACTOR_FEATURE` and `CUSTOM_FEATURE`
   are catalog entries kept out of the `VENUE_FEATURES` palette (the editor
   has dedicated sidebar sections for them) but are in `FEATURE_BY_ID`, so
@@ -116,3 +124,6 @@ venue pieces) keeps one owning file and exports lookups — it does not fork.
 
 - 1.1.0 — off-palette kinds (actor, custom) and GM-only record links
   (passage targets); custom stamps recorded as the user-data shape.
+- 1.2.0 — hidden squares stripped server-side like GM-only stamps;
+  `_TERRAIN_SURFACES` recorded as the one backend mirror of catalog data,
+  with its drift guard.

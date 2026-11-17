@@ -24,7 +24,7 @@ actor, initiative, or persistence ownership.
 - Build grid maps — **venues** — through **GM Tools > Venues** (Ctrl+M): start from a mat-sized
   preset, drag out rooms, paint terrain, draw walls and wide doors, and stamp features — resizable
   catalog stamps, actor markers, or your own imported images. Nest rooms inside a venue and link
-  them with passages. Show a venue
+  them with passages, and hide the parts the players have not found yet under fog. Show a venue
   to the players on the **Venue Screen** second-monitor window, and turn it into a numbered
   **Mat Guide** for drawing it on the table's one-inch grid mat. See Venues below.
 - Open a read-only actor card with the **View** button: sheet values grouped by section, empty
@@ -188,7 +188,7 @@ entries, notes, saved scenes, venues, and custom stamps in one file. **Import** 
 campaign; it never overwrites, so a taken name becomes `<name> (imported)`. Export includes
 only saved data, so save before exporting. Files that are not campaign exports, come from a
 newer app version, or use an unknown ruleset are rejected without creating anything. Exports
-from before venues, custom stamps, or nested venues existed still import (bundle versions 1–3).
+from before venues, custom stamps, nested venues, or hidden squares existed still import (bundle versions 1–4).
 
 ## Local References And Encyclopedia
 
@@ -255,6 +255,7 @@ The editor's tools each have a one-key shortcut:
 | Wall / Door / Secret | W / D / S | Click or drag along grid lines; a dragged door is one wide door. |
 | Stamp | F | Place stairs, pillars, chests, trees, traps, passages, labels, and more. |
 | Select | V | Move a stamp, or drag its corner handle to resize it (up to 8×8); `[` and `]` rotate it, Delete removes it. |
+| Hide | H | Drag a rectangle to hide squares from the players under fog; right-drag reveals them. |
 
 The sidebar's **Actors** section stamps a campaign template or scene actor using its marker
 symbol and color — a snapshot that does not follow the encounter. **Custom stamps > Import
@@ -274,8 +275,16 @@ venue exactly as players will see it.
 
 **Show players** puts the venue on the **Venue Screen** — open it with **View > Open Venue
 Screen** or from the Venues page and drag it to the second monitor. Players never see the
-venue's GM notes, stamps marked GM-only, where a passage leads, or secret doors, which appear to them as plain walls;
+venue's GM notes, stamps marked GM-only, hidden squares, where a passage leads, or secret doors, which appear to them as plain walls;
 the backend strips these before the Venue Screen receives the venue.
+
+**Hide** fogs the parts of a venue the players have not found yet — an unexplored wing, or a
+room whose detail lives in a nested venue behind a passage. The Venue Screen draws hidden
+squares as plain fog with nothing inside, but keeps the walls and doors between them and the
+rooms the players can see, so a corridor still runs into the fog. The editor shows the same
+squares under a translucent veil with a dashed outline, and the sidebar counts them; **Reveal
+all** lifts all the fog at once. Save to update the Venue Screen. The Mat Guide still draws
+every square, hidden or not.
 
 **Mat Guide** turns the venue into instructions for the physical one-inch grid mat (32×46 by
 default; the size is adjustable). It picks the orientation that fits best, splits a venue
@@ -376,7 +385,7 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
 - `GET /api/campaign/current`
 - `POST /api/campaign/save`
 - `POST /api/campaign/rename` accepts `name` and `new_name` query parameters.
-- `GET /api/campaign/export?name=` returns a portable campaign bundle (campaign, saved scenes, venues, and custom stamps; bundle `version` 4 — versions 1 to 3 still import).
+- `GET /api/campaign/export?name=` returns a portable campaign bundle (campaign, saved scenes, venues, and custom stamps; bundle `version` 5 — versions 1 to 4 still import).
 - `POST /api/campaign/import` accepts that bundle as the JSON body and saves it as a new campaign.
 - `DELETE /api/campaign/{campaign_name}`
 
@@ -417,7 +426,7 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
   `DELETE /api/venue/{venue_id}`.
 - `POST /api/venue/show?venue_id=` and `POST /api/venue/hide` choose what the Venue Screen shows.
 - `GET /api/venue/shown` returns `{"venue": ...}` — the shown venue's player-safe copy (no notes,
-  no GM-only stamps, secret doors as walls), or `null` when no venue is shown.
+  no GM-only stamps, secret doors as walls, nothing under hidden squares), or `null` when no venue is shown.
 
 ### The Harrowing
 

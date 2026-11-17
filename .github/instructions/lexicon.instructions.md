@@ -1,7 +1,7 @@
 ---
 description: "Canonical domain vocabulary, naming, casing, and formatting conventions for Game Master's Workbench. The singular voice of the codebase — ALWAYS load this instruction."
 name: "gmw-lexicon"
-version: "1.4.0"
+version: "1.5.0"
 applyTo: "**"
 ---
 
@@ -40,14 +40,15 @@ controlling behavior boundary.
 | **Bestiary Entry** | A monster record in the per-ruleset bestiary sqlite index, imported from the user-supplied `bestiary.csv`. | Mapped to Actors via the ruleset's `bestiary_mapper`. |
 | **Reference Library** | Per-ruleset collection of user-supplied reference PDFs, indexed for search. | Routes under `/api/references/current/*`. |
 | **Source Manifest** | JSON manifest describing a ruleset's reference sources. | `manifests/<ruleset>.json`. |
-| **Campaign Export** | A single portable JSON bundle (`format: "gm-workbench-campaign"`, integer `version`) holding a saved Campaign, its saved Scenes, its Venues, and its Custom Stamps. | `GET /api/campaign/export`, `POST /api/campaign/import`; import never overwrites — a taken name gets an ` (imported)` suffix. Version 2 added venues; version 3 added custom stamps (base64); version 4 added venue nesting (`parent_id`, passage `target_venue_id`). Older bundles still import. |
-| **Venue** | A square-grid map belonging to a Campaign: terrain cells, wall/door edges, and stamped features. Not "map" or "location". | One file per venue at `campaigns/<name>/venues/<venue_id>.json`; catalog in `frontend/src/venueCatalog.jsx`. Notes, `gm_only` features, and secret doors never reach players. |
+| **Campaign Export** | A single portable JSON bundle (`format: "gm-workbench-campaign"`, integer `version`) holding a saved Campaign, its saved Scenes, its Venues, and its Custom Stamps. | `GET /api/campaign/export`, `POST /api/campaign/import`; import never overwrites — a taken name gets an ` (imported)` suffix. Version 2 added venues; version 3 added custom stamps (base64); version 4 added venue nesting (`parent_id`, passage `target_venue_id`); version 5 added hidden squares (`hidden`). Older bundles still import. |
+| **Venue** | A square-grid map belonging to a Campaign: terrain cells, wall/door edges, and stamped features. Not "map" or "location". | One file per venue at `campaigns/<name>/venues/<venue_id>.json`; catalog in `frontend/src/venueCatalog.jsx`. Notes, `gm_only` features, secret doors, and whatever lies under hidden squares never reach players. |
 | **Stamp** | A feature placed on a Venue (`features[]`): a catalog piece, an Actor Stamp, or a Custom Stamp. Spans `width`×`height` squares (1–8). | Doors are not stamps: a **wide door** is a run of touching door edges, stored as unit edges and merged for drawing. |
 | **Actor Stamp** | A stamp (kind `actor`) copying an Actor's or template's name, symbol, and color at placement. | A snapshot — it does not follow the encounter. |
 | **Custom Stamp** | A GM-imported PNG/SVG image stamp (kind `custom`, `stamp_id`), stored per campaign under `campaigns/<name>/stamps/` with a mat glyph. | User data, not a catalog entry. Routes under `/api/venue/stamps`. SVG is served under a no-script CSP and drawn via `<image>`, never inlined. |
 | **Room / parent venue** | A Venue may sit inside another (`parent_id`): a mansion with a venue per room. | No cycles; deleting a parent lifts its rooms to the top level. |
 | **Passage** | A catalog stamp (kind `passage`) whose `target_venue_id` names the venue it leads to; the editor opens it. | `target_venue_id` is GM-only — stripped from the Venue Screen copy. |
-| **Venue Screen** | The pop-out second-monitor window showing players the shown Venue. | Reads only `GET /api/venue/shown` (the player-filtered copy); which venue is shown is in-memory session state. |
+| **Hidden square** | A square of a Venue the GM hides from the players (`Venue.hidden`, `"x,y"` keys), painted with the editor's Hide tool; the Venue Screen draws it as **fog**. | Independent of terrain (erasing never reveals). `player_venue_view` strips the terrain, edges, and stamps under fog and pins the walls the GM sees along the cut; `concealHidden` mirrors it for the preview. Not "Hide from players", which takes the whole venue off the Venue Screen. |
+| **Venue Screen** | The pop-out second-monitor window showing players the shown Venue. | Reads only `GET /api/venue/shown` (the player-filtered copy, hidden squares as fog); which venue is shown is in-memory session state. |
 | **Mat Guide** | A step-by-step drawing guide for copying a Venue onto the physical one-inch grid mat, in the four marker colors. | Default mat 32×46 usable squares, excluding the border; splits venues larger than the mat into sections. |
 | **Local Theme** | A user-installed UI skin: a folder under the themes directory with a `theme.json` manifest and a `theme.css` stylesheet overriding `--mw-*` tokens. | Built-in `morrowind` theme always available (the base sheet); `dissidia` and `pokemon` ship as vendored built-ins layered on it; selection persists via `theme-settings.json`. |
 
@@ -78,7 +79,7 @@ cross-ruleset contract and are not negotiable within a sheet definition.
 - **CSS:** one file per component in `frontend/src/styles/`, named after
   the component (`ActorRow.css`). Theme tokens use the `--mw-` prefix and
   are defined only in `theme.css` — components reference tokens, never
-  hardcode palette colors. Exception: map art (venue terrain, inks, mat
+  hardcode palette colors. Exception: map art (venue terrain, inks, fog, mat
   marker colors) and the marker-symbol bases are content and live as
   constants in `venueCatalog.jsx` and `markerSymbols.js`, so a venue or a
   marker looks the same under every theme and on the mat.
