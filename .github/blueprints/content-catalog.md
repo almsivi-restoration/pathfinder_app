@@ -1,8 +1,8 @@
 ---
 description: "Blueprint: frontend-owned content catalogs whose ids are persisted (marker symbols, venue terrains/edges/stamps) — append-only ids, opaque backend storage, visible fallbacks, physical-mat translation, and server-side GM-only stripping. Load when adding or editing a catalog entry or a renderer that reads one."
 name: "bp-content-catalog"
-version: "1.0.0"
-applyTo: "frontend/src/markerSymbols.js, frontend/src/venueCatalog.jsx, frontend/src/components/MarkerSymbol.jsx, frontend/src/components/SymbolPicker.jsx, frontend/src/components/Venue*.jsx, frontend/src/components/Mat*.jsx, frontend/src/matGuide.js, frontend/src/venueGeometry.js"
+version: "1.1.0"
+applyTo: "frontend/src/markerSymbols.js, frontend/src/venueCatalog.jsx, frontend/src/components/MarkerSymbol.jsx, frontend/src/components/CustomStampArt.jsx, frontend/src/components/SymbolPicker.jsx, frontend/src/components/Venue*.jsx, frontend/src/components/Mat*.jsx, frontend/src/matGuide.js, frontend/src/venueGeometry.js"
 ---
 
 # Blueprint: Content Catalog
@@ -88,6 +88,12 @@ with `getTerrain`/`getFeature`/`getEdgeKind` falling back to an
   per-feature `gm_only` stamps are dropped by `player_venue_view` before
   the Venue Screen ever receives them. The frontend's player mode is a
   display preview, not the security boundary.
+- **Off-palette kinds still register.** `ACTOR_FEATURE` and `CUSTOM_FEATURE`
+  are catalog entries kept out of the `VENUE_FEATURES` palette (the editor
+  has dedicated sidebar sections for them) but are in `FEATURE_BY_ID`, so
+  every renderer resolves them through `getFeature` like any other kind.
+  Their art comes from the feature's own data (`symbol`/`color`,
+  `stamp_id`), and their mat mark from that data too.
 - **Drawing is deterministic.** Procedural texture (rock hatching, grass
   tufts, water ripples, flagstones, planks) uses `seededRandom`, so
   renders are stable across reloads and in tests.
@@ -96,6 +102,13 @@ with `getTerrain`/`getFeature`/`getEdgeKind` falling back to an
 
 GM-authored pieces (an uploaded token image, a custom stamp) are user
 data, not catalog entries: they need persistence, a schema, and an
-import/export story, and would extend the Venue model rather than this
-file. A catalog that grows a second consumer domain (e.g. Scenes reading
+import/export story. Custom stamps follow that shape — `CustomStamp`
+records under `campaigns/<name>/stamps/`, export version 3 — and the
+catalog holds only the one `custom` kind that draws them, with
+`customStampMat` supplying a placeholder for a deleted stamp. A catalog that grows a second consumer domain (e.g. Scenes reading
 venue pieces) keeps one owning file and exports lookups — it does not fork.
+
+## Revisions
+
+- 1.1.0 — off-palette kinds (actor, custom); custom stamps recorded as
+  the user-data shape.

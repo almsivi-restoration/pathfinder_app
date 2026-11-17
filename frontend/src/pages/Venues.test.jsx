@@ -25,6 +25,7 @@ let actions;
 function seedStore(overrides = {}) {
   actions = {
     fetchVenues: jest.fn(),
+    fetchCustomStamps: jest.fn(),
     fetchVenue: jest.fn(async (id) => ({ crypt: CRYPT, docks: DOCKS }[id] || null)),
     createVenue: jest.fn(async (spec) => ({ ...venueRecord('new', spec.name), width: spec.width, height: spec.height })),
     saveVenue: jest.fn(async (venue) => venue),
@@ -64,6 +65,7 @@ test('lists the campaign venues and marks the one on the Venue Screen', () => {
   render(<Venues onBack={() => {}} />);
 
   expect(actions.fetchVenues).toHaveBeenCalled();
+  expect(actions.fetchCustomStamps).toHaveBeenCalled();
   expect(openButton('Crypt')).toHaveTextContent('12×12');
   expect(openButton('Docks')).toHaveTextContent('on the Venue Screen');
   expect(screen.getByText('Create a venue or pick one from the list.')).toBeInTheDocument();

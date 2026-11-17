@@ -571,7 +571,7 @@ function showHelp() {
         paragraphs: [
           'GM Tools > Venues (Ctrl+M) builds grid maps for the campaign. Start from a mat-sized preset, drag out rooms, paint terrain, draw walls, doors, and secret doors along grid lines, and stamp features such as stairs, chests, and trees. Venues are saved with the campaign and included in its export.',
           'Stamps resize: with Select, drag the corner handle of a selected stamp (a 2×2 statue), or set its width and height in the sidebar. Drag the Door or Secret door tool along a wall line to lay one wide door; drag over it again to clear it.',
-          'The Actors section stamps a campaign template or scene actor using its marker symbol and color. The stamp is a snapshot and does not follow the encounter.',
+          'The Actors section stamps a campaign template or scene actor using its marker symbol and color. The stamp is a snapshot and does not follow the encounter. Custom stamps > Import image adds your own PNG or SVG as a stamp; it is saved with the campaign, included in its export, and drawn on the mat as the letters you choose.',
           'Show players sends a venue to the Venue Screen (View > Open Venue Screen). This second-monitor window never shows GM notes or GM-only features; secret doors appear as plain walls.',
           'Mat Guide creates numbered drawing steps, grid coordinates, and a four-marker color key for copying a venue onto a one-inch table mat. The default is 32×46 usable squares, excluding the border; adjust it as needed. Large venues are split into sections, and Print sends the guide to a printer.',
           'Venue editor shortcuts:',

@@ -5,6 +5,7 @@
 // theme, on the Venue Screen, and when copied onto the table mat.
 import React from 'react';
 import { MarkerArt } from './components/MarkerSymbol';
+import CustomStampArt from './components/CustomStampArt';
 
 export const VENUE_CELL = 40; // SVG units per grid cell; every drawing below is in this scale
 export const VENUE_INK = '#2b2116';
@@ -543,7 +544,24 @@ export const ACTOR_FEATURE = {
   mat: { color: 'black', glyph: '', hint: "Draw the actor's mark" },
 };
 
-const FEATURE_BY_ID = Object.fromEntries([...VENUE_FEATURES, ACTOR_FEATURE].map((feature) => [feature.id, feature]));
+// A custom stamp: a campaign-owned image (feature.stamp_id). The image and its Mat Guide
+// mark live in the campaign's stamp library, not here; see CustomStampArt and matLegend.
+export const CUSTOM_FEATURE = {
+  id: 'custom',
+  label: 'Custom stamp',
+  draw: (feature = {}) => <CustomStampArt stampId={feature.stamp_id} />,
+  mat: { color: 'black', glyph: '?', hint: '' },
+};
+
+// Custom stamps write their library mark on the mat; a missing one writes '?'.
+export function customStampMat(stamps, stampId) {
+  const stamp = stamps.find((entry) => entry.id === stampId);
+  return stamp
+    ? { label: stamp.name, glyph: stamp.mat_glyph }
+    : { label: 'Missing custom stamp', glyph: '?' };
+}
+
+const FEATURE_BY_ID = Object.fromEntries([...VENUE_FEATURES, ACTOR_FEATURE, CUSTOM_FEATURE].map((feature) => [feature.id, feature]));
 const EDGE_BY_ID = Object.fromEntries(VENUE_EDGE_KINDS.map((edge) => [edge.id, edge]));
 
 // Unknown ids (from a newer catalog) degrade to plain floor / a labelled box rather than vanishing.

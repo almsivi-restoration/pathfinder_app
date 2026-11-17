@@ -1,5 +1,5 @@
 import React, { useId, useMemo } from 'react';
-import { ACTOR_FEATURE, MAT_COLORS, VENUE_CELL as U, getFeature, getTerrain } from '../venueCatalog';
+import { ACTOR_FEATURE, CUSTOM_FEATURE, MAT_COLORS, customStampMat, VENUE_CELL as U, getFeature, getTerrain } from '../venueCatalog';
 import { getMarkerSymbol } from '../markerSymbols';
 import { MarkerShapes } from './MarkerSymbol';
 import { cellsPath, columnLabel, featureSize, resolveEdges, segmentsPath, terrainOutline } from '../venueGeometry';
@@ -127,8 +127,12 @@ function MatActorMark({ feature, x, y }) {
   );
 }
 
-function MatFeature({ feature }) {
-  const definition = getFeature(feature.kind);
+function MatFeature({ feature, customStamps }) {
+  let definition = getFeature(feature.kind);
+  if (feature.kind === CUSTOM_FEATURE.id) {
+    const { label, glyph } = customStampMat(customStamps, feature.stamp_id);
+    definition = { ...definition, label, mat: { ...definition.mat, glyph } };
+  }
   const caption = feature.label?.trim();
   if (definition.text && !caption) return null;
   const [width, height] = featureSize(feature);
@@ -178,7 +182,7 @@ export function matView(plan, section, view = 'mat') {
 
 // One venue section on the mat. `plan` and `section` come from planMat; `view` is 'mat' or 'closeup'.
 // The coordinates sit on a ruler band around the view so they read on any background.
-export default function MatSheet({ venue, plan, section, view = 'mat' }) {
+export default function MatSheet({ venue, plan, section, view = 'mat', customStamps = [] }) {
   const ids = safeId(useId());
   const { columns, rows } = plan;
   const boardWidth = columns * U;
@@ -308,7 +312,7 @@ export default function MatSheet({ venue, plan, section, view = 'mat' }) {
             />
             {layers.edges.doors.map((door) => <MatDoor key={`${door.x},${door.y},${door.side}`} {...door} />)}
             {layers.edges.secretDoors.map((door) => <MatSecretMark key={`${door.x},${door.y},${door.side}`} {...door} />)}
-            {features.map((feature) => <MatFeature key={feature.id} feature={feature} />)}
+            {features.map((feature) => <MatFeature key={feature.id} feature={feature} customStamps={customStamps} />)}
           </g>
         </g>
 

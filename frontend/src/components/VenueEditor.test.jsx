@@ -124,6 +124,50 @@ test('actor stamps copy a template or scene actor once, and place a snapshot of 
   }
 });
 
+test('custom stamps are imported, placed by id, fall back when their image is gone, and edit their mat mark', async () => {
+  const altar = { id: 's1', name: 'Shrine of Ash', mat_glyph: 'Al', media_type: 'image/svg+xml' };
+  const uploadCustomStamp = jest.fn(async () => {
+    useStore.setState({ customStamps: [altar] });
+    return altar;
+  });
+  const updateCustomStamp = jest.fn(async () => null);
+  const original = useStore.getState();
+  useStore.setState({ customStamps: [], uploadCustomStamp, updateCustomStamp });
+  try {
+    const { container, svg } = renderEditor();
+    const file = new File(['<svg/>'], 'altar.svg', { type: 'image/svg+xml' });
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Custom stamp image file'), { target: { files: [file] } });
+    });
+    expect(uploadCustomStamp).toHaveBeenCalledWith(file);
+    expect(screen.getByRole('button', { name: 'Shrine of Ash' })).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.pointerDown(svg, at(2, 1));
+    fireEvent.pointerUp(svg, at(2, 1));
+    const placed = container.querySelector('svg.venue-map [data-kind="custom"]');
+    const image = placed.querySelector('image');
+    expect(image.getAttribute('href')).toMatch(/\/venue\/stamps\/s1\/image$/);
+    expect(screen.getByRole('heading', { name: 'Shrine of Ash' })).toBeInTheDocument();
+
+    fireEvent.error(image);
+    expect(placed.querySelector('image')).toBeNull();
+    expect(placed.querySelector('.custom-stamp-missing')).not.toBeNull();
+
+    const mark = screen.getByLabelText(/Mat mark/);
+    fireEvent.change(mark, { target: { value: 'A' } });
+    fireEvent.blur(mark);
+    expect(updateCustomStamp).toHaveBeenCalledWith('s1', { name: 'Shrine of Ash', matGlyph: 'A' });
+  } finally {
+    // Unmount first so resetting the shared store does not re-render a live editor.
+    cleanup();
+    useStore.setState({
+      customStamps: [],
+      uploadCustomStamp: original.uploadCustomStamp,
+      updateCustomStamp: original.updateCustomStamp,
+    });
+  }
+});
+
 test('a selected stamp grows by dragging its corner handle and moves by its grab point', () => {
   const { container, svg } = renderEditor();
 

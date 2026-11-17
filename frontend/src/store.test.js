@@ -359,3 +359,19 @@ test('searchBestiary sends alignment and environment only when set', async () =>
   expect(axios.get.mock.calls[1][1].params).not.toHaveProperty('environment');
 });
 
+test('custom stamps upload as a form, stay sorted by name, and drop out of state on delete', async () => {
+  useStore.setState({ customStamps: [{ id: 's2', name: 'Well' }] });
+  axios.post.mockResolvedValueOnce({ data: { id: 's1', name: 'Altar', mat_glyph: 'A' } });
+  const file = new File(['<svg/>'], 'altar.svg');
+
+  await useStore.getState().uploadCustomStamp(file, { matGlyph: 'A' });
+  const [url, form] = axios.post.mock.calls.at(-1);
+  expect(url).toMatch(/\/venue\/stamps$/);
+  expect(form.get('file')).toBe(file);
+  expect(form.get('mat_glyph')).toBe('A');
+  expect(useStore.getState().customStamps.map((stamp) => stamp.id)).toEqual(['s1', 's2']);
+
+  axios.delete.mockResolvedValueOnce({});
+  await useStore.getState().deleteCustomStamp('s2');
+  expect(useStore.getState().customStamps.map((stamp) => stamp.id)).toEqual(['s1']);
+});

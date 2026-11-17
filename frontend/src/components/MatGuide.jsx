@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import MatSheet, { MatSwatch } from './MatSheet';
 import { MAT_DEFAULT_SIZE, clampMatSide, matLegend, planMat } from '../matGuide';
 import { cellLabel } from '../venueGeometry';
+import { useStore } from '../store';
 import '../styles/MatGuide.css';
 
 const ORIENTATIONS = [
@@ -30,7 +31,8 @@ export default function MatGuide({ venue, onClose }) {
   const [view, setView] = useState('mat');
 
   const plan = useMemo(() => planMat(venue, size, orientation), [venue, size, orientation]);
-  const legend = useMemo(() => matLegend(venue), [venue]);
+  const customStamps = useStore((state) => state.customStamps);
+  const legend = useMemo(() => matLegend(venue, customStamps), [venue, customStamps]);
   const section = plan.sections[Math.min(sectionIndex, plan.sections.length - 1)];
   const multiple = plan.sections.length > 1;
   const across = Math.max(...plan.sections.map((entry) => entry.column)) + 1;
@@ -237,7 +239,7 @@ export default function MatGuide({ venue, onClose }) {
           </aside>
 
           <div className="mat-guide-sheet">
-            <MatSheet venue={venue} plan={plan} section={section} view={view} />
+            <MatSheet venue={venue} plan={plan} section={section} view={view} customStamps={customStamps} />
           </div>
         </div>
       </div>

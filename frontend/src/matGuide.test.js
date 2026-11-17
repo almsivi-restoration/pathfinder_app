@@ -177,6 +177,22 @@ describe('matLegend', () => {
     expect(actors).toEqual([expect.objectContaining({ glyph: '', hint: "Draw the actor's mark" })]);
   });
 
+  it('lists each custom stamp with its library mark, and a missing one as ?', () => {
+    const venue = {
+      ...room(blank(5, 5), 'floor', 0, 0, 2, 2),
+      features: [
+        { id: 'a', kind: 'custom', x: 0, y: 0, rotation: 0, stamp_id: 's1', gm_only: false },
+        { id: 'b', kind: 'custom', x: 1, y: 0, rotation: 0, stamp_id: 's1', gm_only: false },
+        { id: 'c', kind: 'custom', x: 1, y: 1, rotation: 0, stamp_id: 'gone', gm_only: false },
+      ],
+    };
+    const stamps = [{ id: 's1', name: 'Altar', mat_glyph: 'Al' }];
+    expect(matLegend(venue, stamps).filter((entry) => entry.id === 'custom')).toEqual([
+      expect.objectContaining({ key: 'feature:custom:s1', label: 'Altar', glyph: 'Al', hint: 'Write Al' }),
+      expect.objectContaining({ key: 'feature:custom:gone', label: 'Missing custom stamp', glyph: '?' }),
+    ]);
+  });
+
   it('includes labels only once one has text', () => {
     const venue = {
       ...room(blank(5, 5), 'floor', 0, 0, 2, 2),

@@ -176,14 +176,14 @@ def test_shown_venue_clears_on_delete_and_campaign_switch(client):
     assert client.post("/api/venue/show", params={"venue_id": "missing"}).status_code == 404
 
 
-def test_export_v2_carries_venues_and_import_restores_them(client):
+def test_export_carries_venues_and_import_restores_them(client):
     new_campaign(client, "Origin")
     venue = new_venue(client)
     client.put(f"/api/venue/{venue['id']}", json=furnished(venue))
     other = new_venue(client, name="Alley", width=3, height=20)
 
     bundle = client.get("/api/campaign/export", params={"name": "Origin"}).json()
-    assert bundle["version"] == 2
+    assert bundle["version"] == 3
     assert {v["id"] for v in bundle["venues"]} == {venue["id"], other["id"]}
     exported = next(v for v in bundle["venues"] if v["id"] == venue["id"])
     assert exported["notes"].startswith("The lich")  # export is the GM's full copy
@@ -197,7 +197,7 @@ def test_export_v2_carries_venues_and_import_restores_them(client):
     assert sorted(v["name"] for v in client.get("/api/venues").json()["venues"]) == ["Alley", "Crypt"]
 
 
-def test_import_accepts_v1_bundles_and_rejects_bad_venues(client):
+def test_import_accepts_older_bundles_and_rejects_bad_venues(client):
     new_campaign(client, "Origin")
     venue = new_venue(client)
     bundle = client.get("/api/campaign/export", params={"name": "Origin"}).json()
@@ -214,12 +214,77 @@ def test_import_accepts_v1_bundles_and_rejects_bad_venues(client):
         {**bundle, "venues": [bundle["venues"][0], bundle["venues"][0]]},
         {**bundle, "venues": [{**bundle["venues"][0], "cells": {"99,99": "floor"}}]},
         {**bundle, "venues": [{"id": venue["id"]}]},
-        {**bundle, "version": 3},
+        {**bundle, "version": 4},
     ]
     for bad_bundle in bad_bundles:
         response = client.post("/api/campaign/import", json=bad_bundle)
         assert response.status_code == 400, bad_bundle
         assert response.json()["detail"]
+
+
+PNG_BYTES = b"\x89PNG\r\n\x1a\n" + b"\x00" * 24
+SVG_BYTES = b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>'
+
+
+def upload_stamp(client, data, filename="statue.png", **form):
+    return client.post("/api/venue/stamps", files={"file": (filename, data)}, data=form)
+
+
+def test_custom_stamps_are_judged_by_content_and_served_with_a_locked_down_policy(client):
+    assert client.get("/api/venue/stamps").status_code == 404  # no campaign yet
+    new_campaign(client)
+
+    png = upload_stamp(client, PNG_BYTES, filename="Gargoyle Statue.png")
+    assert png.status_code == 200, png.text
+    assert (png.json()["name"], png.json()["mat_glyph"], png.json()["media_type"]) == ("Gargoyle Statue", "G", "image/png")
+    # Content decides the type, not the file name.
+    svg = upload_stamp(client, SVG_BYTES, filename="altar.png", name="Altar", mat_glyph="Al")
+    assert svg.json()["media_type"] == "image/svg+xml"
+
+    for data in [b"", b"GIF89a....", b'<!DOCTYPE svg [<!ENTITY x "y">]><svg/>', PNG_BYTES + b"\x00" * (512 * 1024)]:
+        assert upload_stamp(client, data).status_code == 400, data[:20]
+
+    listed = client.get("/api/venue/stamps").json()["stamps"]
+    assert [stamp["name"] for stamp in listed] == ["Altar", "Gargoyle Statue"]
+
+    image = client.get(f"/api/venue/stamps/{svg.json()['id']}/image")
+    assert image.status_code == 200
+    assert image.headers["content-type"].startswith("image/svg+xml")
+    assert "default-src 'none'" in image.headers["content-security-policy"]
+    assert image.content == SVG_BYTES
+
+    renamed = client.put(f"/api/venue/stamps/{png.json()['id']}", json={"name": "Gargoyle", "mat_glyph": "Gy"})
+    assert renamed.json()["mat_glyph"] == "Gy"
+    assert client.delete(f"/api/venue/stamps/{png.json()['id']}").status_code == 200
+    assert client.get(f"/api/venue/stamps/{png.json()['id']}/image").status_code == 404
+    assert client.get("/api/venue/stamps/..%2Fcampaign/image").status_code == 404
+    # The route never shadows venue lookups, and venues reference stamps by id.
+    venue = new_venue(client, width=4, height=4)
+    placed = {**venue, "features": [{"id": "f", "kind": "custom", "x": 0, "y": 0, "stamp_id": svg.json()["id"]}]}
+    assert client.put(f"/api/venue/{venue['id']}", json=placed).json()["features"][0]["stamp_id"] == svg.json()["id"]
+
+
+def test_export_v3_carries_custom_stamp_images_and_rejects_forged_ones(client):
+    new_campaign(client, "Origin")
+    stamp = upload_stamp(client, SVG_BYTES, filename="altar.svg").json()
+    bundle = client.get("/api/campaign/export", params={"name": "Origin"}).json()
+    assert [entry["id"] for entry in bundle["stamps"]] == [stamp["id"]]
+
+    response = client.post("/api/campaign/import", json=bundle)
+    assert response.status_code == 200, response.text
+    client.post("/api/campaign/load", params={"name": "Origin (imported)"})
+    assert client.get(f"/api/venue/stamps/{stamp['id']}/image").content == SVG_BYTES
+
+    entry = bundle["stamps"][0]
+    forged = [
+        {**entry, "data": "not base64!"},
+        {**entry, "media_type": "image/png"},
+        {**entry, "id": "../escape"},
+        {**entry, "data": "R0lGODlh"},
+    ]
+    for bad in forged:
+        assert client.post("/api/campaign/import", json={**bundle, "stamps": [bad]}).status_code == 400, bad
+    assert client.post("/api/campaign/import", json={**bundle, "stamps": [entry, entry]}).status_code == 400
 
 
 def test_venues_live_in_their_own_folder_and_follow_a_rename(state_manager):

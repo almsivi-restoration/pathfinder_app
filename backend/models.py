@@ -157,6 +157,8 @@ class VenueFeature(BaseModel):
     # the actor afterwards. Symbol ids are kept opaque like Actor.symbol.
     symbol: Optional[str] = Field(default=None, max_length=32)
     color: Optional[str] = Field(default=None, pattern=r"^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$")
+    # Custom stamps (kind "custom") name the campaign's CustomStamp; a deleted one draws as a placeholder.
+    stamp_id: Optional[str] = Field(default=None, max_length=64)
 
 
 class Venue(BaseModel):
@@ -198,6 +200,24 @@ class Venue(BaseModel):
                 raise ValueError(f"Feature id {feature.id!r} is listed twice")
             feature_ids.add(feature.id)
         return self
+
+
+CUSTOM_STAMP_MAX_BYTES = 512 * 1024
+
+
+class CustomStamp(BaseModel):
+    """A GM-imported stamp image owned by one campaign (campaigns/<name>/stamps/). The image
+    sits beside this record as <id>.png or <id>.svg; mat_glyph is what the Mat Guide writes."""
+    id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,64}$")
+    name: str = Field(min_length=1, max_length=60)
+    mat_glyph: str = Field(min_length=1, max_length=3)
+    media_type: Literal["image/png", "image/svg+xml"]
+    created_at: datetime = Field(default_factory=datetime.now)
+
+
+class CustomStampUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=60)
+    mat_glyph: str = Field(min_length=1, max_length=3)
 
 
 class VenueCreateRequest(BaseModel):

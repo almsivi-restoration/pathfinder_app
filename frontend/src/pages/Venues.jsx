@@ -14,6 +14,7 @@ function Venues({ onBack }) {
   const shownVenueId = useStore((state) => state.shownVenueId);
   const operationError = useStore((state) => state.operationError);
   const fetchVenues = useStore((state) => state.fetchVenues);
+  const fetchCustomStamps = useStore((state) => state.fetchCustomStamps);
   const fetchVenue = useStore((state) => state.fetchVenue);
   const createVenue = useStore((state) => state.createVenue);
   const saveVenue = useStore((state) => state.saveVenue);
@@ -24,8 +25,11 @@ function Venues({ onBack }) {
   const [openVenue, setOpenVenue] = useState(null);
 
   useEffect(() => {
-    if (currentCampaign) fetchVenues();
-  }, [currentCampaign, fetchVenues]);
+    if (currentCampaign) {
+      fetchVenues();
+      fetchCustomStamps();
+    }
+  }, [currentCampaign, fetchVenues, fetchCustomStamps]);
 
   useEffect(() => () => setVenueEditorDirty(false), [setVenueEditorDirty]);
 

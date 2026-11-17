@@ -2,8 +2,9 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import VenueMap, { FeatureSwatch, TerrainSwatch, pointerToCell } from './VenueMap';
 import MatGuide from './MatGuide';
 import { MarkerArt } from './MarkerSymbol';
+import CustomStampArt from './CustomStampArt';
 import { useStore } from '../store';
-import { ACTOR_FEATURE, VENUE_CELL as C, VENUE_FEATURES, VENUE_INK, VENUE_TERRAINS, getFeature } from '../venueCatalog';
+import { ACTOR_FEATURE, CUSTOM_FEATURE, VENUE_CELL as C, VENUE_FEATURES, VENUE_INK, VENUE_TERRAINS, getFeature } from '../venueCatalog';
 import {
   addFeature,
   applyWall,
@@ -189,6 +190,13 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
   const actorTemplates = useStore((state) => state.actorTemplates);
   const sceneActors = useStore((state) => state.actors);
   const actorChoices = useMemo(() => actorStampChoices(actorTemplates, sceneActors), [actorTemplates, sceneActors]);
+  const [customStampId, setCustomStampId] = useState(null);
+  const customStamps = useStore((state) => state.customStamps);
+  const uploadCustomStamp = useStore((state) => state.uploadCustomStamp);
+  const updateCustomStamp = useStore((state) => state.updateCustomStamp);
+  const deleteCustomStamp = useStore((state) => state.deleteCustomStamp);
+  const stampFileRef = useRef(null);
+  const [importingStamp, setImportingStamp] = useState(false);
 
   const [selectedFeatureId, setSelectedFeatureId] = useState(null);
   const [draft, setDraft] = useState(null);
@@ -403,10 +411,12 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
     } else if (tool === 'stamp') {
       if (!inBounds(present, x, y)) return;
       const placingActor = stampKind === ACTOR_FEATURE.id;
-      if (placingActor && !actorStamp) return;
+      const placingCustom = stampKind === CUSTOM_FEATURE.id;
+      if ((placingActor && !actorStamp) || (placingCustom && !customStampId)) return;
       const existing = featureAt(present, x, y);
       const sameStamp = existing && existing.kind === stampKind
-        && (!placingActor || existing.label === actorStamp.name);
+        && (!placingActor || existing.label === actorStamp.name)
+        && (!placingCustom || existing.stamp_id === customStampId);
       if (sameStamp) {
         commit(removeFeature(present, existing.id));
         setSelectedFeatureId(null);
@@ -416,6 +426,7 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
       const id = newFeatureId();
       let snapshot = {};
       if (placingActor) snapshot = { label: actorStamp.name, symbol: actorStamp.symbol, color: actorStamp.color };
+      if (placingCustom) snapshot = { stamp_id: customStampId };
       commit(addFeature(present, { id, kind: stampKind, x, y, gm_only: Boolean(definition.defaultGmOnly), ...snapshot }));
       focusLabelRef.current = Boolean(definition.text);
       setSelectedFeatureId(id);
@@ -530,6 +541,23 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
     setActorStamp(choice);
     pickStamp(ACTOR_FEATURE.id);
   };
+  const pickCustomStamp = (stampId) => {
+    setCustomStampId(stampId);
+    pickStamp(CUSTOM_FEATURE.id);
+  };
+  const importStampImage = async (event) => {
+    const [file] = event.target.files || [];
+    event.target.value = '';
+    if (!file) return;
+    setImportingStamp(true);
+    const stamp = await uploadCustomStamp(file);
+    setImportingStamp(false);
+    if (stamp) pickCustomStamp(stamp.id);
+  };
+  const removeCustomStamp = async (stamp) => {
+    if (!window.confirm(`Delete the custom stamp "${stamp.name}"? Venues that use it will show an empty dashed box in its place.`)) return;
+    if (await deleteCustomStamp(stamp.id) && customStampId === stamp.id) setCustomStampId(null);
+  };
 
   let overlay = null;
   if (hover && !preview && !dragRef.current) {
@@ -561,6 +589,9 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
     ? cellLabel(Math.floor(hover.x), Math.floor(hover.y))
     : '—';
   const selectedDefinition = selectedFeature ? getFeature(selectedFeature.kind) : null;
+  const selectedCustomStamp = selectedFeature?.kind === CUSTOM_FEATURE.id
+    ? customStamps.find((stamp) => stamp.id === selectedFeature.stamp_id) || null
+    : null;
 
   return (
     <div className="venue-editor">
@@ -718,9 +749,65 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
             )}
           </section>
 
+          <section className="venue-sidebar-section">
+            <h3>Custom stamps</h3>
+            {customStamps.length > 0 && (
+              <div className="venue-palette venue-palette-stamps">
+                {customStamps.map((stamp) => {
+                  const active = tool === 'stamp' && stampKind === CUSTOM_FEATURE.id && customStampId === stamp.id;
+                  return (
+                    <div key={stamp.id} className="venue-custom-stamp">
+                      <button
+                        type="button"
+                        className={`venue-palette-item${active ? ' active' : ''}`}
+                        aria-pressed={active}
+                        onClick={() => pickCustomStamp(stamp.id)}
+                        title={`${stamp.name} (mat mark ${stamp.mat_glyph})`}
+                        disabled={preview}
+                      >
+                        <svg className="venue-swatch" viewBox={`0 0 ${C} ${C}`} width="28" height="28" aria-hidden="true">
+                          <CustomStampArt stampId={stamp.id} />
+                        </svg>
+                        <span>{stamp.name}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-small venue-custom-stamp-remove"
+                        onClick={() => removeCustomStamp(stamp)}
+                        aria-label={`Delete custom stamp ${stamp.name}`}
+                        title="Delete this custom stamp"
+                        disabled={preview}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <input
+              ref={stampFileRef}
+              type="file"
+              accept=".png,.svg,image/png,image/svg+xml"
+              className="venue-hidden-input"
+              onChange={importStampImage}
+              aria-label="Custom stamp image file"
+              tabIndex={-1}
+            />
+            <button
+              type="button"
+              className="btn-small"
+              onClick={() => stampFileRef.current?.click()}
+              disabled={preview || importingStamp}
+              title="PNG or SVG, up to 512 KB; saved with this campaign"
+            >
+              {importingStamp ? 'Importing…' : 'Import image…'}
+            </button>
+          </section>
+
           {selectedFeature && !preview && (
             <section className="venue-sidebar-section venue-inspector" aria-label="Selected stamp">
-              <h3>{selectedDefinition.label}</h3>
+              <h3>{selectedCustomStamp?.name || selectedDefinition.label}</h3>
               <label className="venue-field">
                 <span>{selectedDefinition.text ? 'Text' : 'Label (shown on hover)'}</span>
                 <input
@@ -773,6 +860,26 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
                 />
                 GM only — hidden from players
               </label>
+              {selectedCustomStamp && (
+                <label className="venue-field">
+                  <span>Mat mark (every use of this stamp)</span>
+                  <input
+                    key={`${selectedCustomStamp.id}:${selectedCustomStamp.mat_glyph}`}
+                    type="text"
+                    maxLength={3}
+                    defaultValue={selectedCustomStamp.mat_glyph}
+                    onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur(); }}
+                    onBlur={(event) => {
+                      const matGlyph = event.target.value.trim();
+                      if (matGlyph && matGlyph !== selectedCustomStamp.mat_glyph) {
+                        updateCustomStamp(selectedCustomStamp.id, { name: selectedCustomStamp.name, matGlyph });
+                      } else {
+                        event.target.value = selectedCustomStamp.mat_glyph;
+                      }
+                    }}
+                  />
+                </label>
+              )}
             </section>
           )}
 

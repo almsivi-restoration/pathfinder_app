@@ -1,6 +1,6 @@
 // Mat Guide layout: where a venue lands on the physical dry-erase table mat, counted in
 // one-inch mat squares. Pure functions; MatGuide/MatSheet render what these return.
-import { getEdgeKind, getFeature, getTerrain } from './venueCatalog';
+import { CUSTOM_FEATURE, customStampMat, getEdgeKind, getFeature, getTerrain } from './venueCatalog';
 import { cellKey, featureSize, parseCellKey, resolveEdges } from './venueGeometry';
 
 // Usable one-inch squares, excluding the table mat's ungridded border.
@@ -168,7 +168,7 @@ export function planksSegments(venue, terrainId) {
 
 // Only what this venue actually uses, in drawing order: terrain fills, lines, then stamps.
 // Blank-on-the-mat terrain is left out; the guide says "everything else stays blank".
-export function matLegend(venue) {
+export function matLegend(venue, customStamps = []) {
   const entries = [];
   const terrainIds = [...new Set(Object.values(venue.cells))];
   terrainIds
@@ -197,6 +197,15 @@ export function matLegend(venue) {
 
   const seen = new Set();
   venue.features.forEach((feature) => {
+    if (feature.kind === CUSTOM_FEATURE.id) {
+      // Each custom stamp is its own legend line with its library mark.
+      const key = `feature:custom:${feature.stamp_id}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      const { label, glyph } = customStampMat(customStamps, feature.stamp_id);
+      entries.push({ key, type: 'feature', id: CUSTOM_FEATURE.id, label, color: 'black', glyph, hint: `Write ${glyph}` });
+      return;
+    }
     if (seen.has(feature.kind)) return;
     const definition = getFeature(feature.kind);
     if (definition.text && !venue.features.some((entry) => entry.kind === feature.kind && entry.label?.trim())) return;

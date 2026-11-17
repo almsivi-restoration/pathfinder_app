@@ -1,7 +1,7 @@
 ---
 description: "Blueprint: how state changes flow from UI to disk in Game Master's Workbench — store action, API route, StateManager, persisted JSON. Load when adding any feature that reads or writes persistent state."
 name: "bp-state-mutation-flow"
-version: "1.2.0"
+version: "1.3.0"
 applyTo: "**"
 ---
 
@@ -54,6 +54,11 @@ fetches via axios and `set()`s the slice.
   `campaign.json`, so venue edits never rewrite the campaign. The
   VenueEditor keeps the draft and its undo history locally
   (`venueEditorDirty` in the store); `PUT /api/venue/{id}` is the save.
+- **Custom stamps write immediately, outside the venue draft.** Importing,
+  renaming, re-glyphing, or deleting a custom stamp goes straight to
+  `/api/venue/stamps` through the store; it is campaign data shared by
+  every venue, so it is not undoable and does not dirty the editor. The
+  venue only stores the `stamp_id`.
 - **Second screens read a server-filtered copy.** The Venue Screen polls
   `GET /api/venue/shown` (2 s) for `player_venue_view`, never the GM's
   venue: hidden content is stripped before it leaves the server. Which
@@ -75,3 +80,5 @@ The forbidden move is a second, parallel write path to the same state.
 - 1.2.0: venues — per-file persistence with the folder as the index, the
   editor-local draft with an explicit PUT save, and the server-filtered
   second-screen read (`player_venue_view`, in-memory `shown_venue_id`).
+- 1.3.0: custom stamps as an immediate campaign-level write path beside the
+  editor draft.

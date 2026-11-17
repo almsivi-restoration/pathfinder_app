@@ -3,11 +3,12 @@ FastAPI backend for Game Master's Workbench.
 Provides REST API for campaign, scene, actor, and initiative management.
 """
 
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.concurrency import run_in_threadpool
 import os
+from pathlib import Path
 import uvicorn
 import random
 from typing import Optional
@@ -15,7 +16,7 @@ from uuid import uuid4
 
 from bestiary import BestiaryLibrary
 from harrowing import HarrowingClient
-from models import Actor, Campaign, Scene, RollRequest, RollResult, Effect, InitiativeOrderRequest, ReferenceImportRequest, ChronicleEntryRequest, HarrowingConfigRequest, HarrowingChatRequest, Venue, VenueCreateRequest
+from models import Actor, Campaign, Scene, RollRequest, RollResult, Effect, InitiativeOrderRequest, ReferenceImportRequest, ChronicleEntryRequest, HarrowingConfigRequest, HarrowingChatRequest, Venue, VenueCreateRequest, CustomStampUpdate, CUSTOM_STAMP_MAX_BYTES
 from name_generator import generate_names, list_categories
 from reference_library import ReferenceLibrary
 from sheet_importer import SheetImporter
@@ -375,6 +376,62 @@ def hide_venue():
     """Clear the Venue Screen."""
     state_manager.hide_venue()
     return {"shown_venue_id": None}
+
+
+# Custom stamps are declared before /api/venue/{venue_id} so "stamps" is never read as a venue id.
+@app.get("/api/venue/stamps")
+def list_custom_stamps():
+    """List the current campaign's custom stamps."""
+    if not state_manager.current_campaign:
+        raise HTTPException(status_code=404, detail="No campaign loaded")
+    return {"stamps": [stamp.model_dump() for stamp in state_manager.list_custom_stamps()]}
+
+
+@app.post("/api/venue/stamps")
+async def create_custom_stamp(file: UploadFile = File(...), name: str = Form(""), mat_glyph: str = Form("")):
+    """Import a PNG or SVG as a custom stamp on the current campaign."""
+    if not state_manager.current_campaign:
+        raise HTTPException(status_code=404, detail="No campaign loaded")
+    data = await file.read(CUSTOM_STAMP_MAX_BYTES + 1)
+    name = name.strip() or Path(file.filename or "").stem.strip() or "Custom stamp"
+    mat_glyph = mat_glyph.strip() or name[0].upper()
+    try:
+        stamp = state_manager.create_custom_stamp(name[:60], mat_glyph[:3], data)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    return stamp.model_dump()
+
+
+@app.get("/api/venue/stamps/{stamp_id}/image")
+def get_custom_stamp_image(stamp_id: str):
+    """Serve a custom stamp's image. The CSP keeps an SVG opened on its own from running anything."""
+    found = state_manager.custom_stamp_image(stamp_id)
+    if not found:
+        raise HTTPException(status_code=404, detail="Stamp not found")
+    image_path, media_type = found
+    return FileResponse(image_path, media_type=media_type, headers={
+        "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; img-src data:",
+        "X-Content-Type-Options": "nosniff",
+    })
+
+
+@app.put("/api/venue/stamps/{stamp_id}")
+def update_custom_stamp(stamp_id: str, request: CustomStampUpdate):
+    """Rename a custom stamp or change its Mat Guide mark."""
+    if not request.name.strip() or not request.mat_glyph.strip():
+        raise HTTPException(status_code=400, detail="Name and mat mark are required")
+    updated = state_manager.update_custom_stamp(stamp_id, request.name.strip(), request.mat_glyph.strip())
+    if not updated:
+        raise HTTPException(status_code=404, detail="Stamp not found")
+    return updated.model_dump()
+
+
+@app.delete("/api/venue/stamps/{stamp_id}")
+def delete_custom_stamp(stamp_id: str):
+    """Delete a custom stamp; venues that used it show a placeholder in its place."""
+    if not state_manager.delete_custom_stamp(stamp_id):
+        raise HTTPException(status_code=404, detail="Stamp not found")
+    return {"status": "removed"}
 
 
 @app.get("/api/venue/{venue_id}")

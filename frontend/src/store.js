@@ -13,6 +13,8 @@ export const REQUEST_TIMEOUT_MS = 15000;
 const NO_TIMEOUT = { timeout: 0 };
 axios.defaults.timeout = REQUEST_TIMEOUT_MS;
 
+export const customStampImageUrl = (stampId) => `${API_URL}/venue/stamps/${encodeURIComponent(stampId)}/image`;
+
 const getErrorMessage = (error) => error.response?.data?.detail || error.message || 'The request failed.';
 
 const venueSummary = ({ id, name, width, height, created_at, updated_at }) => ({
@@ -38,6 +40,7 @@ export const useStore = create((set, get) => ({
   chronicleEntries: [],
   campaignScenes: [],
   venues: [],
+  customStamps: [],
   shownVenueId: null,
   // The Venue Screen window's player-safe copy of the shown venue (only that window polls it).
   shownVenue: null,
@@ -193,6 +196,7 @@ export const useStore = create((set, get) => ({
         campaignScenes: [],
         chronicleEntries: [],
         venues: [],
+        customStamps: [],
         shownVenueId: null,
         venueEditorDirty: false,
         isCampaignDirty: false,
@@ -533,6 +537,68 @@ export const useStore = create((set, get) => ({
       return true;
     } catch (error) {
       console.error('Failed to delete venue:', error);
+      set({ operationError: getErrorMessage(error) });
+      return false;
+    }
+  },
+
+  // Custom stamps: campaign-owned images placed on venues as kind "custom" features.
+  fetchCustomStamps: async () => {
+    try {
+      const res = await axios.get(`${API_URL}/venue/stamps`);
+      set({ customStamps: res.data.stamps });
+      return res.data.stamps;
+    } catch (error) {
+      if (error.response?.status !== 404) {
+        console.error('Failed to fetch custom stamps:', error);
+        set({ operationError: getErrorMessage(error) });
+      }
+      return [];
+    }
+  },
+
+  uploadCustomStamp: async (file, { name = '', matGlyph = '' } = {}) => {
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      form.append('name', name);
+      form.append('mat_glyph', matGlyph);
+      const res = await axios.post(`${API_URL}/venue/stamps`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const stamps = [...get().customStamps, res.data]
+        .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+      set({ customStamps: stamps, operationError: null });
+      return res.data;
+    } catch (error) {
+      console.error('Failed to import custom stamp:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
+    }
+  },
+
+  updateCustomStamp: async (stampId, { name, matGlyph }) => {
+    try {
+      const res = await axios.put(`${API_URL}/venue/stamps/${encodeURIComponent(stampId)}`, { name, mat_glyph: matGlyph });
+      set({
+        customStamps: get().customStamps.map((stamp) => (stamp.id === stampId ? res.data : stamp)),
+        operationError: null,
+      });
+      return res.data;
+    } catch (error) {
+      console.error('Failed to update custom stamp:', error);
+      set({ operationError: getErrorMessage(error) });
+      return null;
+    }
+  },
+
+  deleteCustomStamp: async (stampId) => {
+    try {
+      await axios.delete(`${API_URL}/venue/stamps/${encodeURIComponent(stampId)}`);
+      set({ customStamps: get().customStamps.filter((stamp) => stamp.id !== stampId) });
+      return true;
+    } catch (error) {
+      console.error('Failed to delete custom stamp:', error);
       set({ operationError: getErrorMessage(error) });
       return false;
     }
@@ -951,6 +1017,7 @@ export const useStore = create((set, get) => ({
     referenceResults: [],
     campaignScenes: [],
     venues: [],
+    customStamps: [],
     shownVenueId: null,
     venueEditorDirty: false,
     currentScene: null,

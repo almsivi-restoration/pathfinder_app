@@ -3,6 +3,8 @@ In-memory state manager for campaigns and scenes.
 Handles CRUD operations and persistence.
 """
 
+import base64
+import binascii
 import json
 import logging
 import os
@@ -12,16 +14,19 @@ import tempfile
 from typing import Dict, List, Optional
 from pathlib import Path
 from datetime import datetime
-from models import Campaign, Scene, Actor, ChronicleEntry, Venue
+from models import CUSTOM_STAMP_MAX_BYTES, Campaign, Scene, Actor, ChronicleEntry, CustomStamp, Venue
 from rules import get_ruleset
 from rules.common import get_sheet_value
 import uuid
 
 
 CAMPAIGN_EXPORT_FORMAT = "gm-workbench-campaign"
-CAMPAIGN_EXPORT_VERSION = 2  # 2 added venues; version 1 bundles still import
+CAMPAIGN_EXPORT_VERSION = 3  # 2 added venues, 3 custom stamps; older bundles still import
 _SCENE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 _VENUE_ID_PATTERN = _SCENE_ID_PATTERN
+_STAMP_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+_STAMP_EXTENSIONS = {"image/png": "png", "image/svg+xml": "svg"}
+_PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 # Edge kinds drawn as something else on the Venue Screen, so players cannot spot them.
 _PLAYER_EDGE_DISGUISES = {"secret_door": "wall"}
 
@@ -47,6 +52,26 @@ def player_venue_view(venue: Venue) -> dict:
         ],
         "updated_at": venue.updated_at.isoformat(),
     }
+
+
+def sniff_stamp_image(data: bytes) -> str:
+    """Return the media type of an acceptable stamp image, or raise ValueError.
+
+    Only PNG and SVG are accepted, judged by content rather than by file name. SVGs are only
+    ever drawn through an image element, where browsers run no scripts; DTDs are refused anyway."""
+    if not data:
+        raise ValueError("The image is empty")
+    if len(data) > CUSTOM_STAMP_MAX_BYTES:
+        raise ValueError(f"Stamp images must be {CUSTOM_STAMP_MAX_BYTES // 1024} KB or smaller")
+    if data.startswith(_PNG_SIGNATURE):
+        return "image/png"
+    try:
+        text = data.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = ""
+    if "<svg" in text and "<!DOCTYPE" not in text.upper() and "<!ENTITY" not in text.upper():
+        return "image/svg+xml"
+    raise ValueError("Choose a PNG or SVG image")
 
 
 def _validate_campaign_name(name: str) -> str:
@@ -194,6 +219,12 @@ class StateManager:
             if _VENUE_ID_PATTERN.match(venue_path.stem):
                 with open(venue_path, "r") as venue_file:
                     venues.append(Venue(**json.load(venue_file)))
+        stamps = []
+        for stamp, image_path in self._read_custom_stamps(campaign_dir / "stamps"):
+            stamps.append({
+                **stamp.model_dump(mode="json"),
+                "data": base64.b64encode(image_path.read_bytes()).decode("ascii"),
+            })
         return {
             "format": CAMPAIGN_EXPORT_FORMAT,
             "version": CAMPAIGN_EXPORT_VERSION,
@@ -201,6 +232,7 @@ class StateManager:
             "campaign": campaign.model_dump(mode="json"),
             "scenes": [scene.model_dump(mode="json") for scene in scenes],
             "venues": [venue.model_dump(mode="json") for venue in venues],
+            "stamps": stamps,
         }
 
     def import_campaign(self, bundle: dict) -> Campaign:
@@ -216,7 +248,14 @@ class StateManager:
             campaign = Campaign(**bundle["campaign"])
             scenes = [Scene(**scene) for scene in bundle.get("scenes", [])]
             venues = [Venue(**venue) for venue in bundle.get("venues", [])]
-        except (KeyError, TypeError, ValueError):
+            stamps = []
+            for entry in bundle.get("stamps", []):
+                data = base64.b64decode(entry["data"], validate=True)
+                stamp = CustomStamp(**{key: value for key, value in entry.items() if key != "data"})
+                if sniff_stamp_image(data) != stamp.media_type:
+                    raise ValueError("stamp image does not match its media type")
+                stamps.append((stamp, data))
+        except (KeyError, TypeError, ValueError, binascii.Error):
             raise ValueError("The campaign export is damaged or incomplete")
         if not get_ruleset(campaign.ruleset):
             raise ValueError(f"The campaign uses an unknown ruleset: {campaign.ruleset}")
@@ -226,6 +265,9 @@ class StateManager:
         venue_ids = [venue.id for venue in venues]
         if len(set(venue_ids)) != len(venue_ids) or not all(_VENUE_ID_PATTERN.match(i) for i in venue_ids):
             raise ValueError("The campaign export has invalid venue identifiers")
+        stamp_ids = [stamp.id for stamp, _ in stamps]
+        if len(set(stamp_ids)) != len(stamp_ids):
+            raise ValueError("The campaign export has invalid stamp identifiers")
 
         base_name = _validate_campaign_name(campaign.name)
         name = base_name
@@ -246,6 +288,11 @@ class StateManager:
             for venue in venues:
                 with open(staging_dir / "venues" / f"{venue.id}.json", "w") as venue_file:
                     json.dump(venue.model_dump(), venue_file, indent=2, default=str)
+            (staging_dir / "stamps").mkdir()
+            for stamp, data in stamps:
+                (staging_dir / "stamps" / f"{stamp.id}.{_STAMP_EXTENSIONS[stamp.media_type]}").write_bytes(data)
+                with open(staging_dir / "stamps" / f"{stamp.id}.json", "w") as stamp_file:
+                    json.dump(stamp.model_dump(), stamp_file, indent=2, default=str)
             with open(staging_dir / "campaign.json", "w") as campaign_file:
                 json.dump(campaign.model_dump(), campaign_file, indent=2, default=str)
             staging_dir.rename(self.campaigns_dir / name)
@@ -625,6 +672,88 @@ class StateManager:
             logger.warning("Shown venue %s is unreadable: %s", self.shown_venue_id, error)
             return None
         return player_venue_view(venue) if venue else None
+
+    # ==================== Custom Stamp Methods ====================
+    # A custom stamp is <id>.json (its CustomStamp record) plus <id>.png or <id>.svg under
+    # campaigns/<name>/stamps/; like venues, the folder is the index.
+
+    def _stamps_dir(self) -> Optional[Path]:
+        if not self.current_campaign:
+            return None
+        return self.campaigns_dir / self.current_campaign.name / "stamps"
+
+    @staticmethod
+    def _read_custom_stamps(stamps_dir: Path) -> List[tuple]:
+        """Return (stamp, image path) pairs for every readable stamp in a folder."""
+        stamps = []
+        for record_path in sorted(stamps_dir.glob("*.json")):
+            if not _STAMP_ID_PATTERN.match(record_path.stem):
+                continue
+            try:
+                with open(record_path, "r") as record_file:
+                    stamp = CustomStamp(**json.load(record_file))
+            except (OSError, ValueError) as error:
+                logger.warning("Skipping unreadable custom stamp %s: %s", record_path, error)
+                continue
+            image_path = stamps_dir / f"{stamp.id}.{_STAMP_EXTENSIONS[stamp.media_type]}"
+            if stamp.id == record_path.stem and image_path.is_file():
+                stamps.append((stamp, image_path))
+        return stamps
+
+    def list_custom_stamps(self) -> List[CustomStamp]:
+        stamps_dir = self._stamps_dir()
+        if not stamps_dir:
+            return []
+        stamps = [stamp for stamp, _ in self._read_custom_stamps(stamps_dir)]
+        return sorted(stamps, key=lambda stamp: (stamp.name.lower(), stamp.created_at))
+
+    def _write_stamp_record(self, stamp: CustomStamp) -> None:
+        record_path = self._stamps_dir() / f"{stamp.id}.json"
+        temporary_path = record_path.with_suffix(".json.tmp")
+        with open(temporary_path, "w") as record_file:
+            json.dump(stamp.model_dump(), record_file, indent=2, default=str)
+        os.replace(temporary_path, record_path)
+
+    def create_custom_stamp(self, name: str, mat_glyph: str, data: bytes) -> Optional[CustomStamp]:
+        """Store an imported image as a new stamp; raises ValueError for an unacceptable image."""
+        stamps_dir = self._stamps_dir()
+        if not stamps_dir:
+            return None
+        media_type = sniff_stamp_image(data)
+        stamp = CustomStamp(id=str(uuid.uuid4()), name=name, mat_glyph=mat_glyph, media_type=media_type)
+        stamps_dir.mkdir(parents=True, exist_ok=True)
+        (stamps_dir / f"{stamp.id}.{_STAMP_EXTENSIONS[media_type]}").write_bytes(data)
+        self._write_stamp_record(stamp)
+        return stamp
+
+    def _custom_stamp_entry(self, stamp_id: str) -> Optional[tuple]:
+        stamps_dir = self._stamps_dir()
+        if not stamps_dir or not _STAMP_ID_PATTERN.match(stamp_id):
+            return None
+        return next((entry for entry in self._read_custom_stamps(stamps_dir) if entry[0].id == stamp_id), None)
+
+    def custom_stamp_image(self, stamp_id: str) -> Optional[tuple]:
+        """Return (image path, media type) for one stamp of the current campaign."""
+        entry = self._custom_stamp_entry(stamp_id)
+        return (entry[1], entry[0].media_type) if entry else None
+
+    def update_custom_stamp(self, stamp_id: str, name: str, mat_glyph: str) -> Optional[CustomStamp]:
+        entry = self._custom_stamp_entry(stamp_id)
+        if not entry:
+            return None
+        updated = entry[0].model_copy(update={"name": name, "mat_glyph": mat_glyph})
+        self._write_stamp_record(updated)
+        return updated
+
+    def delete_custom_stamp(self, stamp_id: str) -> bool:
+        """Delete a stamp; venue features that used it keep their place and draw a placeholder."""
+        entry = self._custom_stamp_entry(stamp_id)
+        if not entry:
+            return False
+        stamp, image_path = entry
+        (self._stamps_dir() / f"{stamp.id}.json").unlink()
+        image_path.unlink(missing_ok=True)
+        return True
 
     # ==================== Initiative Methods ====================
     

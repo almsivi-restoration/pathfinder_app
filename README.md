@@ -12,7 +12,7 @@ actor, initiative, or persistence ownership.
 
 - Create, load, rename, save, and delete campaigns and their saved scenes.
 - Export a campaign to a single portable file and import it back, on this machine or another.
-  The file carries the campaign's saved scenes, templates, Chronicle, and venues.
+  The file carries the campaign's saved scenes, templates, Chronicle, venues, and custom stamps.
 - Create and save scenes with PC and NPC actors.
 - Clone any scene actor in one click, and assign marker colors (fixed-size swatch, native
   picker opens on click) that appear on the player view. Colors assigned to a campaign template
@@ -180,11 +180,11 @@ persisted scenes after confirmation; it cannot be undone.
 
 Campaign export and import are available from the campaign selector. **Export** beside a saved
 campaign writes `<name>.gmw-campaign.json` — the campaign, its actor templates, Chronicle
-entries, notes, saved scenes, and venues in one file. **Import** reads such a file back as a new
+entries, notes, saved scenes, venues, and custom stamps in one file. **Import** reads such a file back as a new
 campaign; it never overwrites, so a taken name becomes `<name> (imported)`. Export includes
 only saved data, so save before exporting. Files that are not campaign exports, come from a
 newer app version, or use an unknown ruleset are rejected without creating anything. Exports
-from before venues existed still import.
+from before venues or custom stamps existed still import.
 
 ## Local References And Encyclopedia
 
@@ -251,6 +251,12 @@ The editor's tools each have a one-key shortcut:
 | Wall / Door / Secret | W / D / S | Click or drag along grid lines; a dragged door is one wide door. |
 | Stamp | F | Place stairs, pillars, chests, trees, traps, labels, and more. |
 | Select | V | Move a stamp, or drag its corner handle to resize it (up to 8×8); `[` and `]` rotate it, Delete removes it. |
+The sidebar's **Actors** section stamps a campaign template or scene actor using its marker
+symbol and color — a snapshot that does not follow the encounter. **Custom stamps > Import
+image** adds a PNG or SVG (up to 512 KB) as a stamp of your own; it is saved with the campaign
+and its export, and the Mat Guide writes it as the mat mark you choose (every use of the stamp
+shares it).
+
 
 Ctrl+Z / Ctrl+Y undo and redo, and Ctrl+S (or **Save**) saves. **Player preview** shows the
 venue exactly as players will see it.
@@ -266,8 +272,8 @@ larger than the mat into sections, and lists numbered drawing steps with grid co
 as H14 and a color key for four markers — black, red, green, and blue. **Print** prints the
 guide.
 
-Each venue is saved in its own file under the campaign folder (`venues/<id>.json`) and travels
-with the campaign's export.
+Each venue is saved in its own file under the campaign folder (`venues/<id>.json`), and custom
+stamps under `stamps/`; both travel with the campaign's export.
 
 ## Themes
 
@@ -359,7 +365,7 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
 - `GET /api/campaign/current`
 - `POST /api/campaign/save`
 - `POST /api/campaign/rename` accepts `name` and `new_name` query parameters.
-- `GET /api/campaign/export?name=` returns a portable campaign bundle (campaign, saved scenes, and venues; bundle `version` 2 — version 1 bundles still import).
+- `GET /api/campaign/export?name=` returns a portable campaign bundle (campaign, saved scenes, venues, and custom stamps; bundle `version` 3 — versions 1 and 2 still import).
 - `POST /api/campaign/import` accepts that bundle as the JSON body and saves it as a new campaign.
 - `DELETE /api/campaign/{campaign_name}`
 
@@ -393,6 +399,9 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
 
 - `GET /api/venues` lists the active campaign's venues.
 - `POST /api/venue/new` creates a venue (`name`, `width`, `height`).
+- `GET /api/venue/stamps` lists custom stamps; `POST /api/venue/stamps` imports one (multipart
+  `file`, `name`, `mat_glyph`); `GET /api/venue/stamps/{id}/image`, `PUT` and `DELETE
+  /api/venue/stamps/{id}` serve, edit, and delete one.
 - `GET /api/venue/{venue_id}`, `PUT /api/venue/{venue_id}` (save), and
   `DELETE /api/venue/{venue_id}`.
 - `POST /api/venue/show?venue_id=` and `POST /api/venue/hide` choose what the Venue Screen shows.

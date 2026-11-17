@@ -5,7 +5,7 @@ A comprehensive GM tool for managing Pathfinder scenes. Includes a GM dashboard 
 ## Features
 
 ### Phase 1 (Current)
-- **Campaign Management:** Create/load/rename/save/delete campaigns with ruleset selection (1e/2e/Numenera); only a campaign persists a ruleset — scenes and actors inherit it. Rename from the selector with Save/Enter or Cancel/Escape; scenes, templates, Chronicle entries, and unsaved edits are preserved, and invalid or duplicate names are rejected. Export a campaign (with its saved scenes, templates, Chronicle, and venues) to one portable `.gmw-campaign.json` file and import it back as a new campaign — imports never overwrite
+- **Campaign Management:** Create/load/rename/save/delete campaigns with ruleset selection (1e/2e/Numenera); only a campaign persists a ruleset — scenes and actors inherit it. Rename from the selector with Save/Enter or Cancel/Escape; scenes, templates, Chronicle entries, and unsaved edits are preserved, and invalid or duplicate names are rejected. Export a campaign (with its saved scenes, templates, Chronicle, venues, and custom stamps) to one portable `.gmw-campaign.json` file and import it back as a new campaign — imports never overwrite
 - **Actor Management:** Add/remove/clone actors (PCs and NPCs) with ruleset-driven stat sheets (Pathfinder 1e and 2e, Numenera); optional GM-assigned marker colors and marker symbols (twelve hand-drawable marks from `markerSymbols.js`, picked beside the color swatch) shown on the player view, the initiative order, and the actor card; read-only **View** card renders an actor's sheet grouped by section with empty fields omitted (works for scene actors and campaign templates)
 - **Scenes:** Create/save/load scenes via the Scene Library, with full actor CRUD
 - **Actor Templates:** Save/edit/delete/view actor templates and instantiate them into a scene; template marker colors and symbols are inherited by instantiated actors
@@ -111,6 +111,7 @@ pathfinder_app/
 │   │   │   ├── PlayerView.jsx / PlayerActorRow.jsx
 │   │   │   ├── VenueLibrary.jsx / VenueEditor.jsx / VenueMap.jsx
 │   │   │   ├── VenueScreen.jsx     # Venue Screen window (polls the player-safe shown venue)
+│   │   │   ├── CustomStampArt.jsx  # Draws a custom stamp image (<image>, never inlined SVG)
 │   │   │   ├── MatGuide.jsx / MatSheet.jsx
 │   │   │   └── *.test.js(x)    # Jest + React Testing Library tests
 │   │   ├── pages/
@@ -209,7 +210,7 @@ pathfinder_app/
 - `GET /api/campaign/current` — Get active campaign
 - `POST /api/campaign/save` — Save current campaign
 - `POST /api/campaign/rename` — Rename a saved campaign (`name` and `new_name` query parameters)
-- `GET /api/campaign/export` — Export a saved campaign with its saved scenes and venues as one JSON bundle (`name` query parameter; bundle `version` 2, version 1 bundles still import)
+- `GET /api/campaign/export` — Export a saved campaign with its saved scenes, venues, and custom stamps as one JSON bundle (`name` query parameter; bundle `version` 3, versions 1–2 still import)
 - `POST /api/campaign/import` — Import an exported bundle (JSON body) as a new campaign; a taken name gets an ` (imported)` suffix
 - `DELETE /api/campaign/{campaign_name}` — Delete a saved campaign
 
@@ -256,6 +257,11 @@ pathfinder_app/
 ### Venues
 - `GET /api/venues` — List the active campaign's venues
 - `POST /api/venue/new` — Create a venue (`name`, `width`, `height` JSON body)
+- `GET /api/venue/stamps` — List the campaign's custom stamps
+- `POST /api/venue/stamps` — Import a custom stamp (multipart `file` PNG/SVG ≤ 512 KB, optional `name`, `mat_glyph`)
+- `GET /api/venue/stamps/{stamp_id}/image` — The stamp image (SVG served under a no-script CSP)
+- `PUT /api/venue/stamps/{stamp_id}` — Rename a stamp or change its mat glyph
+- `DELETE /api/venue/stamps/{stamp_id}` — Delete a custom stamp (placed copies draw as a placeholder)
 - `GET /api/venue/{venue_id}` — Get a venue
 - `PUT /api/venue/{venue_id}` — Save a venue
 - `DELETE /api/venue/{venue_id}` — Delete a venue (hides it first if shown)
@@ -373,6 +379,18 @@ venues are not listed in `campaign.json`.
 Walls between a filled cell and empty space are derived when drawing and are not stored.
 Doors are stored as unit edges; touching doors on one line draw as a single wide door.
 
+### CustomStamp
+Stored at `campaigns/<name>/stamps/<id>.json` beside its `<id>.png` or `<id>.svg`; the image
+type is judged from the file's content, not its name.
+```
+{
+  id: string            // [A-Za-z0-9_-]{1,64}
+  name: string          // 1..60
+  mat_glyph: string     // 1..3 characters, written on the mat
+  media_type: "image/png" | "image/svg+xml"
+  created_at: datetime
+}
+```
 
 ## Roadmap — Future Phases
 
