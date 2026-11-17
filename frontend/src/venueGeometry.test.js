@@ -15,6 +15,7 @@ import {
   resizeVenue,
   resolveEdges,
   rotateBy,
+  rotateFeature,
   showsWall,
   toggleEdgeKind,
   updateFeature,
@@ -194,6 +195,27 @@ describe('features', () => {
     expect(removeFeature(venue, chest.id).features).toEqual([]);
   });
 
+  it('finds, moves, and erases a stamp by its whole footprint', () => {
+    let venue = room(blank(), 'floor', 0, 0, 5, 5);
+    venue = addFeature(venue, { kind: 'statue', x: 1, y: 1, width: 2, height: 3 });
+    const [statue] = venue.features;
+    expect(featureAt(venue, 2, 3)).toBe(statue);
+    expect(featureAt(venue, 3, 3)).toBeNull();
+    expect(updateFeature(venue, statue.id, { x: 5 })).toBe(venue); // would cross the right edge
+    expect(updateFeature(venue, statue.id, { width: 9 })).toBe(venue); // past the 8-square cap
+    expect(paintCells(venue, [[2, 3]], null).features).toEqual([]); // erasing any covered square
+  });
+
+  it('swaps the sides of a stamp on a quarter turn, refusing turns off the map', () => {
+    let venue = addFeature(blank(6, 6), { kind: 'table', x: 0, y: 4, width: 3, height: 1 });
+    const id = venue.features[0].id;
+    venue = rotateFeature(venue, id, 180);
+    expect(venue.features[0]).toMatchObject({ rotation: 180, width: 3, height: 1 });
+    expect(rotateFeature(venue, id, 90)).toBe(venue); // 1x3 from row 4 crosses the bottom edge
+    venue = updateFeature(venue, id, { y: 0 });
+    expect(rotateFeature(venue, id, 90).features[0]).toMatchObject({ rotation: 270, width: 1, height: 3 });
+  });
+
   it('rotates in quarter turns both ways', () => {
     expect(rotateBy(270, 90)).toBe(0);
     expect(rotateBy(0, -90)).toBe(270);
@@ -205,6 +227,7 @@ describe('resizing', () => {
     let venue = room(blank(6, 6), 'floor', 0, 0, 5, 5);
     venue = toggleEdgeKind(venue, 5, 2, 'w', 'door');
     venue = addFeature(venue, { kind: 'tree', x: 5, y: 5 });
+    venue = addFeature(venue, { kind: 'statue', x: 2, y: 2, width: 3, height: 1 }); // now crosses x=4
     const cropped = resizeVenue(venue, 4, 4);
     expect(Object.keys(cropped.cells)).toHaveLength(16);
     expect(cropped.edges).toEqual([]);

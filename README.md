@@ -250,7 +250,7 @@ The editor's tools each have a one-key shortcut:
 | Erase | E | Drag to clear cells back to empty space. |
 | Wall / Door / Secret | W / D / S | Click or drag along grid lines. |
 | Stamp | F | Place stairs, pillars, chests, trees, traps, labels, and more. |
-| Select | V | Move a stamp; `[` and `]` rotate it, Delete removes it. |
+| Select | V | Move a stamp, or drag its corner handle to resize it (up to 8×8); `[` and `]` rotate it, Delete removes it. |
 
 Ctrl+Z / Ctrl+Y undo and redo, and Ctrl+S (or **Save**) saves. **Player preview** shows the
 venue exactly as players will see it.

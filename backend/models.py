@@ -121,6 +121,7 @@ class Campaign(BaseModel):
 
 
 VENUE_MAX_SIDE = 100  # cells; the 32x46 usable mat grid fits with room for larger maps split into sections
+FEATURE_MAX_SIDE = 8  # squares a single stamp may span on either side
 _VENUE_CELL_KEY = re.compile(r"^(\d{1,3}),(\d{1,3})$")
 
 
@@ -138,11 +139,17 @@ class VenueEdge(BaseModel):
 
 
 class VenueFeature(BaseModel):
-    """A catalog stamp (furniture, stairs, labels, traps...) anchored on one cell."""
+    """A catalog stamp (furniture, stairs, labels, traps...) anchored at its top-left cell.
+
+    width/height are the footprint in squares as laid on the grid, already rotated: a
+    quarter turn swaps them. Stamps saved before sizing existed load as 1x1.
+    """
     id: str = Field(min_length=1, max_length=64)
     kind: str = Field(min_length=1, max_length=32)
     x: int = Field(ge=0, lt=VENUE_MAX_SIDE)
     y: int = Field(ge=0, lt=VENUE_MAX_SIDE)
+    width: int = Field(default=1, ge=1, le=FEATURE_MAX_SIDE)
+    height: int = Field(default=1, ge=1, le=FEATURE_MAX_SIDE)
     rotation: Literal[0, 90, 180, 270] = 0
     label: str = Field(default="", max_length=80)
     gm_only: bool = False  # stripped server-side before the venue reaches the Venue Screen
@@ -181,7 +188,7 @@ class Venue(BaseModel):
             seen_edges.add((edge.x, edge.y, edge.side))
         feature_ids = set()
         for feature in self.features:
-            if feature.x >= self.width or feature.y >= self.height:
+            if feature.x + feature.width > self.width or feature.y + feature.height > self.height:
                 raise ValueError(f"Feature {feature.id!r} is outside the venue")
             if feature.id in feature_ids:
                 raise ValueError(f"Feature id {feature.id!r} is listed twice")

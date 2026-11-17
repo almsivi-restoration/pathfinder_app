@@ -228,7 +228,7 @@ export function paintCells(venue, cells, terrain) {
     }
   }
   const features = erased.size
-    ? venue.features.filter((feature) => !erased.has(cellKey(feature.x, feature.y)))
+    ? venue.features.filter((feature) => !featureCells(feature).some(([fx, fy]) => erased.has(cellKey(fx, fy))))
     : venue.features;
   if (!changed && features.length === venue.features.length) return venue;
   const painted = { ...venue, cells: changed ? next : venue.cells, features };
@@ -304,20 +304,41 @@ export function newFeatureId() {
   return `f${Date.now().toString(36)}${featureCounter.toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 }
 
-// Topmost (last drawn) stamp on a cell.
+export const FEATURE_MAX_SIDE = 8; // backend models.FEATURE_MAX_SIDE
+
+// A stamp's footprint in squares, as laid on the grid (already rotated). Stamps saved before
+// sizing existed have no width/height and cover one square.
+export const featureSize = (feature) => [feature.width || 1, feature.height || 1];
+
+export function featureCovers(feature, x, y) {
+  const [width, height] = featureSize(feature);
+  return x >= feature.x && y >= feature.y && x < feature.x + width && y < feature.y + height;
+}
+
+export function featureCells(feature) {
+  const [width, height] = featureSize(feature);
+  return rectCells(feature.x, feature.y, feature.x + width - 1, feature.y + height - 1);
+}
+
+export function featureFits(venue, feature) {
+  const [width, height] = featureSize(feature);
+  return feature.x >= 0 && feature.y >= 0
+    && width >= 1 && height >= 1 && width <= FEATURE_MAX_SIDE && height <= FEATURE_MAX_SIDE
+    && feature.x + width <= venue.width && feature.y + height <= venue.height;
+}
+
+// Topmost (last drawn) stamp covering a cell.
 export function featureAt(venue, x, y) {
   for (let i = venue.features.length - 1; i >= 0; i -= 1) {
-    if (venue.features[i].x === x && venue.features[i].y === y) return venue.features[i];
+    if (featureCovers(venue.features[i], x, y)) return venue.features[i];
   }
   return null;
 }
 
 export function addFeature(venue, feature) {
-  if (!inBounds(venue, feature.x, feature.y)) return venue;
-  return {
-    ...venue,
-    features: [...venue.features, { rotation: 0, label: '', gm_only: false, id: newFeatureId(), ...feature }],
-  };
+  const next = { rotation: 0, label: '', gm_only: false, width: 1, height: 1, id: newFeatureId(), ...feature };
+  if (!featureFits(venue, next)) return venue;
+  return { ...venue, features: [...venue.features, next] };
 }
 
 export function updateFeature(venue, featureId, patch) {
@@ -325,11 +346,23 @@ export function updateFeature(venue, featureId, patch) {
   const features = venue.features.map((feature) => {
     if (feature.id !== featureId) return feature;
     const next = { ...feature, ...patch };
-    if (!inBounds(venue, next.x, next.y)) return feature;
+    if (!featureFits(venue, next)) return feature;
     changed = Object.keys(patch).some((key) => patch[key] !== feature[key]);
     return changed ? next : feature;
   });
   return changed ? { ...venue, features } : venue;
+}
+
+// Quarter turns swap the footprint's sides; a turn that would cross the map edge is refused.
+export function rotateFeature(venue, featureId, step) {
+  const feature = venue.features.find((entry) => entry.id === featureId);
+  if (!feature) return venue;
+  const [width, height] = featureSize(feature);
+  const quarter = Math.abs(step) % 180 === 90;
+  return updateFeature(venue, featureId, {
+    rotation: rotateBy(feature.rotation || 0, step),
+    ...(quarter && width !== height ? { width: height, height: width } : {}),
+  });
 }
 
 export function removeFeature(venue, featureId) {
@@ -353,6 +386,6 @@ export function resizeVenue(venue, width, height) {
     ...sized,
     cells,
     edges: venue.edges.filter((edge) => isEdgeInBounds(sized, edge.x, edge.y, edge.side)),
-    features: venue.features.filter((feature) => inBounds(sized, feature.x, feature.y)),
+    features: venue.features.filter((feature) => featureFits(sized, feature)),
   });
 }

@@ -28,3 +28,7 @@
   border: 1px solid var(--mw-border-dark);
   border-radius: 3px;
 }
+
+.venue-map-resize-handle {
+  cursor: nwse-resize;
+}

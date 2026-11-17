@@ -10,7 +10,9 @@ import {
   edgeSegment,
   edgeTouchesTerrain,
   edgesAlongLine,
+  FEATURE_MAX_SIDE,
   featureAt,
+  featureSize,
   inBounds,
   nearestEdge,
   newFeatureId,
@@ -18,7 +20,7 @@ import {
   rectCells,
   removeFeature,
   resizeVenue,
-  rotateBy,
+  rotateFeature,
   showsWall,
   toggleEdgeKind,
   updateFeature,
@@ -113,7 +115,7 @@ export const VENUE_TOOLS = [
     id: 'select',
     label: 'Select',
     key: 'v',
-    hint: 'Click a stamp to select it, drag to move it. [ and ] rotate, Delete removes.',
+    hint: 'Click a stamp to select it, drag to move it, drag its corner handle to resize it. [ and ] rotate, Delete removes.',
     icon: icon(<path d="M5.5 3v13l3.4-3.3 2.4 4.6 2-1-2.3-4.5 4.6-.2z" fill="currentColor" />),
   },
 ];
@@ -130,11 +132,22 @@ const isTyping = (target) => {
   return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || Boolean(target?.isContentEditable);
 };
 
+const clampFeatureSide = (value, room) => Math.max(1, Math.min(value, FEATURE_MAX_SIDE, room));
+
+// Whether a point (cell units) is on the drag handle at a stamp's bottom-right corner.
+const RESIZE_REACH = 0.3;
+function onResizeHandle(feature, point) {
+  const [width, height] = featureSize(feature);
+  return Math.abs(point.x - (feature.x + width)) <= RESIZE_REACH
+    && Math.abs(point.y - (feature.y + height)) <= RESIZE_REACH;
+}
+
 const clampSide = (value, fallback) => {
   const parsed = Number.parseInt(value, 10);
   if (Number.isNaN(parsed)) return fallback;
   return Math.min(Math.max(parsed, 1), VENUE_MAX_SIDE);
 };
+
 
 // The venue map editor. Edits stay local until Save; name and notes sit outside the undo
 // history so undoing a wall never reverts a rename.
@@ -269,7 +282,7 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
 
   const rotateSelected = useCallback((step) => {
     if (!selectedFeature) return;
-    commit(updateFeature(present, selectedFeature.id, { rotation: rotateBy(selectedFeature.rotation, step) }));
+    commit(rotateFeature(present, selectedFeature.id, step));
   }, [commit, present, selectedFeature]);
 
   // Keyboard shortcuts read the latest state through a ref so the listener attaches once.
@@ -364,9 +377,14 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
       focusLabelRef.current = Boolean(definition.text);
       setSelectedFeatureId(id);
     } else if (tool === 'select') {
+      if (selectedFeature && onResizeHandle(selectedFeature, point)) {
+        beginDrag({ kind: 'resize', featureId: selectedFeature.id }, present);
+        return;
+      }
       const feature = inBounds(present, x, y) ? featureAt(present, x, y) : null;
       setSelectedFeatureId(feature?.id || null);
-      if (feature) beginDrag({ kind: 'move', featureId: feature.id }, present);
+      // Keep the grab point under the pointer so a large stamp does not jump to its corner.
+      if (feature) beginDrag({ kind: 'move', featureId: feature.id, grab: [x - feature.x, y - feature.y] }, present);
     }
   };
 
@@ -386,8 +404,17 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
       const edges = moved ? edgesAlongLine(drag.base, drag.start.x, drag.start.y, point.x, point.y) : [drag.edge];
       updateDrag(edges.reduce((venue, edge) => applyWall(venue, edge.x, edge.y, edge.side, drag.wantWall), drag.base));
     } else if (drag.kind === 'move') {
-      const [mx, my] = clampCell(present, point);
+      const feature = drag.base.features.find((entry) => entry.id === drag.featureId);
+      const [width, height] = featureSize(feature);
+      const mx = Math.min(Math.max(Math.floor(point.x) - drag.grab[0], 0), present.width - width);
+      const my = Math.min(Math.max(Math.floor(point.y) - drag.grab[1], 0), present.height - height);
       updateDrag(updateFeature(drag.base, drag.featureId, { x: mx, y: my }));
+    } else if (drag.kind === 'resize') {
+      const feature = drag.base.features.find((entry) => entry.id === drag.featureId);
+      updateDrag(updateFeature(drag.base, drag.featureId, {
+        width: clampFeatureSide(Math.round(point.x - feature.x), present.width - feature.x),
+        height: clampFeatureSide(Math.round(point.y - feature.y), present.height - feature.y),
+      }));
     }
   };
 
@@ -428,6 +455,14 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
       labelEditRef.current = true;
       commit(next);
     }
+  };
+
+  // Typed sizes that would cross the map edge are clamped to the room left, not refused.
+  const resizeSelected = (side, value) => {
+    const parsed = Number.parseInt(value, 10);
+    if (!selectedFeature || Number.isNaN(parsed)) return;
+    const room = side === 'width' ? present.width - selectedFeature.x : present.height - selectedFeature.y;
+    commit(updateFeature(present, selectedFeature.id, { [side]: clampFeatureSide(parsed, room) }));
   };
 
   const pickTerrain = (terrainId) => {
@@ -544,6 +579,7 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
             pxPerCell={zoom}
             editorGrid={!preview}
             selectedFeatureId={preview ? null : selectedFeatureId}
+            resizableSelection={tool === 'select'}
             svgRef={svgRef}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
@@ -620,6 +656,28 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
                   <span>Rotate</span>
                 </button>
                 <button type="button" className="btn-small" onClick={removeSelected} title="Remove (Delete)">Remove</button>
+              </div>
+              <div className="venue-field">
+                <span>Size (squares)</span>
+                <div className="venue-size-row">
+                  <input
+                    type="number"
+                    min="1"
+                    max={FEATURE_MAX_SIDE}
+                    aria-label="Stamp width in squares"
+                    value={featureSize(selectedFeature)[0]}
+                    onChange={(event) => resizeSelected('width', event.target.value)}
+                  />
+                  <span>×</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max={FEATURE_MAX_SIDE}
+                    aria-label="Stamp height in squares"
+                    value={featureSize(selectedFeature)[1]}
+                    onChange={(event) => resizeSelected('height', event.target.value)}
+                  />
+                </div>
               </div>
               <label className="venue-check">
                 <input

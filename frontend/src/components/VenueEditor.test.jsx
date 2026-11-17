@@ -91,6 +91,30 @@ test('stamps are placed, inspected, and deleted with the keyboard', () => {
   expect(container.querySelector('[data-kind="barrel"]')).toBeNull();
 });
 
+test('a selected stamp grows by dragging its corner handle and moves by its grab point', () => {
+  const { container, svg } = renderEditor();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Statue' }));
+  fireEvent.pointerDown(svg, at(0, 0));
+  fireEvent.pointerUp(svg, at(0, 0));
+  fireEvent.click(screen.getByRole('button', { name: /^Select/ }));
+  fireEvent.pointerDown(svg, at(0, 0)); // select it
+  fireEvent.pointerUp(svg, at(0, 0));
+  expect(container.querySelector('.venue-map-resize-handle')).not.toBeNull();
+
+  // at(c) is the middle of square c, so at(0.5) is the grid line between squares 0 and 1.
+  drag(svg, [0.5, 0.5], [1.5, 1.5]); // the handle sits on the bottom-right corner
+  expect(screen.getByLabelText('Stamp width in squares')).toHaveValue(2);
+  expect(screen.getByLabelText('Stamp height in squares')).toHaveValue(2);
+
+  drag(svg, [1, 1], [2, 2]); // grabbed by its lower-right square
+  fireEvent.change(screen.getByLabelText('Stamp width in squares'), { target: { value: '8' } });
+  const statue = container.querySelector('[data-kind="statue"]');
+  expect(statue.getAttribute('transform')).toBe('translate(40 40)');
+  // Typed sizes are clamped to the room left on the 4-wide map.
+  expect(screen.getByLabelText('Stamp width in squares')).toHaveValue(3);
+});
+
 test('tool shortcuts are ignored while typing in a field', () => {
   renderEditor();
 

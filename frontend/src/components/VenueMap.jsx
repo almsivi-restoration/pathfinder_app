@@ -11,11 +11,13 @@ import {
   getFeature,
   getTerrain,
 } from '../venueCatalog';
-import { cellsPath, resolveEdges, segmentsPath, terrainOutline } from '../venueGeometry';
+import { cellsPath, featureSize, resolveEdges, segmentsPath, terrainOutline } from '../venueGeometry';
 import '../styles/VenueMap.css';
 
 // Half a cell of margin around the map holds the frame.
 export const VENUE_PAD = C / 2;
+// Side of the drag handle on a selected stamp's bottom-right corner, in SVG units.
+export const RESIZE_HANDLE = C * 0.3;
 const WALL_WIDTH = 6.4;
 const HATCH_BAND = C * 1.2;
 const GRID_INK = 'rgba(43, 33, 22, 0.17)';
@@ -79,12 +81,27 @@ function SecretMark({ x, y, side }) {
   );
 }
 
-function Feature({ feature, mode, selected }) {
+// Stamp art is drawn in one C×C square; a larger stamp scales it to its footprint. The
+// footprint is stored already rotated, so the art box is the footprint with sides swapped
+// for a quarter turn, centred and turned about the footprint's middle.
+function artTransform(feature) {
+  const [width, height] = featureSize(feature);
+  const rotation = feature.rotation || 0;
+  const quarter = rotation % 180 === 90;
+  const [artWidth, artHeight] = quarter ? [height, width] : [width, height];
+  if (!rotation && width === 1 && height === 1) return undefined;
+  return `translate(${(width * C) / 2} ${(height * C) / 2}) rotate(${rotation}) `
+    + `translate(${(-artWidth * C) / 2} ${(-artHeight * C) / 2}) scale(${artWidth} ${artHeight})`;
+}
+
+function Feature({ feature, mode, selected, resizable }) {
   const definition = getFeature(feature.kind);
   const isLabel = Boolean(definition.text);
   const caption = feature.label?.trim();
   if (isLabel && !caption && mode === 'player') return null;
-  const rotation = feature.rotation ? `rotate(${feature.rotation} ${C / 2} ${C / 2})` : undefined;
+  const [width, height] = featureSize(feature);
+  const boxWidth = width * C;
+  const boxHeight = height * C;
   return (
     <g
       transform={`translate(${feature.x * C} ${feature.y * C})`}
@@ -94,31 +111,44 @@ function Feature({ feature, mode, selected }) {
     >
       <title>{caption || definition.label}</title>
       {feature.gm_only && (
-        <rect x="1.5" y="1.5" width={C - 3} height={C - 3} fill="none" stroke={VENUE_SECRET_INK} strokeWidth="1.3" strokeDasharray="4 3" />
+        <rect x="1.5" y="1.5" width={boxWidth - 3} height={boxHeight - 3} fill="none" stroke={VENUE_SECRET_INK} strokeWidth="1.3" strokeDasharray="4 3" />
       )}
-      <g transform={rotation}>
-        {isLabel && caption ? (
-          <text
-            x={C / 2}
-            y={C / 2}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontSize="24"
-            fontFamily={LABEL_FONT}
-            fill={VENUE_INK}
-            stroke={VENUE_PAPER}
-            strokeWidth="5"
-            strokeLinejoin="round"
-            paintOrder="stroke"
-          >
-            {caption}
-          </text>
-        ) : definition.draw()}
-      </g>
+      {isLabel && caption ? (
+        <text
+          x={boxWidth / 2}
+          y={boxHeight / 2}
+          transform={feature.rotation ? `rotate(${feature.rotation} ${boxWidth / 2} ${boxHeight / 2})` : undefined}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize="24"
+          fontFamily={LABEL_FONT}
+          fill={VENUE_INK}
+          stroke={VENUE_PAPER}
+          strokeWidth="5"
+          strokeLinejoin="round"
+          paintOrder="stroke"
+        >
+          {caption}
+        </text>
+      ) : (
+        <g transform={artTransform(feature)}>{definition.draw(feature)}</g>
+      )}
       {selected && (
         <>
-          <rect className="venue-map-casing" x="-2" y="-2" width={C + 4} height={C + 4} rx="4" fill="none" stroke={VENUE_INK} />
-          <rect className="venue-map-selection" x="-2" y="-2" width={C + 4} height={C + 4} rx="4" fill="none" />
+          <rect className="venue-map-casing" x="-2" y="-2" width={boxWidth + 4} height={boxHeight + 4} rx="4" fill="none" stroke={VENUE_INK} />
+          <rect className="venue-map-selection" x="-2" y="-2" width={boxWidth + 4} height={boxHeight + 4} rx="4" fill="none" />
+          {resizable && (
+            <rect
+              className="venue-map-resize-handle"
+              x={boxWidth - RESIZE_HANDLE / 2}
+              y={boxHeight - RESIZE_HANDLE / 2}
+              width={RESIZE_HANDLE}
+              height={RESIZE_HANDLE}
+              fill={VENUE_PAPER}
+              stroke={VENUE_INK}
+              strokeWidth="2"
+            />
+          )}
         </>
       )}
     </g>
@@ -134,6 +164,7 @@ export default function VenueMap({
   pxPerCell,
   editorGrid = false,
   selectedFeatureId = null,
+  resizableSelection = false,
   svgRef,
   className = '',
   children,
@@ -236,7 +267,13 @@ export default function VenueMap({
       {layers.edges.secretDoors.map((door) => <SecretMark key={`${door.x},${door.y},${door.side}`} {...door} />)}
 
       {features.map((feature) => (
-        <Feature key={feature.id} feature={feature} mode={mode} selected={feature.id === selectedFeatureId} />
+        <Feature
+          key={feature.id}
+          feature={feature}
+          mode={mode}
+          selected={feature.id === selectedFeatureId}
+          resizable={resizableSelection}
+        />
       ))}
 
       <rect x="-6" y="-6" width={width + 12} height={height + 12} fill="none" stroke={VENUE_INK} strokeWidth="2.4" />

@@ -1,7 +1,7 @@
 // Mat Guide layout: where a venue lands on the physical dry-erase table mat, counted in
 // one-inch mat squares. Pure functions; MatGuide/MatSheet render what these return.
 import { getEdgeKind, getFeature, getTerrain } from './venueCatalog';
-import { cellKey, parseCellKey, resolveEdges } from './venueGeometry';
+import { cellKey, featureSize, parseCellKey, resolveEdges } from './venueGeometry';
 
 // Usable one-inch squares, excluding the table mat's ungridded border.
 export const MAT_DEFAULT_SIZE = { columns: 32, rows: 46 };
@@ -26,7 +26,10 @@ export function contentBounds(venue) {
     const [x, y] = parseCellKey(key);
     include(x, y, x + 1, y + 1);
   });
-  venue.features.forEach(({ x, y }) => include(x, y, x + 1, y + 1));
+  venue.features.forEach((feature) => {
+    const [width, height] = featureSize(feature);
+    include(feature.x, feature.y, feature.x + width, feature.y + height);
+  });
   venue.edges.forEach(({ x, y, side, kind }) => {
     if (kind === 'opening') return;
     if (side === 'n') include(x, y, x + 1, y);

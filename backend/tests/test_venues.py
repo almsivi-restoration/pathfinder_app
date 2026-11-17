@@ -94,6 +94,10 @@ def test_venue_validation_rejects_contents_outside_the_grid(client):
         {**venue, "features": [{"id": "f", "kind": "chest", "x": 4, "y": 0}]},
         {**venue, "features": [{"id": "f", "kind": "chest", "x": 0, "y": 0, "rotation": 45}]},
         {**venue, "features": [{"id": "f", "kind": "chest", "x": 0, "y": 0}] * 2},
+        # A stamp's whole footprint must fit, and no side may pass 8 squares.
+        {**venue, "features": [{"id": "f", "kind": "statue", "x": 3, "y": 0, "width": 2}]},
+        {**venue, "features": [{"id": "f", "kind": "statue", "x": 0, "y": 2, "height": 2}]},
+        {**venue, "features": [{"id": "f", "kind": "statue", "x": 0, "y": 0, "width": 0}]},
     ]
     for payload in bad_payloads:
         response = client.put(f"/api/venue/{venue['id']}", json=payload)
@@ -105,6 +109,10 @@ def test_venue_validation_rejects_contents_outside_the_grid(client):
         {"x": 4, "y": 2, "side": "w", "kind": "door"},
     ]}
     assert client.put(f"/api/venue/{venue['id']}", json=border).status_code == 200
+    sized = {**venue, "features": [{"id": "f", "kind": "statue", "x": 2, "y": 1, "width": 2, "height": 2}]}
+    response = client.put(f"/api/venue/{venue['id']}", json=sized)
+    assert response.status_code == 200, response.text
+    assert (response.json()["features"][0]["width"], response.json()["features"][0]["height"]) == (2, 2)
     # Unknown catalog ids survive, so a newer frontend's pieces are not lost by an older backend.
     future = {**venue, "cells": {"0,0": "lava_v2"}, "features": [{"id": "f", "kind": "teleporter", "x": 0, "y": 0}]}
     assert client.put(f"/api/venue/{venue['id']}", json=future).status_code == 200

@@ -1,6 +1,6 @@
 import React, { useId, useMemo } from 'react';
 import { MAT_COLORS, VENUE_CELL as U, getFeature, getTerrain } from '../venueCatalog';
-import { cellsPath, columnLabel, resolveEdges, segmentsPath, terrainOutline } from '../venueGeometry';
+import { cellsPath, columnLabel, featureSize, resolveEdges, segmentsPath, terrainOutline } from '../venueGeometry';
 import { planksSegments } from '../matGuide';
 import '../styles/MatSheet.css';
 
@@ -100,14 +100,20 @@ function MatGlyph({ text, color, size = 19, x = U / 2, y = U / 2 }) {
   );
 }
 
-function GmRing() {
-  return <circle cx={U / 2} cy={U / 2} r={U * 0.43} fill="none" stroke={MAT_COLORS.red} strokeWidth="1.8" strokeDasharray="4 3" />;
+function GmRing({ x = U / 2, y = U / 2 }) {
+  return <circle cx={x} cy={y} r={U * 0.43} fill="none" stroke={MAT_COLORS.red} strokeWidth="1.8" strokeDasharray="4 3" />;
 }
 
+// A stamp larger than one square gets its footprint outlined so the GM knows how much
+// of the mat it takes; the glyph sits in the middle.
 function MatFeature({ feature }) {
   const definition = getFeature(feature.kind);
   const caption = feature.label?.trim();
   if (definition.text && !caption) return null;
+  const [width, height] = featureSize(feature);
+  const large = width > 1 || height > 1;
+  const color = MAT_COLORS[definition.mat.color] || MAT_COLORS.black;
+  const centre = { x: (width * U) / 2, y: (height * U) / 2 };
   return (
     <g
       transform={`translate(${feature.x * U} ${feature.y * U})`}
@@ -115,11 +121,23 @@ function MatFeature({ feature }) {
       data-kind={feature.kind}
     >
       <title>{caption || definition.label}</title>
-      {feature.gm_only && <GmRing />}
+      {feature.gm_only && <GmRing {...centre} />}
       <g opacity={feature.gm_only ? 0.6 : 1}>
-        {definition.text
-          ? <MatGlyph text={caption} color={definition.mat.color} size={15} />
-          : <MatGlyph text={definition.mat.glyph} color={definition.mat.color} />}
+        {large && (
+          <rect
+            className="mat-feature-outline"
+            x="3"
+            y="3"
+            width={width * U - 6}
+            height={height * U - 6}
+            rx="3"
+            fill="none"
+            stroke={color}
+            strokeWidth="2"
+          />
+        )}
+        {definition.text && <MatGlyph text={caption} color={definition.mat.color} size={15} {...centre} />}
+        {!definition.text && definition.mat.glyph && <MatGlyph text={definition.mat.glyph} color={definition.mat.color} {...centre} />}
       </g>
     </g>
   );
@@ -175,7 +193,12 @@ export default function MatSheet({ venue, plan, section, view = 'mat' }) {
   const offsetY = (section.top - section.y0) * U;
   const clip = { x: section.x0 * U - WALL_WIDTH, y: section.y0 * U - WALL_WIDTH, width: section.width * U + WALL_WIDTH * 2, height: section.height * U + WALL_WIDTH * 2 };
   const footprint = { x: section.left * U, y: section.top * U, width: section.width * U, height: section.height * U };
-  const features = venue.features.filter(({ x, y }) => x >= section.x0 && x < section.x1 && y >= section.y0 && y < section.y1);
+  // A large stamp may straddle sections; each section draws the part inside its clip.
+  const features = venue.features.filter((feature) => {
+    const [width, height] = featureSize(feature);
+    return feature.x < section.x1 && feature.x + width > section.x0
+      && feature.y < section.y1 && feature.y + height > section.y0;
+  });
   const tick = U * 0.6;
   const closeUp = view === 'closeup';
   const shown = matView(plan, section, view);
@@ -263,8 +286,8 @@ export default function MatSheet({ venue, plan, section, view = 'mat' }) {
             />
             {layers.edges.doors.map((door) => <MatDoor key={`${door.x},${door.y},${door.side}`} {...door} />)}
             {layers.edges.secretDoors.map((door) => <MatSecretMark key={`${door.x},${door.y},${door.side}`} {...door} />)}
+            {features.map((feature) => <MatFeature key={feature.id} feature={feature} />)}
           </g>
-          {features.map((feature) => <MatFeature key={feature.id} feature={feature} />)}
         </g>
 
         <g className="mat-continues" stroke={CONTINUES} strokeWidth="3" strokeDasharray="10 7" fill="none">

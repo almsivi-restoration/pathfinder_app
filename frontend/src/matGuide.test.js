@@ -43,6 +43,11 @@ describe('contentBounds', () => {
     expect(contentBounds(venue)).toEqual({ x0: 2, y0: 2, x1: 13, y1: 21 });
   });
 
+  it('covers the whole footprint of a large stamp', () => {
+    const venue = { ...blank(30, 30), features: [{ id: 'f', kind: 'statue', x: 3, y: 4, width: 2, height: 3 }] };
+    expect(contentBounds(venue)).toEqual({ x0: 3, y0: 4, x1: 5, y1: 7 });
+  });
+
   it('gives a lone wall one square of depth', () => {
     const venue = { ...blank(10, 10), edges: [{ x: 3, y: 10, side: 'n', kind: 'wall' }] };
     expect(contentBounds(venue)).toEqual({ x0: 3, y0: 9, x1: 4, y1: 10 });
