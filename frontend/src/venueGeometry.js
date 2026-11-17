@@ -442,7 +442,10 @@ export const venueDescendants = (venues, venueId) => {
   const found = new Set();
   let frontier = [venueId];
   while (frontier.length) {
-    const next = venues.filter((venue) => frontier.includes(venue.parent_id) && !found.has(venue.id) && venue.id !== venueId);
+    const frontierIds = new Set(frontier);
+    const next = venues.filter((venue) => (
+      frontierIds.has(venue.parent_id) && !found.has(venue.id) && venue.id !== venueId
+    ));
     next.forEach((venue) => found.add(venue.id));
     frontier = next.map((venue) => venue.id);
   }

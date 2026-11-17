@@ -224,6 +224,7 @@ __marimo__/
 
 # Local-only artifacts (session state, scratch notes, etc.) — never committed
 artifacts/local/
+.local-state/
 
 # Node / frontend build
 node_modules/

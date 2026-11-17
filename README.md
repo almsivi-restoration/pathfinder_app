@@ -57,9 +57,11 @@ actor, initiative, or persistence ownership.
 	bestiary use a ruleset-defined monster sheet that shares the tracker's summary contract.
 - Search user-supplied local rulebook PDFs through **GM Tools > Encyclopedia** (Ctrl+E) — scanned PDFs
 	with no embedded text are OCR'd with Tesseract when it is installed.
-- Search a user-supplied bestiary CSV through **GM Tools > Bestiary** (Ctrl+B), view full
-	monster entries, and create NPC actors or campaign templates directly from them. Results
-	page 50 at a time so every match is reachable.
+- Search a user-supplied bestiary CSV through **GM Tools > Bestiary** (Ctrl+B): word-prefix
+  matching (`gob` finds goblin), CR/type/alignment filters, and environment substring filtering
+  (`forest` finds temperate forests). `any` is an ordinary search term, not a wildcard. View full
+  monster entries and create NPC actors or campaign templates directly from them; results page
+  50 at a time.
 - Generate names for actors (per-race, tuned syllable grammars), places, items, factions, and
 	events through **GM Tools > Name Generator** (Ctrl+N).
 - Chat with a local language model you run yourself through **GM Tools > The Harrowing** (Ctrl+P):
@@ -186,7 +188,7 @@ entries, notes, saved scenes, venues, and custom stamps in one file. **Import** 
 campaign; it never overwrites, so a taken name becomes `<name> (imported)`. Export includes
 only saved data, so save before exporting. Files that are not campaign exports, come from a
 newer app version, or use an unknown ruleset are rejected without creating anything. Exports
-from before venues or custom stamps existed still import.
+from before venues, custom stamps, or nested venues existed still import (bundle versions 1–3).
 
 ## Local References And Encyclopedia
 

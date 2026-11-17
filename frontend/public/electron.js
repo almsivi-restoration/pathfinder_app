@@ -540,7 +540,7 @@ function showHelp() {
         paragraphs: [
           'Use Rename beside a saved campaign to edit its name. Save or Enter applies the change; Cancel or Escape discards it. Scenes, actor templates, and Chronicle entries are preserved. Invalid or duplicate names are rejected.',
           'Delete removes the campaign and its saved scenes after confirmation.',
-          'Export saves the campaign, its saved scenes, templates, venues, and Chronicle to one .gmw-campaign.json file. Import reads it back as a new campaign and never overwrites an existing one.',
+          'Export saves the campaign, its saved scenes, templates, venues (including nested rooms and passages), custom stamps, and Chronicle to one .gmw-campaign.json file. Import reads it back as a new campaign and never overwrites an existing one; exports from earlier versions still import.',
         ],
       },
       {
