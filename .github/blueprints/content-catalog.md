@@ -94,6 +94,10 @@ with `getTerrain`/`getFeature`/`getEdgeKind` falling back to an
   every renderer resolves them through `getFeature` like any other kind.
   Their art comes from the feature's own data (`symbol`/`color`,
   `stamp_id`), and their mat mark from that data too.
+- **Links to other records are GM-only data.** A passage's
+  `target_venue_id` is dropped by `player_venue_view` like `gm_only`
+  stamps; an id that no longer resolves leaves the passage drawn but
+  leading nowhere.
 - **Drawing is deterministic.** Procedural texture (rock hatching, grass
   tufts, water ripples, flagstones, planks) uses `seededRandom`, so
   renders are stable across reloads and in tests.
@@ -110,5 +114,5 @@ venue pieces) keeps one owning file and exports lookups — it does not fork.
 
 ## Revisions
 
-- 1.1.0 — off-palette kinds (actor, custom); custom stamps recorded as
-  the user-data shape.
+- 1.1.0 — off-palette kinds (actor, custom) and GM-only record links
+  (passage targets); custom stamps recorded as the user-data shape.

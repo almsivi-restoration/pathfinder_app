@@ -82,7 +82,7 @@ test('creating a custom-size venue opens it in the editor', async () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create venue' }));
   });
 
-  expect(actions.createVenue).toHaveBeenCalledWith({ name: 'Sunken Chapel', width: 30, height: 100 });
+  expect(actions.createVenue).toHaveBeenCalledWith({ name: 'Sunken Chapel', width: 30, height: 100, parentId: null });
   expect(screen.getByLabelText('Name')).toHaveValue('Sunken Chapel');
   expect(screen.getByLabelText('New venue name')).toHaveValue('');
 });
@@ -102,7 +102,40 @@ test.each([
   await act(async () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create venue' }));
   });
-  expect(actions.createVenue).toHaveBeenCalledWith({ name: 'Test venue', width, height });
+  expect(actions.createVenue).toHaveBeenCalledWith({ name: 'Test venue', width, height, parentId: null });
+});
+
+test('rooms list under their venue, and Back to returns there with the Venue Screen following', async () => {
+  const mansion = venueRecord('mansion', 'Mansion');
+  const hall = { ...venueRecord('hall', 'Hall'), parent_id: 'mansion' };
+  const records = { mansion, hall, crypt: CRYPT };
+  seedStore({
+    venues: [summary(CRYPT), { ...summary(hall), parent_id: 'mansion' }, summary(mansion)],
+    shownVenueId: 'hall',
+  });
+  actions.fetchVenue.mockImplementation(async (id) => records[id] || null);
+  const { container } = render(<Venues onBack={() => {}} />);
+
+  const rows = [...container.querySelectorAll('.venue-library-row')];
+  expect(rows.map((row) => [row.querySelector('.venue-library-name').textContent, row.dataset.depth]))
+    .toEqual([['Crypt', '0'], ['Mansion', '0'], ['Hall', '1']]);
+
+  fireEvent.change(screen.getByLabelText('New venue name'), { target: { value: 'Study' } });
+  fireEvent.change(screen.getByLabelText('New venue inside'), { target: { value: 'mansion' } });
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Create venue' }));
+  });
+  expect(actions.createVenue).toHaveBeenCalledWith(expect.objectContaining({ name: 'Study', parentId: 'mansion' }));
+
+  await act(async () => {
+    fireEvent.click(openButton('Hall'));
+  });
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Mansion' }));
+  });
+  expect(screen.getByLabelText('Name')).toHaveValue('Mansion');
+  expect(actions.showVenue).toHaveBeenCalledWith('mansion');
+  expect(screen.queryByRole('button', { name: /^Back to Mansion/ })).toBeNull();
 });
 
 test('switching venues with unsaved edits asks first', async () => {

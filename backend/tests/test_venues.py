@@ -158,6 +158,56 @@ def test_venue_screen_receives_only_the_player_safe_projection(client):
     assert client.get("/api/venue/shown").json() == {"venue": None}
 
 
+def test_rooms_nest_inside_venues_without_cycles_and_passages_stay_gm_side(client):
+    new_campaign(client)
+    mansion = new_venue(client, name="Mansion")
+    response = client.post("/api/venue/new", json={"name": "Library", "width": 6, "height": 6, "parent_id": mansion["id"]})
+    assert response.status_code == 200, response.text
+    library = response.json()
+    study = client.post("/api/venue/new", json={"name": "Study", "width": 4, "height": 4, "parent_id": library["id"]}).json()
+    assert client.post("/api/venue/new", json={"name": "X", "width": 4, "height": 4, "parent_id": "missing"}).status_code == 400
+
+    summaries = {v["name"]: v for v in client.get("/api/venues").json()["venues"]}
+    assert (summaries["Library"]["parent_id"], summaries["Mansion"]["parent_id"]) == (mansion["id"], None)
+    # No venue may end up inside itself, directly or through its own rooms.
+    for parent in [mansion["id"], study["id"]]:
+        response = client.put(f"/api/venue/{mansion['id']}", json={**mansion, "parent_id": parent})
+        assert response.status_code in (400, 422), parent
+    # A parent deleted while the room was open in the editor lifts it instead of failing the save.
+    assert client.put(f"/api/venue/{mansion['id']}", json={**mansion, "parent_id": "missing"}).json()["parent_id"] is None
+
+    passage = {"id": "p", "kind": "passage", "x": 0, "y": 0, "target_venue_id": library["id"]}
+    saved = client.put(f"/api/venue/{mansion['id']}", json={**mansion, "features": [passage]}).json()
+    assert saved["features"][0]["target_venue_id"] == library["id"]
+    client.post("/api/venue/show", params={"venue_id": mansion["id"]})
+    shown = client.get("/api/venue/shown").json()["venue"]
+    assert shown["features"][0]["kind"] == "passage"
+    assert library["id"] not in json.dumps(shown) and "parent_id" not in shown
+
+    # Deleting a venue lifts its rooms to the top level.
+    assert client.delete(f"/api/venue/{library['id']}").status_code == 200
+    assert client.get(f"/api/venue/{study['id']}").json()["parent_id"] is None
+
+
+def test_import_keeps_nesting_but_lifts_rooms_with_broken_parents(client):
+    new_campaign(client, "Origin")
+    mansion = new_venue(client, name="Mansion")
+    hall = client.post("/api/venue/new", json={"name": "Hall", "width": 4, "height": 4, "parent_id": mansion["id"]}).json()
+    bundle = client.get("/api/campaign/export", params={"name": "Origin"}).json()
+    by_name = {venue["name"]: venue for venue in bundle["venues"]}
+    orphan = {**by_name["Hall"], "id": "orphan", "name": "Orphan", "parent_id": "not-in-bundle"}
+    loop_a = {**by_name["Hall"], "id": "loop-a", "name": "Loop A", "parent_id": "loop-b"}
+    loop_b = {**by_name["Hall"], "id": "loop-b", "name": "Loop B", "parent_id": "loop-a"}
+    bundle["venues"] += [orphan, loop_a, loop_b]
+
+    response = client.post("/api/campaign/import", json=bundle)
+    assert response.status_code == 200, response.text
+    client.post("/api/campaign/load", params={"name": "Origin (imported)"})
+    parents = {v["name"]: v["parent_id"] for v in client.get("/api/venues").json()["venues"]}
+    assert parents == {"Mansion": None, "Hall": mansion["id"], "Orphan": None, "Loop A": None, "Loop B": None}
+    assert hall["parent_id"] == mansion["id"]
+
+
 def test_shown_venue_clears_on_delete_and_campaign_switch(client):
     new_campaign(client, "First")
     venue = new_venue(client)
@@ -183,7 +233,7 @@ def test_export_carries_venues_and_import_restores_them(client):
     other = new_venue(client, name="Alley", width=3, height=20)
 
     bundle = client.get("/api/campaign/export", params={"name": "Origin"}).json()
-    assert bundle["version"] == 3
+    assert bundle["version"] == 4
     assert {v["id"] for v in bundle["venues"]} == {venue["id"], other["id"]}
     exported = next(v for v in bundle["venues"] if v["id"] == venue["id"])
     assert exported["notes"].startswith("The lich")  # export is the GM's full copy
@@ -209,12 +259,15 @@ def test_import_accepts_older_bundles_and_rejects_bad_venues(client):
     client.post("/api/campaign/load", params={"name": response.json()["name"]})
     assert client.get("/api/venues").json()["venues"] == []
 
+    response = client.post("/api/campaign/import", json={**bundle, "version": 3})
+    assert response.status_code == 200, response.text
+
     bad_bundles = [
         {**bundle, "venues": [{**bundle["venues"][0], "id": "../escape"}]},
         {**bundle, "venues": [bundle["venues"][0], bundle["venues"][0]]},
         {**bundle, "venues": [{**bundle["venues"][0], "cells": {"99,99": "floor"}}]},
         {**bundle, "venues": [{"id": venue["id"]}]},
-        {**bundle, "version": 4},
+        {**bundle, "version": 5},
     ]
     for bad_bundle in bad_bundles:
         response = client.post("/api/campaign/import", json=bad_bundle)

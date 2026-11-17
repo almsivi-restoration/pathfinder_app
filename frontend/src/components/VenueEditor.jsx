@@ -30,6 +30,8 @@ import {
   toggleEdgeKind,
   updateFeature,
   VENUE_MAX_SIDE,
+  venueDescendants,
+  venueTree,
 } from '../venueGeometry';
 import '../styles/VenueEditor.css';
 
@@ -178,7 +180,7 @@ export function actorStampChoices(templates, sceneActors) {
 
 // The venue map editor. Edits stay local until Save; name and notes sit outside the undo
 // history so undoing a wall never reverts a rename.
-export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange, shown = false, onShow, onHide }) {
+export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange, shown = false, onShow, onHide, onOpenVenue }) {
   const [history, setHistory] = useState({ past: [], present: initialVenue, future: [] });
   const [name, setName] = useState(initialVenue.name);
   const [notes, setNotes] = useState(initialVenue.notes || '');
@@ -192,6 +194,7 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
   const actorChoices = useMemo(() => actorStampChoices(actorTemplates, sceneActors), [actorTemplates, sceneActors]);
   const [customStampId, setCustomStampId] = useState(null);
   const customStamps = useStore((state) => state.customStamps);
+  const venues = useStore((state) => state.venues);
   const uploadCustomStamp = useStore((state) => state.uploadCustomStamp);
   const updateCustomStamp = useStore((state) => state.updateCustomStamp);
   const deleteCustomStamp = useStore((state) => state.deleteCustomStamp);
@@ -442,6 +445,19 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
     }
   };
 
+  const venueById = useMemo(() => new Map(venues.map((venue) => [venue.id, venue])), [venues]);
+  const openVenue = (venueId) => {
+    if (onOpenVenue && venueId && venueId !== present.id && venueById.has(venueId)) onOpenVenue(venueId);
+  };
+
+  const handleDoubleClick = (event) => {
+    if (preview || tool !== 'select') return;
+    const point = toCell(event);
+    const [x, y] = [Math.floor(point.x), Math.floor(point.y)];
+    const feature = inBounds(present, x, y) ? featureAt(present, x, y) : null;
+    if (feature && getFeature(feature.kind).passage) openVenue(feature.target_venue_id);
+  };
+
   const handlePointerMove = (event) => {
     const point = toCell(event);
     setHover(point);
@@ -589,6 +605,12 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
     ? cellLabel(Math.floor(hover.x), Math.floor(hover.y))
     : '—';
   const selectedDefinition = selectedFeature ? getFeature(selectedFeature.kind) : null;
+  const parentVenue = present.parent_id ? venueById.get(present.parent_id) || null : null;
+  // A venue may sit inside any venue except itself and its own rooms.
+  const blockedParents = venueDescendants(venues, present.id).add(present.id);
+  const parentChoices = venueTree(venues).filter(({ venue }) => !blockedParents.has(venue.id));
+  const passageChoices = venueTree(venues).filter(({ venue }) => venue.id !== present.id);
+  const passageTarget = selectedFeature?.target_venue_id ? venueById.get(selectedFeature.target_venue_id) || null : null;
   const selectedCustomStamp = selectedFeature?.kind === CUSTOM_FEATURE.id
     ? customStamps.find((stamp) => stamp.id === selectedFeature.stamp_id) || null
     : null;
@@ -596,6 +618,18 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
   return (
     <div className="venue-editor">
       <div className="venue-toolbar" role="toolbar" aria-label="Venue tools">
+        {parentVenue && onOpenVenue && (
+          <div className="venue-toolbar-group">
+            <button
+              type="button"
+              className="btn venue-tool"
+              onClick={() => openVenue(parentVenue.id)}
+              title={`Open ${parentVenue.name}, the venue this one is inside`}
+            >
+              {`Back to ${parentVenue.name}`}
+            </button>
+          </div>
+        )}
         <div className="venue-toolbar-group">
           {VENUE_TOOLS.map((entry) => (
             <button
@@ -673,6 +707,7 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerCancel}
+            onDoubleClick={handleDoubleClick}
             onPointerLeave={() => setHover(null)}
             onContextMenu={(event) => event.preventDefault()}
           >
@@ -860,6 +895,32 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
                 />
                 GM only — hidden from players
               </label>
+              {selectedDefinition.passage && (
+                <div className="venue-field">
+                  <span>Leads to (never shown to players)</span>
+                  <select
+                    aria-label="Passage leads to"
+                    value={passageTarget ? passageTarget.id : ''}
+                    onChange={(event) => commit(updateFeature(present, selectedFeature.id, { target_venue_id: event.target.value || null }))}
+                  >
+                    <option value="">Nowhere yet</option>
+                    {passageChoices.map(({ venue, depth }) => (
+                      <option key={venue.id} value={venue.id}>{`${'\u2003'.repeat(depth)}${venue.name}`}</option>
+                    ))}
+                  </select>
+                  {onOpenVenue && (
+                    <button
+                      type="button"
+                      className="btn-small btn-edit"
+                      onClick={() => openVenue(passageTarget?.id)}
+                      disabled={!passageTarget}
+                      title="Open that venue (or double-click the passage with Select)"
+                    >
+                      {passageTarget ? `Go to ${passageTarget.name}` : 'Go there'}
+                    </button>
+                  )}
+                </div>
+              )}
               {selectedCustomStamp && (
                 <label className="venue-field">
                   <span>Mat mark (every use of this stamp)</span>
@@ -912,6 +973,19 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
                 <button type="button" className="btn-small btn-edit" onClick={applySize}>Apply</button>
               </div>
             </div>
+            <label className="venue-field">
+              <span>Inside venue</span>
+              <select
+                aria-label="Inside venue"
+                value={parentVenue ? parentVenue.id : ''}
+                onChange={(event) => commit({ ...present, parent_id: event.target.value || null })}
+              >
+                <option value="">Not inside another venue</option>
+                {parentChoices.map(({ venue, depth }) => (
+                  <option key={venue.id} value={venue.id}>{`${'\u2003'.repeat(depth)}${venue.name}`}</option>
+                ))}
+              </select>
+            </label>
             <label className="venue-field">
               <span>GM notes (never shown to players)</span>
               <textarea rows={4} value={notes} onChange={(event) => setNotes(event.target.value)} />

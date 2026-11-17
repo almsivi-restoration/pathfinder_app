@@ -159,6 +159,9 @@ class VenueFeature(BaseModel):
     color: Optional[str] = Field(default=None, pattern=r"^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$")
     # Custom stamps (kind "custom") name the campaign's CustomStamp; a deleted one draws as a placeholder.
     stamp_id: Optional[str] = Field(default=None, max_length=64)
+    # Passage stamps (kind "passage") lead to another venue of the campaign. GM-only: the
+    # Venue Screen copy drops it, so players never learn where a passage goes.
+    target_venue_id: Optional[str] = Field(default=None, max_length=128)
 
 
 class Venue(BaseModel):
@@ -166,6 +169,9 @@ class Venue(BaseModel):
     id: str = Field(min_length=1, max_length=128)
     name: str = Field(min_length=1, max_length=120)
     notes: str = ""  # GM-only; never sent to the Venue Screen
+    # The venue this one sits inside (a room of a mansion). Existence and cycles are checked
+    # by the StateManager, which can see the other venues.
+    parent_id: Optional[str] = Field(default=None, max_length=128)
     grid: Literal["square"] = "square"
     width: int = Field(ge=1, le=VENUE_MAX_SIDE)
     height: int = Field(ge=1, le=VENUE_MAX_SIDE)
@@ -177,6 +183,8 @@ class Venue(BaseModel):
 
     @model_validator(mode="after")
     def check_contents_fit_the_grid(self) -> "Venue":
+        if self.parent_id == self.id:
+            raise ValueError("A venue cannot sit inside itself")
         for key, terrain in self.cells.items():
             match = _VENUE_CELL_KEY.match(key)
             if not match or int(match[1]) >= self.width or int(match[2]) >= self.height:
@@ -224,6 +232,7 @@ class VenueCreateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     width: int = Field(ge=1, le=VENUE_MAX_SIDE)
     height: int = Field(ge=1, le=VENUE_MAX_SIDE)
+    parent_id: Optional[str] = Field(default=None, max_length=128)
 
 
 class RollRequest(BaseModel):

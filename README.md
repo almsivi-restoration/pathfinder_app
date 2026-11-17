@@ -22,7 +22,9 @@ actor, initiative, or persistence ownership.
   base, in the marker color, on the player view, the initiative order, and the actor card, and
   templates pass it on like color.
 - Build grid maps — **venues** — through **GM Tools > Venues** (Ctrl+M): start from a mat-sized
-  preset, drag out rooms, paint terrain, draw walls and doors, and stamp features. Show a venue
+  preset, drag out rooms, paint terrain, draw walls and wide doors, and stamp features — resizable
+  catalog stamps, actor markers, or your own imported images. Nest rooms inside a venue and link
+  them with passages. Show a venue
   to the players on the **Venue Screen** second-monitor window, and turn it into a numbered
   **Mat Guide** for drawing it on the table's one-inch grid mat. See Venues below.
 - Open a read-only actor card with the **View** button: sheet values grouped by section, empty
@@ -249,21 +251,28 @@ The editor's tools each have a one-key shortcut:
 | Paint | B | Drag to paint the chosen terrain (flagstones, wood, cave, water, chasm, grass, …). |
 | Erase | E | Drag to clear cells back to empty space. |
 | Wall / Door / Secret | W / D / S | Click or drag along grid lines; a dragged door is one wide door. |
-| Stamp | F | Place stairs, pillars, chests, trees, traps, labels, and more. |
+| Stamp | F | Place stairs, pillars, chests, trees, traps, passages, labels, and more. |
 | Select | V | Move a stamp, or drag its corner handle to resize it (up to 8×8); `[` and `]` rotate it, Delete removes it. |
+
 The sidebar's **Actors** section stamps a campaign template or scene actor using its marker
 symbol and color — a snapshot that does not follow the encounter. **Custom stamps > Import
 image** adds a PNG or SVG (up to 512 KB) as a stamp of your own; it is saved with the campaign
 and its export, and the Mat Guide writes it as the mat mark you choose (every use of the stamp
 shares it).
 
+Venues can sit inside other venues — a mansion with a venue for each room. Pick **Inside**
+when creating a venue, or **Inside venue** in its sidebar, and the library lists rooms under
+their venue. A **Passage** stamp's **Leads to** names another venue; **Go to** (or
+double-clicking the passage with Select) opens it, and **Back to** returns to the venue it sits
+inside. When the venue you leave is on the Venue Screen, the screen follows you. Deleting a
+venue moves its rooms to the top level.
 
 Ctrl+Z / Ctrl+Y undo and redo, and Ctrl+S (or **Save**) saves. **Player preview** shows the
 venue exactly as players will see it.
 
 **Show players** puts the venue on the **Venue Screen** — open it with **View > Open Venue
 Screen** or from the Venues page and drag it to the second monitor. Players never see the
-venue's GM notes, stamps marked GM-only, or secret doors, which appear to them as plain walls;
+venue's GM notes, stamps marked GM-only, where a passage leads, or secret doors, which appear to them as plain walls;
 the backend strips these before the Venue Screen receives the venue.
 
 **Mat Guide** turns the venue into instructions for the physical one-inch grid mat (32×46 by
@@ -365,7 +374,7 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
 - `GET /api/campaign/current`
 - `POST /api/campaign/save`
 - `POST /api/campaign/rename` accepts `name` and `new_name` query parameters.
-- `GET /api/campaign/export?name=` returns a portable campaign bundle (campaign, saved scenes, venues, and custom stamps; bundle `version` 3 — versions 1 and 2 still import).
+- `GET /api/campaign/export?name=` returns a portable campaign bundle (campaign, saved scenes, venues, and custom stamps; bundle `version` 4 — versions 1 to 3 still import).
 - `POST /api/campaign/import` accepts that bundle as the JSON body and saves it as a new campaign.
 - `DELETE /api/campaign/{campaign_name}`
 
@@ -398,7 +407,7 @@ asset for auto-update — lives in [.github/copilot-instructions.md](.github/cop
 ### Venues
 
 - `GET /api/venues` lists the active campaign's venues.
-- `POST /api/venue/new` creates a venue (`name`, `width`, `height`).
+- `POST /api/venue/new` creates a venue (`name`, `width`, `height`, optional `parent_id`).
 - `GET /api/venue/stamps` lists custom stamps; `POST /api/venue/stamps` imports one (multipart
   `file`, `name`, `mat_glyph`); `GET /api/venue/stamps/{id}/image`, `PUT` and `DELETE
   /api/venue/stamps/{id}` serve, edit, and delete one.

@@ -20,6 +20,8 @@ import {
   showsWall,
   toggleEdgeKind,
   updateFeature,
+  venueDescendants,
+  venueTree,
 } from './venueGeometry';
 import { VENUE_TERRAINS, VENUE_FEATURES, getTerrain, getFeature } from './venueCatalog';
 
@@ -255,5 +257,21 @@ describe('resizing', () => {
 describe('paths', () => {
   it('builds one run per contiguous row span', () => {
     expect(cellsPath(['0,0', '1,0', '3,0'], 10)).toBe('M0 0h20v10h-20zM30 0h10v10h-10z');
+  });
+});
+
+describe('venueTree', () => {
+  it('nests rooms under their venue and never drops an orphan or a cycle', () => {
+    const venues = [
+      { id: 'a', parent_id: 'b' },
+      { id: 'b', parent_id: 'a' },
+      { id: 'hall', parent_id: 'mansion' },
+      { id: 'lost', parent_id: 'gone' },
+      { id: 'mansion', parent_id: null },
+      { id: 'study', parent_id: 'hall' },
+    ];
+    expect(venueTree(venues).map(({ venue, depth }) => `${venue.id}:${depth}`))
+      .toEqual(['lost:0', 'mansion:0', 'hall:1', 'study:2', 'a:0', 'b:1']);
+    expect([...venueDescendants(venues, 'mansion')].sort()).toEqual(['hall', 'study']);
   });
 });

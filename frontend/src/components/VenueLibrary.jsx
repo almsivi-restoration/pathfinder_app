@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { VENUE_MAX_SIDE } from '../venueGeometry';
+import { VENUE_MAX_SIDE, venueTree } from '../venueGeometry';
 import { MAT_DEFAULT_SIZE } from '../matGuide';
 import '../styles/VenueLibrary.css';
 
@@ -24,6 +24,9 @@ export default function VenueLibrary({ venues, selectedId, shownVenueId, onSelec
   const [presetId, setPresetId] = useState(VENUE_SIZE_PRESETS[0].id);
   const [custom, setCustom] = useState({ width: '20', height: '20' });
   const [creating, setCreating] = useState(false);
+  const [parentId, setParentId] = useState('');
+  const tree = venueTree(venues);
+  const parentChoice = venues.some((venue) => venue.id === parentId) ? parentId : '';
 
   const preset = VENUE_SIZE_PRESETS.find((entry) => entry.id === presetId);
   const width = preset.width ?? toSide(custom.width);
@@ -34,7 +37,7 @@ export default function VenueLibrary({ venues, selectedId, shownVenueId, onSelec
     event.preventDefault();
     if (!canCreate) return;
     setCreating(true);
-    const created = await onCreate({ name: name.trim(), width, height });
+    const created = await onCreate({ name: name.trim(), width, height, parentId: parentChoice || null });
     setCreating(false);
     if (created) setName('');
   };
@@ -56,6 +59,14 @@ export default function VenueLibrary({ venues, selectedId, shownVenueId, onSelec
             <option key={entry.id} value={entry.id}>{entry.label}</option>
           ))}
         </select>
+        {venues.length > 0 && (
+          <select aria-label="New venue inside" value={parentChoice} onChange={(event) => setParentId(event.target.value)}>
+            <option value="">Not inside another venue</option>
+            {tree.map(({ venue, depth }) => (
+              <option key={venue.id} value={venue.id}>{`${'\u2003'.repeat(depth)}Inside ${venue.name}`}</option>
+            ))}
+          </select>
+        )}
         {presetId === 'custom' && (
           <div className="venue-library-custom">
             <input
@@ -87,8 +98,13 @@ export default function VenueLibrary({ venues, selectedId, shownVenueId, onSelec
         <p className="venue-library-empty">No venues yet. Name one above to start drawing.</p>
       ) : (
         <ul className="venue-library-list">
-          {venues.map((venue) => (
-            <li key={venue.id} className={`venue-library-row${venue.id === selectedId ? ' selected' : ''}`}>
+          {tree.map(({ venue, depth }) => (
+            <li
+              key={venue.id}
+              className={`venue-library-row${venue.id === selectedId ? ' selected' : ''}${depth ? ' nested' : ''}`}
+              style={depth ? { '--venue-depth': depth } : undefined}
+              data-depth={depth}
+            >
               <button
                 type="button"
                 className="venue-library-open"

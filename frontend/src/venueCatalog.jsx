@@ -527,6 +527,21 @@ export const VENUE_FEATURES = [
     ),
     mat: { color: 'black', glyph: 'Aa' },
   },
+  {
+    // Leads to another venue (target_venue_id); the editor opens it, players see only the arch.
+    id: 'passage',
+    label: 'Passage',
+    passage: true,
+    draw: () => (
+      <>
+        <path d="M9 34V18a11 11 0 0 1 22 0v16z" transform="translate(1.5 1.5)" fill={VENUE_INK} opacity="0.18" />
+        <path d="M9 34V18a11 11 0 0 1 22 0v16z" fill="#3b3128" {...S} />
+        <path d="M13 34V19a7 7 0 0 1 14 0v15" fill="#6e5a44" stroke="#2b231c" strokeWidth="1" />
+        <path d="M15 26h9M21 22l4 4 -4 4" stroke="#f1e6cf" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      </>
+    ),
+    mat: { color: 'blue', glyph: 'P' },
+  },
 ];
 
 const TERRAIN_BY_ID = Object.fromEntries(VENUE_TERRAINS.map((terrain) => [terrain.id, terrain]));

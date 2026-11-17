@@ -67,6 +67,12 @@
   background: var(--mw-panel-lo);
 }
 
+/* Rooms sit under the venue they are inside, one step in per level. */
+.venue-library-row.nested {
+  margin-left: calc(var(--venue-depth, 1) * 0.9rem);
+  border-left-color: var(--mw-border-dark);
+}
+
 /* The tint is translucent and the list sits on the page backdrop: layer it
    over the row's own surface so the row reads on any theme. */
 .venue-library-row.selected {

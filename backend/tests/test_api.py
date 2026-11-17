@@ -148,7 +148,7 @@ def test_export_import_campaign_roundtrips_scenes_templates_and_chronicle(client
     assert response.status_code == 200
     bundle = response.json()
     assert bundle["format"] == "gm-workbench-campaign"
-    assert bundle["version"] == 3
+    assert bundle["version"] == 4
     assert bundle["venues"] == [] and bundle["stamps"] == []
     assert [s["id"] for s in bundle["scenes"]] == [scene["id"]]
 

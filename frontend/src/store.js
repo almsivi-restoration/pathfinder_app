@@ -17,8 +17,8 @@ export const customStampImageUrl = (stampId) => `${API_URL}/venue/stamps/${encod
 
 const getErrorMessage = (error) => error.response?.data?.detail || error.message || 'The request failed.';
 
-const venueSummary = ({ id, name, width, height, created_at, updated_at }) => ({
-  id, name, width, height, created_at, updated_at,
+const venueSummary = ({ id, name, width, height, parent_id = null, created_at, updated_at }) => ({
+  id, name, width, height, parent_id, created_at, updated_at,
 });
 // Same order as the backend list: name (case-insensitive), then creation time.
 const sortVenues = (venues) => [...venues].sort((a, b) => (
@@ -488,9 +488,9 @@ export const useStore = create((set, get) => ({
     }
   },
 
-  createVenue: async ({ name, width, height }) => {
+  createVenue: async ({ name, width, height, parentId = null }) => {
     try {
-      const res = await axios.post(`${API_URL}/venue/new`, { name, width, height });
+      const res = await axios.post(`${API_URL}/venue/new`, { name, width, height, parent_id: parentId });
       set({ venues: sortVenues([...get().venues, venueSummary(res.data)]), operationError: null });
       return res.data;
     } catch (error) {
@@ -530,8 +530,11 @@ export const useStore = create((set, get) => ({
     try {
       await axios.delete(`${API_URL}/venue/${encodeURIComponent(venueId)}`);
       const { venues, shownVenueId } = get();
+      // The backend lifts the deleted venue's rooms to the top level; mirror that here.
       set({
-        venues: venues.filter((entry) => entry.id !== venueId),
+        venues: venues
+          .filter((entry) => entry.id !== venueId)
+          .map((entry) => (entry.parent_id === venueId ? { ...entry, parent_id: null } : entry)),
         shownVenueId: shownVenueId === venueId ? null : shownVenueId,
       });
       return true;

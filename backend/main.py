@@ -339,7 +339,7 @@ def list_venues():
         raise HTTPException(status_code=404, detail="No campaign loaded")
     return {
         "venues": [
-            venue.model_dump(include={"id", "name", "width", "height", "created_at", "updated_at"})
+            venue.model_dump(include={"id", "name", "width", "height", "parent_id", "created_at", "updated_at"})
             for venue in state_manager.list_venues()
         ],
         "shown_venue_id": state_manager.shown_venue_id,
@@ -351,7 +351,10 @@ def create_venue(request: VenueCreateRequest):
     """Create an empty venue on the current campaign."""
     if not request.name.strip():
         raise HTTPException(status_code=400, detail="Name is required")
-    venue = state_manager.create_venue(request.name.strip(), request.width, request.height)
+    try:
+        venue = state_manager.create_venue(request.name.strip(), request.width, request.height, request.parent_id)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
     if not venue:
         raise HTTPException(status_code=400, detail="No campaign loaded")
     return venue.model_dump()
@@ -446,7 +449,10 @@ def update_venue(venue_id: str, venue: Venue):
     if not venue.name.strip():
         raise HTTPException(status_code=400, detail="Name is required")
     _read_venue_or_404(venue_id)
-    updated = state_manager.update_venue(venue_id, venue.model_copy(update={"name": venue.name.strip()}))
+    try:
+        updated = state_manager.update_venue(venue_id, venue.model_copy(update={"name": venue.name.strip()}))
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
     return updated.model_dump()
 
 

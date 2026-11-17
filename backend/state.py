@@ -21,7 +21,7 @@ import uuid
 
 
 CAMPAIGN_EXPORT_FORMAT = "gm-workbench-campaign"
-CAMPAIGN_EXPORT_VERSION = 3  # 2 added venues, 3 custom stamps; older bundles still import
+CAMPAIGN_EXPORT_VERSION = 4  # 2 added venues, 3 custom stamps, 4 venue nesting; older bundles still import
 _SCENE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 _VENUE_ID_PATTERN = _SCENE_ID_PATTERN
 _STAMP_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
@@ -48,7 +48,7 @@ def player_venue_view(venue: Venue) -> dict:
             for edge in venue.edges
         ],
         "features": [
-            feature.model_dump() for feature in venue.features if not feature.gm_only
+            feature.model_dump(exclude={"target_venue_id"}) for feature in venue.features if not feature.gm_only
         ],
         "updated_at": venue.updated_at.isoformat(),
     }
@@ -72,6 +72,23 @@ def sniff_stamp_image(data: bytes) -> str:
     if "<svg" in text and "<!DOCTYPE" not in text.upper() and "<!ENTITY" not in text.upper():
         return "image/svg+xml"
     raise ValueError("Choose a PNG or SVG image")
+
+
+def _top_level_broken_parents(venues: List[Venue]) -> List[Venue]:
+    """Move venues whose parent is missing from the set, or who sit in a parent cycle, to the
+    top level, so an imported bundle never carries a nesting the editor could not make."""
+    parents = {venue.id: venue.parent_id for venue in venues}
+    broken = set()
+    for venue in venues:
+        seen = {venue.id}
+        parent_id = venue.parent_id
+        while parent_id:
+            if parent_id not in parents or parent_id in seen:
+                broken.add(venue.id)
+                break
+            seen.add(parent_id)
+            parent_id = parents[parent_id]
+    return [venue.model_copy(update={"parent_id": None}) if venue.id in broken else venue for venue in venues]
 
 
 def _validate_campaign_name(name: str) -> str:
@@ -265,6 +282,7 @@ class StateManager:
         venue_ids = [venue.id for venue in venues]
         if len(set(venue_ids)) != len(venue_ids) or not all(_VENUE_ID_PATTERN.match(i) for i in venue_ids):
             raise ValueError("The campaign export has invalid venue identifiers")
+        venues = _top_level_broken_parents(venues)
         stamp_ids = [stamp.id for stamp, _ in stamps]
         if len(set(stamp_ids)) != len(stamp_ids):
             raise ValueError("The campaign export has invalid stamp identifiers")
@@ -612,11 +630,25 @@ class StateManager:
                 logger.warning("Skipping unreadable venue %s: %s", venue_path, error)
         return sorted(venues, key=lambda venue: (venue.name.lower(), venue.created_at))
 
-    def create_venue(self, name: str, width: int, height: int) -> Optional[Venue]:
-        """Create and persist an empty venue on the current campaign."""
+    def _check_parent(self, venue_id: str, parent_id: Optional[str]) -> None:
+        """Raise ValueError unless parent_id is empty or an existing venue that does not sit,
+        at any depth, inside venue_id."""
+        seen = {venue_id}
+        while parent_id:
+            if parent_id in seen:
+                raise ValueError("A venue cannot sit inside one of its own rooms")
+            seen.add(parent_id)
+            parent = self.get_venue(parent_id)
+            if not parent:
+                raise ValueError("The venue it sits inside no longer exists")
+            parent_id = parent.parent_id
+
+    def create_venue(self, name: str, width: int, height: int, parent_id: Optional[str] = None) -> Optional[Venue]:
+        """Create and persist an empty venue on the current campaign, optionally inside another."""
         if not self.current_campaign:
             return None
-        venue = Venue(id=str(uuid.uuid4()), name=name, width=width, height=height)
+        venue = Venue(id=str(uuid.uuid4()), name=name, width=width, height=height, parent_id=parent_id)
+        self._check_parent(venue.id, parent_id)
         self._write_venue(venue)
         return venue
 
@@ -633,6 +665,11 @@ class StateManager:
         existing = self.get_venue(venue_id)
         if not existing:
             return None
+        # A parent deleted while this room was open in the editor lifts it to the top level,
+        # as delete_venue does for saved rooms; a cycle is still refused.
+        if venue.parent_id and not self.get_venue(venue.parent_id):
+            venue = venue.model_copy(update={"parent_id": None})
+        self._check_parent(venue_id, venue.parent_id)
         updated = venue.model_copy(update={
             "id": venue_id,
             "created_at": existing.created_at,
@@ -649,6 +686,10 @@ class StateManager:
         venue_path.unlink()
         if self.shown_venue_id == venue_id:
             self.shown_venue_id = None
+        # Its rooms move up to the top level; passages that led here stay, as dead ends.
+        for child in self.list_venues():
+            if child.parent_id == venue_id:
+                self._write_venue(child.model_copy(update={"parent_id": None}))
         return True
 
     def show_venue(self, venue_id: str) -> Optional[Venue]:

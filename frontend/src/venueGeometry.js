@@ -410,3 +410,41 @@ export function resizeVenue(venue, width, height) {
     features: venue.features.filter((feature) => featureFits(sized, feature)),
   });
 }
+
+// Venues nest by parent_id (rooms of a mansion). Returns [{ venue, depth }] with every venue
+// once, each room right after its parent, siblings in the list's order. A venue whose parent
+// is missing or sits in a cycle is treated as top level, so nothing is ever dropped.
+export const venueTree = (venues) => {
+  const ids = new Set(venues.map((venue) => venue.id));
+  const children = new Map();
+  const roots = [];
+  venues.forEach((venue) => {
+    const parent = venue.parent_id && venue.parent_id !== venue.id && ids.has(venue.parent_id) ? venue.parent_id : null;
+    if (parent) children.set(parent, [...(children.get(parent) || []), venue]);
+    else roots.push(venue);
+  });
+  const out = [];
+  const placed = new Set();
+  const walk = (venue, depth) => {
+    if (placed.has(venue.id)) return;
+    placed.add(venue.id);
+    out.push({ venue, depth });
+    (children.get(venue.id) || []).forEach((child) => walk(child, depth + 1));
+  };
+  roots.forEach((venue) => walk(venue, 0));
+  // Whatever is left sits in a parent cycle, unreachable from any root.
+  venues.forEach((venue) => walk(venue, 0));
+  return out;
+};
+
+// The ids of every venue inside venueId, at any depth (not including venueId itself).
+export const venueDescendants = (venues, venueId) => {
+  const found = new Set();
+  let frontier = [venueId];
+  while (frontier.length) {
+    const next = venues.filter((venue) => frontier.includes(venue.parent_id) && !found.has(venue.id) && venue.id !== venueId);
+    next.forEach((venue) => found.add(venue.id));
+    frontier = next.map((venue) => venue.id);
+  }
+  return found;
+};

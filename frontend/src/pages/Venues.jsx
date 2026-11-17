@@ -44,6 +44,17 @@ function Venues({ onBack }) {
     if (venue) openEditor(venue);
   };
 
+  // Passages and "Back to" move between venues; if the players are looking at the venue
+  // being left, the Venue Screen follows the GM through the door.
+  const handleNavigate = async (venueId) => {
+    if (!openVenue || venueId === openVenue.id || !confirmDiscard()) return;
+    const venue = await fetchVenue(venueId);
+    if (!venue) return;
+    const screenFollows = useStore.getState().shownVenueId === openVenue.id;
+    openEditor(venue);
+    if (screenFollows) await showVenue(venue.id);
+  };
+
   const handleCreate = async (spec) => {
     if (!confirmDiscard()) return null;
     const venue = await createVenue(spec);
@@ -121,6 +132,7 @@ function Venues({ onBack }) {
             shown={shownVenueId === openVenue.id}
             onShow={() => showVenue(openVenue.id)}
             onHide={hideVenue}
+            onOpenVenue={handleNavigate}
           />
         ) : (
           <div className="venues-placeholder">

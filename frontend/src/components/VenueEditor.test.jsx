@@ -309,3 +309,40 @@ test('hover and selection cues carry an ink casing', () => {
   expect(container.querySelector('[data-kind="barrel"] .venue-map-casing')).not.toBeNull();
   expect(container.querySelector('[data-kind="barrel"] .venue-map-selection')).not.toBeNull();
 });
+
+test('a passage leads to another venue, opens it, and a venue cannot sit inside its own rooms', () => {
+  const original = useStore.getState().venues;
+  useStore.setState({
+    venues: [
+      { id: 'v1', name: 'Crypt', width: 4, height: 4, parent_id: null },
+      { id: 'hall', name: 'Hall', width: 4, height: 4, parent_id: 'v1' },
+      { id: 'tower', name: 'Tower', width: 4, height: 4, parent_id: null },
+    ],
+  });
+  try {
+    const venue = { ...blankVenue(), features: [{ id: 'p1', kind: 'passage', x: 1, y: 1, target_venue_id: 'hall' }] };
+    const onOpenVenue = jest.fn();
+    const utils = render(<VenueEditor venue={venue} onSave={jest.fn()} onDirtyChange={jest.fn()} onOpenVenue={onOpenVenue} />);
+    const svg = utils.container.querySelector('svg.venue-map');
+    svg.getBoundingClientRect = () => ({ left: 0, top: 0, width: 200, height: 200, right: 200, bottom: 200 });
+
+    const optionNames = (label) => [...screen.getByLabelText(label).options].map((option) => option.textContent.trim());
+    expect(optionNames('Inside venue')).toEqual(['Not inside another venue', 'Tower']);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select' }));
+    fireEvent.pointerDown(svg, at(1, 1));
+    fireEvent.pointerUp(svg, at(1, 1));
+    expect(screen.getByLabelText('Passage leads to')).toHaveValue('hall');
+    expect(optionNames('Passage leads to')).toEqual(['Nowhere yet', 'Hall', 'Tower']);
+
+    fireEvent.change(screen.getByLabelText('Passage leads to'), { target: { value: 'tower' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Go to Tower' }));
+    expect(onOpenVenue).toHaveBeenLastCalledWith('tower');
+    fireEvent.doubleClick(svg, at(1, 1));
+    expect(onOpenVenue).toHaveBeenCalledTimes(2);
+  } finally {
+    // Unmount first so resetting the shared store does not re-render a live editor.
+    cleanup();
+    useStore.setState({ venues: original });
+  }
+});
