@@ -165,6 +165,18 @@ describe('matLegend', () => {
     expect(matLegend(pillars).find((entry) => entry.id === 'pillar')).toMatchObject({ glyph: '●', hint: 'Fill in a dot' });
   });
 
+  it('lists actor stamps once, as their own mark', () => {
+    const venue = {
+      ...room(blank(5, 5), 'floor', 0, 0, 2, 2),
+      features: [
+        { id: 'a', kind: 'actor', x: 0, y: 0, rotation: 0, label: 'Goblin', symbol: 'cross', gm_only: false },
+        { id: 'b', kind: 'actor', x: 1, y: 0, rotation: 0, label: 'Orc', symbol: 'dot', gm_only: false },
+      ],
+    };
+    const actors = matLegend(venue).filter((entry) => entry.id === 'actor');
+    expect(actors).toEqual([expect.objectContaining({ glyph: '', hint: "Draw the actor's mark" })]);
+  });
+
   it('includes labels only once one has text', () => {
     const venue = {
       ...room(blank(5, 5), 'floor', 0, 0, 2, 2),

@@ -153,6 +153,10 @@ class VenueFeature(BaseModel):
     rotation: Literal[0, 90, 180, 270] = 0
     label: str = Field(default="", max_length=80)
     gm_only: bool = False  # stripped server-side before the venue reaches the Venue Screen
+    # Actor stamps (kind "actor") snapshot the actor's marker when placed; they do not follow
+    # the actor afterwards. Symbol ids are kept opaque like Actor.symbol.
+    symbol: Optional[str] = Field(default=None, max_length=32)
+    color: Optional[str] = Field(default=None, pattern=r"^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$")
 
 
 class Venue(BaseModel):

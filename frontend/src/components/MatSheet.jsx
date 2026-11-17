@@ -1,5 +1,7 @@
 import React, { useId, useMemo } from 'react';
-import { MAT_COLORS, VENUE_CELL as U, getFeature, getTerrain } from '../venueCatalog';
+import { ACTOR_FEATURE, MAT_COLORS, VENUE_CELL as U, getFeature, getTerrain } from '../venueCatalog';
+import { getMarkerSymbol } from '../markerSymbols';
+import { MarkerShapes } from './MarkerSymbol';
 import { cellsPath, columnLabel, featureSize, resolveEdges, segmentsPath, terrainOutline } from '../venueGeometry';
 import { planksSegments } from '../matGuide';
 import '../styles/MatSheet.css';
@@ -107,6 +109,24 @@ function GmRing({ x = U / 2, y = U / 2 }) {
 
 // A stamp larger than one square gets its footprint outlined so the GM knows how much
 // of the mat it takes; the glyph sits in the middle.
+// An actor stamp on the mat is the actor's own mark inked in black, without the base disc;
+// with no known symbol it is the actor's initial.
+function MatActorMark({ feature, x, y }) {
+  const definition = getMarkerSymbol(feature.symbol);
+  if (!definition) {
+    return <MatGlyph text={feature.label?.trim().charAt(0).toUpperCase() || '?'} color="black" x={x} y={y} />;
+  }
+  const side = U * 0.62;
+  return (
+    <MarkerShapes
+      definition={definition}
+      ink={MAT_COLORS.black}
+      strokeWidth={2.4}
+      transform={`translate(${x - side / 2} ${y - side / 2}) scale(${side / 24})`}
+    />
+  );
+}
+
 function MatFeature({ feature }) {
   const definition = getFeature(feature.kind);
   const caption = feature.label?.trim();
@@ -124,6 +144,7 @@ function MatFeature({ feature }) {
       <title>{caption || definition.label}</title>
       {feature.gm_only && <GmRing {...centre} />}
       <g opacity={feature.gm_only ? 0.6 : 1}>
+        {feature.kind === ACTOR_FEATURE.id && <MatActorMark feature={feature} {...centre} />}
         {large && (
           <rect
             className="mat-feature-outline"
@@ -345,6 +366,8 @@ export function MatSwatch({ entry, size = 30 }) {
     if (entry.id === 'door') body = <MatDoor x={0} y={0.5} side="n" />;
     else if (entry.id === 'secret_door') body = <>{line}<MatSecretMark x={0} y={0.5} side="n" /></>;
     else body = line;
+  } else if (entry.type === 'feature' && entry.id === ACTOR_FEATURE.id) {
+    body = <MatActorMark feature={{ symbol: 'star' }} x={U / 2} y={U / 2} />;
   } else if (entry.type === 'feature') {
     body = <MatGlyph text={entry.glyph} color={entry.color} size={entry.glyph.length > 1 ? 16 : 19} />;
   } else if (entry.type === 'gm-only') {

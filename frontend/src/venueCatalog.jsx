@@ -4,6 +4,7 @@
 // tokens (react-component-pair blueprint deviation): a map must look the same in every
 // theme, on the Venue Screen, and when copied onto the table mat.
 import React from 'react';
+import { MarkerArt } from './components/MarkerSymbol';
 
 export const VENUE_CELL = 40; // SVG units per grid cell; every drawing below is in this scale
 export const VENUE_INK = '#2b2116';
@@ -528,7 +529,21 @@ export const VENUE_FEATURES = [
 ];
 
 const TERRAIN_BY_ID = Object.fromEntries(VENUE_TERRAINS.map((terrain) => [terrain.id, terrain]));
-const FEATURE_BY_ID = Object.fromEntries(VENUE_FEATURES.map((feature) => [feature.id, feature]));
+// An actor stamp: a static snapshot of an actor's marker (feature.symbol, feature.color, name in
+// feature.label). It is placed from the editor's Actors list, never from the stamp palette, so
+// it is kept out of VENUE_FEATURES; draw() takes the placed feature for its snapshot.
+export const ACTOR_FEATURE = {
+  id: 'actor',
+  label: 'Actor',
+  draw: (feature = {}) => (
+    <g transform={`translate(${VENUE_CELL * 0.1} ${VENUE_CELL * 0.1}) scale(${(VENUE_CELL * 0.8) / 24})`}>
+      <MarkerArt symbol={feature.symbol} color={feature.color} name={feature.label} />
+    </g>
+  ),
+  mat: { color: 'black', glyph: '', hint: "Draw the actor's mark" },
+};
+
+const FEATURE_BY_ID = Object.fromEntries([...VENUE_FEATURES, ACTOR_FEATURE].map((feature) => [feature.id, feature]));
 const EDGE_BY_ID = Object.fromEntries(VENUE_EDGE_KINDS.map((edge) => [edge.id, edge]));
 
 // Unknown ids (from a newer catalog) degrade to plain floor / a labelled box rather than vanishing.

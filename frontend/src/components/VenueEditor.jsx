@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import VenueMap, { FeatureSwatch, TerrainSwatch, pointerToCell } from './VenueMap';
 import MatGuide from './MatGuide';
-import { VENUE_CELL as C, VENUE_FEATURES, VENUE_INK, VENUE_TERRAINS, getFeature } from '../venueCatalog';
+import { MarkerArt } from './MarkerSymbol';
+import { useStore } from '../store';
+import { ACTOR_FEATURE, VENUE_CELL as C, VENUE_FEATURES, VENUE_INK, VENUE_TERRAINS, getFeature } from '../venueCatalog';
 import {
   addFeature,
   applyWall,
@@ -150,6 +152,28 @@ const clampSide = (value, fallback) => {
   return Math.min(Math.max(parsed, 1), VENUE_MAX_SIDE);
 };
 
+const HEX_COLOR = /^#[0-9a-f]{3}([0-9a-f]{3})?$/i;
+
+// What an actor stamp copies from an actor: its marker, its color, and its name. Templates
+// and the current scene's actors are listed once each by that snapshot.
+export function actorStampChoices(templates, sceneActors) {
+  const choices = [];
+  const seen = new Set();
+  [...templates, ...sceneActors].forEach((actor) => {
+    const name = (actor.name || '').trim().slice(0, 80);
+    if (!name) return;
+    const choice = {
+      name,
+      symbol: actor.symbol || null,
+      color: HEX_COLOR.test(actor.color || '') ? actor.color : null,
+    };
+    const key = `${choice.name}|${choice.symbol}|${choice.color}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    choices.push({ ...choice, key });
+  });
+  return choices;
+}
 
 // The venue map editor. Edits stay local until Save; name and notes sit outside the undo
 // history so undoing a wall never reverts a rename.
@@ -161,6 +185,11 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
   const [tool, setTool] = useState('room');
   const [terrain, setTerrain] = useState('floor');
   const [stampKind, setStampKind] = useState('chest');
+  const [actorStamp, setActorStamp] = useState(null);
+  const actorTemplates = useStore((state) => state.actorTemplates);
+  const sceneActors = useStore((state) => state.actors);
+  const actorChoices = useMemo(() => actorStampChoices(actorTemplates, sceneActors), [actorTemplates, sceneActors]);
+
   const [selectedFeatureId, setSelectedFeatureId] = useState(null);
   const [draft, setDraft] = useState(null);
   const [hover, setHover] = useState(null);
@@ -373,15 +402,21 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
       }
     } else if (tool === 'stamp') {
       if (!inBounds(present, x, y)) return;
+      const placingActor = stampKind === ACTOR_FEATURE.id;
+      if (placingActor && !actorStamp) return;
       const existing = featureAt(present, x, y);
-      if (existing && existing.kind === stampKind) {
+      const sameStamp = existing && existing.kind === stampKind
+        && (!placingActor || existing.label === actorStamp.name);
+      if (sameStamp) {
         commit(removeFeature(present, existing.id));
         setSelectedFeatureId(null);
         return;
       }
       const definition = getFeature(stampKind);
       const id = newFeatureId();
-      commit(addFeature(present, { id, kind: stampKind, x, y, gm_only: Boolean(definition.defaultGmOnly) }));
+      let snapshot = {};
+      if (placingActor) snapshot = { label: actorStamp.name, symbol: actorStamp.symbol, color: actorStamp.color };
+      commit(addFeature(present, { id, kind: stampKind, x, y, gm_only: Boolean(definition.defaultGmOnly), ...snapshot }));
       focusLabelRef.current = Boolean(definition.text);
       setSelectedFeatureId(id);
     } else if (tool === 'select') {
@@ -490,6 +525,10 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
   const pickStamp = (kind) => {
     setStampKind(kind);
     setTool('stamp');
+  };
+  const pickActorStamp = (choice) => {
+    setActorStamp(choice);
+    pickStamp(ACTOR_FEATURE.id);
   };
 
   let overlay = null;
@@ -648,6 +687,35 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
                 </button>
               ))}
             </div>
+          </section>
+
+          <section className="venue-sidebar-section">
+            <h3>Actors</h3>
+            {actorChoices.length === 0 ? (
+              <p className="venue-sidebar-note">Actor templates and the current scene's actors appear here as stamps.</p>
+            ) : (
+              <div className="venue-palette venue-palette-stamps">
+                {actorChoices.map((choice) => {
+                  const active = tool === 'stamp' && stampKind === ACTOR_FEATURE.id && actorStamp?.key === choice.key;
+                  return (
+                    <button
+                      key={choice.key}
+                      type="button"
+                      className={`venue-palette-item${active ? ' active' : ''}`}
+                      aria-pressed={active}
+                      onClick={() => pickActorStamp(choice)}
+                      title={`${choice.name} (a copy: later changes to the actor do not move or restyle it)`}
+                      disabled={preview}
+                    >
+                      <svg className="venue-swatch" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+                        <MarkerArt symbol={choice.symbol} color={choice.color} name={choice.name} />
+                      </svg>
+                      <span>{choice.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </section>
 
           {selectedFeature && !preview && (

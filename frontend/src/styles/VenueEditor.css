@@ -287,3 +287,9 @@
 .venue-status-size {
   flex-shrink: 0;
 }
+
+.venue-sidebar-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--mw-text-dim);
+}

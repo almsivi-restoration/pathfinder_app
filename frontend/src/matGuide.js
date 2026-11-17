@@ -207,7 +207,7 @@ export function matLegend(venue) {
       id: feature.kind,
       label: definition.label,
       color: definition.mat.color,
-      glyph: definition.mat.glyph,
+      glyph: definition.mat.glyph || '',
       hint: definition.text ? 'Write the label' : (definition.mat.hint || `Write ${definition.mat.glyph}`),
     });
   });

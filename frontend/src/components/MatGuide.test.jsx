@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import MatGuide from './MatGuide';
 import MatSheet from './MatSheet';
 import { planMat } from '../matGuide';
+import { MAT_COLORS } from '../venueCatalog';
 
 const venueWith = ({ width = 24, height = 24, cells = {}, edges = [], features = [], name = 'Crypt' } = {}) => ({
   id: 'v1', name, notes: '', grid: 'square', width, height, cells, edges, features,
@@ -173,6 +174,8 @@ test('the mat sheet draws walls, secret marks, ringed GM stamps, labels, and bri
       { id: 'a', kind: 'trap', x: 5, y: 5, rotation: 0, label: '', gm_only: true },
       { id: 'b', kind: 'label', x: 3, y: 3, rotation: 0, label: 'Chapel', gm_only: false },
       { id: 'c', kind: 'label', x: 4, y: 4, rotation: 0, label: '   ', gm_only: false },
+      { id: 'd', kind: 'actor', x: 2, y: 5, rotation: 0, label: 'Goblin', symbol: 'cross', color: '#2f8f2f', gm_only: false },
+      { id: 'e', kind: 'actor', x: 3, y: 5, rotation: 0, label: 'mira', symbol: null, color: null, gm_only: false },
     ],
   });
   const plan = planMat(venue);
@@ -183,6 +186,10 @@ test('the mat sheet draws walls, secret marks, ringed GM stamps, labels, and bri
   expect(container.querySelector('.mat-feature.gm-only[data-kind="trap"] circle')).not.toBeNull();
   expect(container.querySelectorAll('.mat-feature[data-kind="label"]')).toHaveLength(1);
   expect(container.querySelector('.mat-feature[data-kind="label"]').textContent).toContain('Chapel');
+  // Actor stamps are the actor's own mark in black, or its initial when it has no symbol.
+  const [goblin, mira] = container.querySelectorAll('.mat-feature[data-kind="actor"]');
+  expect(goblin.querySelector('path').parentNode.getAttribute('stroke')).toBe(MAT_COLORS.black);
+  expect(mira.textContent).toContain('M');
   expect(container.querySelector('[data-terrain="floor"]')).toBeNull();
   const bridge = container.querySelector('[data-terrain="bridge"]');
   expect(bridge).not.toBeNull();

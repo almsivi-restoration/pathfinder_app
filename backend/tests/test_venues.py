@@ -98,6 +98,7 @@ def test_venue_validation_rejects_contents_outside_the_grid(client):
         {**venue, "features": [{"id": "f", "kind": "statue", "x": 3, "y": 0, "width": 2}]},
         {**venue, "features": [{"id": "f", "kind": "statue", "x": 0, "y": 2, "height": 2}]},
         {**venue, "features": [{"id": "f", "kind": "statue", "x": 0, "y": 0, "width": 0}]},
+        {**venue, "features": [{"id": "f", "kind": "actor", "x": 0, "y": 0, "color": "red"}]},
     ]
     for payload in bad_payloads:
         response = client.put(f"/api/venue/{venue['id']}", json=payload)
@@ -113,6 +114,13 @@ def test_venue_validation_rejects_contents_outside_the_grid(client):
     response = client.put(f"/api/venue/{venue['id']}", json=sized)
     assert response.status_code == 200, response.text
     assert (response.json()["features"][0]["width"], response.json()["features"][0]["height"]) == (2, 2)
+    actor = {**venue, "features": [
+        {"id": "f", "kind": "actor", "x": 0, "y": 0, "label": "Grishnak", "symbol": "star", "color": "#c03030"},
+    ]}
+    response = client.put(f"/api/venue/{venue['id']}", json=actor)
+    assert response.status_code == 200, response.text
+    placed = response.json()["features"][0]
+    assert (placed["label"], placed["symbol"], placed["color"]) == ("Grishnak", "star", "#c03030")
     # Unknown catalog ids survive, so a newer frontend's pieces are not lost by an older backend.
     future = {**venue, "cells": {"0,0": "lava_v2"}, "features": [{"id": "f", "kind": "teleporter", "x": 0, "y": 0}]}
     assert client.put(f"/api/venue/{venue['id']}", json=future).status_code == 200

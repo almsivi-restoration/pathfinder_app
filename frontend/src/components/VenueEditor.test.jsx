@@ -1,5 +1,6 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
-import VenueEditor from './VenueEditor';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import VenueEditor, { actorStampChoices } from './VenueEditor';
+import { useStore } from '../store';
 
 // jsdom 16 has no PointerEvent; React listens for the native pointer events.
 let originalPointerEvent;
@@ -89,6 +90,38 @@ test('stamps are placed, inspected, and deleted with the keyboard', () => {
 
   fireEvent.keyDown(window, { key: 'Delete' });
   expect(container.querySelector('[data-kind="barrel"]')).toBeNull();
+});
+
+test('actor stamps copy a template or scene actor once, and place a snapshot of its marker', async () => {
+  const goblin = { name: 'Goblin', symbol: 'cross', color: '#2f8f2f' };
+  expect(actorStampChoices(
+    [goblin, { name: '  ' }],
+    [{ ...goblin, id: 'a1' }, { name: 'Mira', color: 'tomato' }],
+  )).toEqual([
+    { ...goblin, key: 'Goblin|cross|#2f8f2f' },
+    { name: 'Mira', symbol: null, color: null, key: 'Mira|null|null' },
+  ]);
+
+  useStore.setState({ actorTemplates: [goblin], actors: [] });
+  try {
+    const { container, svg, onSave } = renderEditor();
+    fireEvent.click(screen.getByRole('button', { name: /Goblin/ }));
+    fireEvent.pointerDown(svg, at(1, 1));
+    fireEvent.pointerUp(svg, at(1, 1));
+    expect(container.querySelector('[data-kind="actor"] .marker-base-disc')).not.toBeNull();
+    expect(container.querySelector('[data-kind="actor"] title')).toHaveTextContent('Goblin');
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    });
+    expect(onSave.mock.calls[0][0].features).toEqual([
+      expect.objectContaining({ kind: 'actor', x: 1, y: 1, label: 'Goblin', symbol: 'cross', color: '#2f8f2f' }),
+    ]);
+  } finally {
+    // Unmount first so resetting the shared store does not re-render a live editor.
+    cleanup();
+    useStore.setState({ actorTemplates: [], actors: [] });
+  }
 });
 
 test('a selected stamp grows by dragging its corner handle and moves by its grab point', () => {
