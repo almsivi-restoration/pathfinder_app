@@ -266,8 +266,9 @@ pathfinder_app/
 ### Bestiary
 - `GET /api/bestiary/current/status` — CSV presence and index state for the active ruleset
 - `POST /api/bestiary/current/import` — Parse and index the ruleset's `bestiary.csv`
-- `GET /api/bestiary/current/search` — Text search with CR-range and type filters; paginated
+- `GET /api/bestiary/current/search` — Word-prefix text search with CR-range, type, `alignment` (exact), and `environment` (substring) filters; paginated
   via `limit` (default 50, max 200) and `offset`, returns `{results, total}`
+- `GET /api/bestiary/current/alignments` — Distinct alignments in the index, for the filter
 - `GET /api/bestiary/current/entry/{entry_id}` — Full normalized monster record
 - `GET /api/bestiary/current/entry/{entry_id}/actor` — Map an entry to a new NPC actor payload
 

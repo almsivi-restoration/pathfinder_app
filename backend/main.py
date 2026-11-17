@@ -603,10 +603,21 @@ def search_current_bestiary(
     monster_type: Optional[str] = None,
     limit: int = 50,
     offset: int = 0,
+    alignment: Optional[str] = None,
+    environment: Optional[str] = None,
 ):
     """Search the indexed bestiary for the active campaign's ruleset."""
     ruleset, _ = get_current_ruleset_definition()
-    return bestiary_library.search(ruleset, query, cr_min, cr_max, monster_type, limit, offset)
+    return bestiary_library.search(
+        ruleset, query, cr_min, cr_max, monster_type, limit, offset, alignment, environment
+    )
+
+
+@app.get("/api/bestiary/current/alignments")
+def get_bestiary_alignments():
+    """List the distinct alignments in the active ruleset's bestiary index."""
+    ruleset, _ = get_current_ruleset_definition()
+    return {"alignments": bestiary_library.alignments(ruleset)}
 
 
 @app.get("/api/bestiary/current/entry/{entry_id}")

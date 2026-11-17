@@ -359,7 +359,7 @@ export const useStore = create((set, get) => ({
     }
   },
 
-  searchBestiary: async ({ query, crMin, crMax, monsterType, limit = 50, offset = 0 }) => {
+  searchBestiary: async ({ query, crMin, crMax, monsterType, alignment, environment, limit = 50, offset = 0 }) => {
     try {
       const res = await axios.get(`${API_URL}/bestiary/current/search`, {
         params: {
@@ -367,6 +367,8 @@ export const useStore = create((set, get) => ({
           ...(crMin !== '' && crMin != null ? { cr_min: crMin } : {}),
           ...(crMax !== '' && crMax != null ? { cr_max: crMax } : {}),
           ...(monsterType ? { monster_type: monsterType } : {}),
+          ...(alignment ? { alignment } : {}),
+          ...(environment ? { environment } : {}),
           limit,
           offset,
         },
@@ -377,6 +379,16 @@ export const useStore = create((set, get) => ({
       console.error('Failed to search bestiary:', error);
       set({ operationError: getErrorMessage(error) });
       return { results: [], total: 0 };
+    }
+  },
+
+  fetchBestiaryAlignments: async () => {
+    try {
+      const res = await axios.get(`${API_URL}/bestiary/current/alignments`);
+      return res.data.alignments || [];
+    } catch (error) {
+      console.error('Failed to load bestiary alignments:', error);
+      return [];
     }
   },
 

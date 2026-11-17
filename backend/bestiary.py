@@ -411,11 +411,12 @@ class BestiaryLibrary:
                     record["desc_short"], record["desc_long"],
                 ]))
                 connection.execute(
-                    "insert into monsters (id, name, cr, cr_display, type, size, alignment, source, page, indexed_checksum, indexed_at, data) "
-                    "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "insert into monsters (id, name, cr, cr_display, type, size, alignment, environment, "
+                    "source, page, indexed_checksum, indexed_at, data) "
+                    "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         row_id, record["name"], record["cr"], record["cr_display"],
-                        record["type"], record["size"], record["alignment"],
+                        record["type"], record["size"], record["alignment"], record["environment"],
                         record["sources"][0]["name"] if record["sources"] else "",
                         record["sources"][0]["page"] if record["sources"] else "",
                         checksum, indexed_at, json.dumps(record),
@@ -443,8 +444,15 @@ class BestiaryLibrary:
         monster_type: Optional[str] = None,
         limit: int = 50,
         offset: int = 0,
+        alignment: Optional[str] = None,
+        environment: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Search indexed monsters; filters are ANDed, query is optional FTS5.
+
+        Every query term matches as a word prefix ("gob" finds goblin). alignment
+        is an exact, case-insensitive match; environment is a case-insensitive
+        substring match on the free-text environment ("forest" finds
+        "temperate forests"; "any" is an ordinary term, not a wildcard).
 
         Returns {"results": [...], "total": n} where total is the full match
         count so callers can paginate past the default 50-row page.
@@ -458,7 +466,7 @@ class BestiaryLibrary:
         terms = re.findall(r"[A-Za-z0-9_']+", query or "")
         if terms:
             clauses.append("monsters.id in (select rowid from monster_search where monster_search match ?)")
-            params.append(" AND ".join(f'"{term}"' for term in terms))
+            params.append(" AND ".join(f'"{term}"*' for term in terms))
         if cr_min is not None:
             clauses.append("monsters.cr >= ?")
             params.append(cr_min)
@@ -468,6 +476,13 @@ class BestiaryLibrary:
         if monster_type:
             clauses.append("lower(monsters.type) = lower(?)")
             params.append(monster_type.strip())
+        if alignment and alignment.strip():
+            clauses.append("lower(monsters.alignment) = lower(?)")
+            params.append(alignment.strip())
+        if environment and environment.strip():
+            clauses.append("lower(monsters.environment) like ? escape '\\'")
+            escaped = re.sub(r"([\\%_])", r"\\\1", environment.strip().lower())
+            params.append(f"%{escaped}%")
 
         where_sql = (" where " + " and ".join(clauses)) if clauses else ""
 
@@ -518,12 +533,34 @@ class BestiaryLibrary:
         connection.execute(
             "create table if not exists monsters ("
             "id integer primary key, name text, cr real, cr_display text, type text, "
-            "size text, alignment text, source text, page text, "
+            "size text, alignment text, environment text, source text, page text, "
             "indexed_checksum text, indexed_at text, data text)"
         )
         connection.execute(
             "create virtual table if not exists monster_search using fts5(content)"
         )
+        # Indexes built before the environment filter lack the column; the full
+        # record JSON already holds the value, so backfill in place rather than
+        # requiring a CSV re-import.
+        columns = {row[1] for row in connection.execute("pragma table_info(monsters)")}
+        if "environment" not in columns:
+            connection.execute("alter table monsters add column environment text")
+            connection.execute(
+                "update monsters set environment = coalesce(json_extract(data, '$.environment'), '')"
+            )
+
+    def alignments(self, ruleset: str) -> List[str]:
+        """Return the distinct non-blank alignments in the index, sorted."""
+        database = self._database_path(ruleset)
+        if not database.exists():
+            return []
+        with sqlite3.connect(database) as connection:
+            self._initialize_database(connection)
+            rows = connection.execute(
+                "select distinct alignment from monsters where trim(coalesce(alignment, '')) != '' "
+                "order by alignment"
+            ).fetchall()
+        return [row[0] for row in rows]
 
     @staticmethod
     def _checksum(source_path: Path) -> str:

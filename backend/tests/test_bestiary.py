@@ -7,6 +7,7 @@ blank-ability constructs, misspelled columns, and malformed data.
 
 import csv
 import json
+import sqlite3
 
 import pytest
 
@@ -176,6 +177,41 @@ def test_search_paginates_with_offset_and_reports_full_total(tmp_path):
 def test_search_without_index_returns_empty(tmp_path):
     library = BestiaryLibrary(tmp_path / "reference_library")
     assert library.search("1e", "goblin") == {"results": [], "total": 0}
+    assert library.alignments("1e") == []
+
+
+def test_search_matches_word_prefixes(tmp_path):
+    library = make_library(tmp_path)
+    library.import_source("1e", "pathfinder_1e")
+
+    assert [m["name"] for m in library.search("1e", "gob")["results"]] == ["Test Goblin"]
+    assert [m["name"] for m in library.search("1e", "autom")["results"]] == ["Test Construct"]
+    assert library.search("1e", "oblin")["results"] == []
+
+
+def test_search_filters_by_alignment_and_environment(tmp_path):
+    library = make_library(tmp_path)
+    library.import_source("1e", "pathfinder_1e")
+
+    assert library.alignments("1e") == ["N", "NE"]
+    assert [m["name"] for m in library.search("1e", alignment="ne")["results"]] == ["Test Goblin"]
+
+    forest = library.search("1e", environment="Forest")
+    assert [m["name"] for m in forest["results"]] == ["Test Goblin"]
+    # "any" is an ordinary term: it finds only monsters whose environment says so.
+    assert [m["name"] for m in library.search("1e", environment="any")["results"]] == ["Test Construct"]
+    # LIKE wildcards in user input are literal, not patterns.
+    assert library.search("1e", environment="%")["results"] == []
+
+
+def test_index_without_environment_column_is_backfilled(tmp_path):
+    library = make_library(tmp_path)
+    library.import_source("1e", "pathfinder_1e")
+    database = library._database_path("1e")
+    with sqlite3.connect(database) as connection:
+        connection.execute("alter table monsters drop column environment")
+
+    assert [m["name"] for m in library.search("1e", environment="forest")["results"]] == ["Test Goblin"]
 
 
 def test_get_entry_returns_full_record_and_404_case(tmp_path):
@@ -334,6 +370,11 @@ def test_bestiary_routes_roundtrip(client, tmp_path):
     results = client.get("/api/bestiary/current/search", params={"query": "goblin"}).json()["results"]
     assert [r["name"] for r in results] == ["Test Goblin"]
 
+    filtered = client.get(
+        "/api/bestiary/current/search", params={"alignment": "N", "environment": "any"}
+    ).json()["results"]
+    assert [r["name"] for r in filtered] == ["Test Construct"]
+    assert client.get("/api/bestiary/current/alignments").json() == {"alignments": ["N", "NE"]}
     entry_id = results[0]["id"]
     entry = client.get(f"/api/bestiary/current/entry/{entry_id}").json()
     assert entry["name"] == "Test Goblin"

@@ -217,7 +217,10 @@ directory (the same folder the Encyclopedia reads PDFs from), load a campaign, t
 (including its Python-repr structured cells), indexes the monsters into a per-ruleset SQLite
 FTS5 database, and reports any rows with malformed data as warnings.
 
-Searching supports free text plus CR-range and creature-type filters. From an entry you can
+Searching matches the start of words (`gob` finds goblin) and supports CR-range, creature-type,
+alignment, and environment filters. Environment matches text within the monster's listed
+environment (`forest` finds "temperate forests"); `any` is an ordinary word, so it finds monsters
+listed for any environment rather than every monster. From an entry you can
 view the full stat block, create an NPC actor in the current scene, or save the monster as a
 campaign template. Monster actors use the ruleset's monster sheet definition, which shares the
 summary keys the initiative tracker and player view rely on.

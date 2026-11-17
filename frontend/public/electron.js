@@ -592,6 +592,7 @@ function showHelp() {
         title: 'Bestiary',
         paragraphs: [
           'GM Tools > Bestiary (Ctrl+B) searches a monster CSV you supply. Put a file named bestiary.csv in the ruleset sources directory alongside your reference PDFs, then Import it.',
+          'Search matches the start of words (gob finds goblin), and can be narrowed by CR, type, alignment, and environment. Environment matches text in the listed environment (forest finds temperate forests); any is searched as a word, so it finds monsters listed for any environment, not every monster.',
           'View entries, create NPCs directly from them, or save them as campaign templates.',
         ],
       },

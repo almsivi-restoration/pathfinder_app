@@ -347,3 +347,15 @@ test('fetchShownVenue keeps one object while the venue is unchanged and the last
   await useStore.getState().fetchShownVenue();
   expect(useStore.getState().shownVenue).toBeNull();
 });
+
+test('searchBestiary sends alignment and environment only when set', async () => {
+  axios.get.mockResolvedValue({ data: { results: [], total: 0 } });
+
+  await useStore.getState().searchBestiary({ query: 'gob', alignment: 'NE', environment: 'forest' });
+  await useStore.getState().searchBestiary({ query: '', alignment: '', environment: '' });
+
+  expect(axios.get.mock.calls[0][1].params).toMatchObject({ query: 'gob', alignment: 'NE', environment: 'forest' });
+  expect(axios.get.mock.calls[1][1].params).not.toHaveProperty('alignment');
+  expect(axios.get.mock.calls[1][1].params).not.toHaveProperty('environment');
+});
+

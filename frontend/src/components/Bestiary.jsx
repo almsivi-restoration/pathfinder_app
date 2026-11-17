@@ -6,10 +6,14 @@ const PAGE_SIZE = 50;
 export function BestiarySearchPanel({ onSelect, selectLabel = 'View' }) {
   const bestiaryResults = useStore((state) => state.bestiaryResults);
   const searchBestiary = useStore((state) => state.searchBestiary);
+  const fetchBestiaryAlignments = useStore((state) => state.fetchBestiaryAlignments);
   const [query, setQuery] = useState('');
   const [crMin, setCrMin] = useState('');
   const [crMax, setCrMax] = useState('');
   const [monsterType, setMonsterType] = useState('');
+  const [alignment, setAlignment] = useState('');
+  const [alignments, setAlignments] = useState([]);
+  const [environment, setEnvironment] = useState('');
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
 
@@ -19,6 +23,8 @@ export function BestiarySearchPanel({ onSelect, selectLabel = 'View' }) {
       crMin,
       crMax,
       monsterType,
+      alignment,
+      environment,
       limit: PAGE_SIZE,
       offset: pageIndex * PAGE_SIZE,
     });
@@ -31,7 +37,8 @@ export function BestiarySearchPanel({ onSelect, selectLabel = 'View' }) {
       setTotal(data.total || 0);
       setPage(0);
     });
-  }, [searchBestiary]);
+    fetchBestiaryAlignments().then(setAlignments);
+  }, [searchBestiary, fetchBestiaryAlignments]);
 
   const handleSearch = async (event) => {
     event?.preventDefault();
@@ -70,6 +77,23 @@ export function BestiarySearchPanel({ onSelect, selectLabel = 'View' }) {
           placeholder="Type (e.g. dragon)"
           value={monsterType}
           onChange={(event) => setMonsterType(event.target.value)}
+        />
+        <select
+          aria-label="Alignment"
+          value={alignment}
+          onChange={(event) => setAlignment(event.target.value)}
+        >
+          <option value="">Any alignment</option>
+          {alignments.map((entry) => (
+            <option key={entry} value={entry}>{entry}</option>
+          ))}
+        </select>
+        <input
+          type="text"
+          placeholder="Environment (e.g. forest)"
+          aria-label="Environment"
+          value={environment}
+          onChange={(event) => setEnvironment(event.target.value)}
         />
         <button className="btn btn-primary" type="submit">Search</button>
       </form>
