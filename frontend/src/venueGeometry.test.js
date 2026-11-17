@@ -8,6 +8,7 @@ import {
   featureAt,
   addFeature,
   isDerivedWall,
+  mergeEdgeRuns,
   nearestEdge,
   paintCells,
   rectCells,
@@ -119,7 +120,7 @@ describe('wall and door edits', () => {
     const venue = toggleEdgeKind(room(blank(), 'floor', 1, 1, 3, 3), 2, 2, 'n', 'secret_door');
     const gm = resolveEdges(venue, 'gm');
     const player = resolveEdges(venue, 'player');
-    expect(gm.secretDoors).toEqual([{ x: 2, y: 2, side: 'n' }]);
+    expect(gm.secretDoors).toEqual([{ x: 2, y: 2, side: 'n', length: 1 }]);
     expect(player.secretDoors).toEqual([]);
     const coversSecret = (walls) => walls.some((w) => w.y1 === 2 && w.y2 === 2 && w.x1 <= 2 && w.x2 >= 3);
     expect(coversSecret(gm.walls)).toBe(true);
@@ -132,6 +133,21 @@ describe('wall and door edits', () => {
     expect(walls).toHaveLength(4);
     expect(walls).toContainEqual({ x1: 1, y1: 1, x2: 4, y2: 1 });
     expect(walls).toContainEqual({ x1: 4, y1: 1, x2: 4, y2: 3 });
+  });
+});
+
+describe('door runs', () => {
+  it('joins touching doors on one grid line and keeps separate lines apart', () => {
+    let venue = room(blank(), 'floor', 0, 0, 5, 5);
+    [[1, 2], [2, 2], [4, 2]].forEach(([x, y]) => { venue = toggleEdgeKind(venue, x, y, 'n', 'door'); });
+    venue = toggleEdgeKind(venue, 3, 1, 'w', 'door');
+    venue = toggleEdgeKind(venue, 3, 2, 'w', 'door');
+    expect(resolveEdges(venue).doors).toEqual([
+      { x: 1, y: 2, side: 'n', length: 2 },
+      { x: 4, y: 2, side: 'n', length: 1 },
+      { x: 3, y: 1, side: 'w', length: 2 },
+    ]);
+    expect(mergeEdgeRuns([])).toEqual([]);
   });
 });
 

@@ -371,6 +371,8 @@ venues are not listed in `campaign.json`.
 }
 ```
 Walls between a filled cell and empty space are derived when drawing and are not stored.
+Doors are stored as unit edges; touching doors on one line draw as a single wide door.
+
 
 ## Roadmap — Future Phases
 

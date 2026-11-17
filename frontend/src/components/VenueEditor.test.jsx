@@ -142,6 +142,21 @@ test('doors need terrain beside them, and the preview hides secret doors', () =>
   expect(container.querySelector('.venue-map-secret')).toBeNull();
 });
 
+test('dragging the door tool along a line lays one wide door, and dragging again clears it', () => {
+  const venue = { ...blankVenue(), cells: { '0,0': 'floor', '1,0': 'floor', '2,0': 'floor' } };
+  const { container, svg } = renderEditor(venue);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Door' }));
+  drag(svg, [0, 0.45], [2, 0.45]); // just above the line under row 0
+  const doors = container.querySelectorAll('.venue-map-door');
+  expect(doors).toHaveLength(1);
+  expect(doors[0]).toHaveAttribute('data-length', '3');
+
+  drag(svg, [0, 0.45], [1, 0.45]);
+  expect(container.querySelectorAll('.venue-map-door')).toHaveLength(1);
+  expect(container.querySelector('.venue-map-door')).toHaveAttribute('data-length', '1');
+});
+
 test('renaming is saved but is not undone with the map edits', async () => {
   const { svg, onSave } = renderEditor();
 

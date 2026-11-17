@@ -48,19 +48,21 @@ function TerrainPattern({ id, terrain }) {
 
 const terrainPaint = (terrain, patternId) => (terrain.pattern ? `url(#${patternId})` : terrain.fill);
 
-function Door({ x, y, side }) {
+// A door run spans `length` squares: wall stubs at each end, one door leaf between them.
+function Door({ x, y, side, length = 1 }) {
   const transform = `translate(${x * C} ${y * C})${side === 'w' ? ' rotate(90)' : ''}`;
+  const span = length * C;
   return (
-    <g transform={transform} className="venue-map-door">
-      <path d={`M0 0L${C * 0.22} 0M${C * 0.78} 0L${C} 0`} stroke={VENUE_INK} strokeWidth={WALL_WIDTH} strokeLinecap="square" />
-      <rect x={C * 0.22} y={-C * 0.14} width={C * 0.56} height={C * 0.28} fill={VENUE_PAPER} stroke={VENUE_INK} strokeWidth="1.8" />
+    <g transform={transform} className="venue-map-door" data-length={length}>
+      <path d={`M0 0L${C * 0.22} 0M${span - C * 0.22} 0L${span} 0`} stroke={VENUE_INK} strokeWidth={WALL_WIDTH} strokeLinecap="square" />
+      <rect x={C * 0.22} y={-C * 0.14} width={span - C * 0.44} height={C * 0.28} fill={VENUE_PAPER} stroke={VENUE_INK} strokeWidth="1.8" />
     </g>
   );
 }
 
-function SecretMark({ x, y, side }) {
-  const cx = side === 'n' ? (x + 0.5) * C : x * C;
-  const cy = side === 'n' ? y * C : (y + 0.5) * C;
+function SecretMark({ x, y, side, length = 1 }) {
+  const cx = side === 'n' ? (x + length / 2) * C : x * C;
+  const cy = side === 'n' ? y * C : (y + length / 2) * C;
   return (
     <text
       x={cx}

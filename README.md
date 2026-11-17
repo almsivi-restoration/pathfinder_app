@@ -248,7 +248,7 @@ The editor's tools each have a one-key shortcut:
 | Room | R | Drag a rectangle; the chosen terrain fills it and walls appear around it. |
 | Paint | B | Drag to paint the chosen terrain (flagstones, wood, cave, water, chasm, grass, …). |
 | Erase | E | Drag to clear cells back to empty space. |
-| Wall / Door / Secret | W / D / S | Click or drag along grid lines. |
+| Wall / Door / Secret | W / D / S | Click or drag along grid lines; a dragged door is one wide door. |
 | Stamp | F | Place stairs, pillars, chests, trees, traps, labels, and more. |
 | Select | V | Move a stamp, or drag its corner handle to resize it (up to 8×8); `[` and `]` rotate it, Delete removes it. |
 

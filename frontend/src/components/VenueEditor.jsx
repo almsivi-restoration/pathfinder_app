@@ -10,6 +10,7 @@ import {
   edgeSegment,
   edgeTouchesTerrain,
   edgesAlongLine,
+  explicitEdgeAt,
   FEATURE_MAX_SIDE,
   featureAt,
   featureSize,
@@ -21,6 +22,7 @@ import {
   removeFeature,
   resizeVenue,
   rotateFeature,
+  setEdge,
   showsWall,
   toggleEdgeKind,
   updateFeature,
@@ -79,7 +81,7 @@ export const VENUE_TOOLS = [
     id: 'door',
     label: 'Door',
     key: 'd',
-    hint: 'Click a grid line to place or remove a door.',
+    hint: 'Click a grid line to place or remove a door; drag along a line for a wider door.',
     icon: icon(
       <>
         <path d="M2.5 10h3M14.5 10h3" {...line} strokeWidth="3" strokeLinecap="square" />
@@ -91,7 +93,7 @@ export const VENUE_TOOLS = [
     id: 'secret',
     label: 'Secret',
     key: 's',
-    hint: 'Click a grid line to place or remove a secret door. Players only ever see a wall.',
+    hint: 'Click a grid line to place or remove a secret door; drag for a wider one. Players only ever see a wall.',
     icon: icon(
       <>
         <path d="M2.5 13h15" {...line} strokeWidth="3" strokeLinecap="square" />
@@ -361,7 +363,13 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
     } else if (tool === 'door' || tool === 'secret') {
       const edge = nearestEdge(present, point.x, point.y);
       if (edgeTouchesTerrain(present, edge.x, edge.y, edge.side)) {
-        commit(toggleEdgeKind(present, edge.x, edge.y, edge.side, tool === 'door' ? 'door' : 'secret_door'));
+        const doorKind = tool === 'door' ? 'door' : 'secret_door';
+        // The first line decides the whole drag: lay doors, or clear the ones already there.
+        const placing = explicitEdgeAt(present, edge.x, edge.y, edge.side)?.kind !== doorKind;
+        beginDrag(
+          { kind: 'door', start: point, edge, doorKind, placing },
+          toggleEdgeKind(present, edge.x, edge.y, edge.side, doorKind),
+        );
       }
     } else if (tool === 'stamp') {
       if (!inBounds(present, x, y)) return;
@@ -403,6 +411,16 @@ export default function VenueEditor({ venue: initialVenue, onSave, onDirtyChange
       const moved = Math.hypot(point.x - drag.start.x, point.y - drag.start.y) > 0.35;
       const edges = moved ? edgesAlongLine(drag.base, drag.start.x, drag.start.y, point.x, point.y) : [drag.edge];
       updateDrag(edges.reduce((venue, edge) => applyWall(venue, edge.x, edge.y, edge.side, drag.wantWall), drag.base));
+    } else if (drag.kind === 'door') {
+      const moved = Math.hypot(point.x - drag.start.x, point.y - drag.start.y) > 0.35;
+      const edges = moved ? edgesAlongLine(drag.base, drag.start.x, drag.start.y, point.x, point.y) : [drag.edge];
+      updateDrag(edges
+        .filter((edge) => edgeTouchesTerrain(drag.base, edge.x, edge.y, edge.side))
+        .reduce((venue, edge) => {
+          const current = explicitEdgeAt(venue, edge.x, edge.y, edge.side)?.kind;
+          if (drag.placing) return setEdge(venue, edge.x, edge.y, edge.side, drag.doorKind);
+          return current === drag.doorKind ? setEdge(venue, edge.x, edge.y, edge.side, null) : venue;
+        }, drag.base));
     } else if (drag.kind === 'move') {
       const feature = drag.base.features.find((entry) => entry.id === drag.featureId);
       const [width, height] = featureSize(feature);

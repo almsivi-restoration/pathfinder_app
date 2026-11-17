@@ -46,19 +46,20 @@ function fillPaint(prefix, mat) {
   return null;
 }
 
-function MatDoor({ x, y, side }) {
+function MatDoor({ x, y, side, length = 1 }) {
   const transform = `translate(${x * U} ${y * U})${side === 'w' ? ' rotate(90)' : ''}`;
+  const span = length * U;
   return (
     <g transform={transform} className="mat-door">
-      <path d={`M0 0L${U * 0.22} 0M${U * 0.78} 0L${U} 0`} stroke={MAT_COLORS.black} strokeWidth={WALL_WIDTH} strokeLinecap="square" />
-      <rect x={U * 0.22} y={-U * 0.15} width={U * 0.56} height={U * 0.3} fill={BOARD} stroke={MAT_COLORS.black} strokeWidth="2.2" />
+      <path d={`M0 0L${U * 0.22} 0M${span - U * 0.22} 0L${span} 0`} stroke={MAT_COLORS.black} strokeWidth={WALL_WIDTH} strokeLinecap="square" />
+      <rect x={U * 0.22} y={-U * 0.15} width={span - U * 0.44} height={U * 0.3} fill={BOARD} stroke={MAT_COLORS.black} strokeWidth="2.2" />
     </g>
   );
 }
 
-function MatSecretMark({ x, y, side }) {
-  const cx = side === 'n' ? (x + 0.5) * U : x * U;
-  const cy = side === 'n' ? y * U : (y + 0.5) * U;
+function MatSecretMark({ x, y, side, length = 1 }) {
+  const cx = side === 'n' ? (x + length / 2) * U : x * U;
+  const cy = side === 'n' ? y * U : (y + length / 2) * U;
   return (
     <text
       x={cx}

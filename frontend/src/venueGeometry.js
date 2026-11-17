@@ -89,7 +89,28 @@ export function resolveEdges(venue, mode = 'gm') {
   for (let y = 0; y < venue.height; y += 1) {
     for (let x = 0; x <= venue.width; x += 1) visit(x, y, 'w');
   }
-  return { walls: mergeSegments(walls), doors, secretDoors };
+  return { walls: mergeSegments(walls), doors: mergeEdgeRuns(doors), secretDoors: mergeEdgeRuns(secretDoors) };
+}
+
+// Join touching unit edges on one grid line into runs ({ x, y, side, length }) so a door laid
+// across several squares draws as one wide door. Edges arrive in resolveEdges' scan order.
+export function mergeEdgeRuns(edges) {
+  const runs = [];
+  const open = new Map();
+  for (const { x, y, side } of edges) {
+    const line = side === 'n' ? `n${y}` : `w${x}`;
+    const along = side === 'n' ? x : y;
+    const run = open.get(line);
+    if (run && run.end === along) {
+      run.length += 1;
+      run.end += 1;
+    } else {
+      const next = { x, y, side, length: 1, end: along + 1 };
+      runs.push(next);
+      open.set(line, next);
+    }
+  }
+  return runs.map(({ end, ...run }) => run);
 }
 
 // Join touching collinear unit segments so long walls render as single strokes.
